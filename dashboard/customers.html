@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Customer Database - Jehan Holding Group</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600;700&family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+  <script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          primary:      '#3D5A34',
+          'primary-mid':'#5C7A48',
+          'primary-lt': '#8CAE78',
+          gold:         '#C49A1A',
+          'gold-hover': '#A07D10',
+          bg:           '#F2F1EE',
+          surface:      '#FFFFFF',
+          'surface-dim':'#F8F7F4',
+          'surface-mid':'#EEEDE9',
+          'surface-high':'#E4E3DF',
+          dark:         '#1E1E1E',
+          mid:          '#444444',
+          light:        '#888888',
+          border:       '#DCDBD7',
+          error:        '#ba1a1a',
+          'error-bg':   '#ffdad6',
+          'gold-bg':    '#FBF0C4',
+        },
+        fontFamily: {
+          heading: ['"Barlow Condensed"', 'Arial', 'sans-serif'],
+          body:    ['Barlow', 'Arial', 'sans-serif'],
+        },
+        borderRadius: {
+          DEFAULT: '4px',
+          full: '9999px',
+        },
+      }
+    }
+  };
+  </script>
+  <style>
+    body { font-family: 'Barlow', Arial, sans-serif; }
+    h1,h2,h3,h4,h5 { font-family: 'Barlow Condensed', Arial, sans-serif; font-weight: 700; letter-spacing: 0.02em; }
+    .material-symbols-outlined { font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24; }
+    .action-col { visibility: hidden; }
+    tr:hover .action-col { visibility: visible; }
+  </style>
+</head>
+<body class="bg-bg text-dark h-screen flex overflow-hidden">
+
+  <!-- Sidebar -->
+  <aside class="w-64 h-full flex flex-col bg-surface border-r border-border flex-shrink-0">
+    <div class="px-6 py-5 border-b border-border flex items-center justify-between">
+      <img src="../assets/images/logo.png" class="h-8 object-contain" alt="Jehan Holding Group"/>
+      <button onclick="toggleDashLang()" id="dash-lang-btn" class="text-xs font-bold px-2.5 py-1 rounded border border-border text-mid hover:bg-surface-mid hover:text-primary transition-colors flex-shrink-0">&#x0639;&#x0631;&#x0628;&#x064A;</button>
+    </div>
+    <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+      <a href="overview.html" class="flex items-center gap-3 px-4 py-2.5 rounded text-sm font-semibold tracking-wide transition-colors text-mid hover:bg-surface-mid hover:text-dark">
+        <span class="material-symbols-outlined text-[20px]">dashboard</span>
+        <span data-i18n="nav_overview">Overview</span>
+      </a>
+      <a href="bookings.html" class="flex items-center gap-3 px-4 py-2.5 rounded text-sm font-semibold tracking-wide transition-colors text-mid hover:bg-surface-mid hover:text-dark">
+        <span class="material-symbols-outlined text-[20px]">list_alt</span>
+        <span data-i18n="nav_bookings">Booking Requests</span>
+      </a>
+      <a href="inbox.html" class="flex items-center gap-3 px-4 py-2.5 rounded text-sm font-semibold tracking-wide transition-colors text-mid hover:bg-surface-mid hover:text-dark">
+        <span class="material-symbols-outlined text-[20px]">inbox</span>
+        <span data-i18n="nav_inbox">Inbox</span>
+        <span class="ml-auto bg-gold text-white text-xs font-bold px-2 py-0.5 rounded-full">12</span>
+      </a>
+      <a href="customers.html" class="flex items-center gap-3 px-4 py-2.5 rounded text-sm font-semibold tracking-wide transition-colors bg-primary text-white">
+        <span class="material-symbols-outlined text-[20px]">group</span>
+        <span data-i18n="nav_customers">Customer Database</span>
+      </a>
+      <a href="access.html" class="flex items-center gap-3 px-4 py-2.5 rounded text-sm font-semibold tracking-wide transition-colors text-mid hover:bg-surface-mid hover:text-dark">
+        <span class="material-symbols-outlined text-[20px]">admin_panel_settings</span>
+        <span data-i18n="nav_access">User Access</span>
+      </a>
+      <a href="settings.html" class="flex items-center gap-3 px-4 py-2.5 rounded text-sm font-semibold tracking-wide transition-colors text-mid hover:bg-surface-mid hover:text-dark">
+        <span class="material-symbols-outlined text-[20px]">settings</span>
+        <span data-i18n="nav_settings">Settings</span>
+      </a>
+    </nav>
+    <div class="px-4 py-4 border-t border-border">
+      <div class="flex items-center gap-3 mb-3">
+        <div class="w-9 h-9 rounded-full bg-primary-lt/30 text-primary flex items-center justify-center flex-shrink-0">
+          <span class="text-xs font-bold">AU</span>
+        </div>
+        <div class="overflow-hidden">
+          <p class="text-sm font-semibold text-dark truncate">Admin User</p>
+          <p class="text-xs text-light truncate" data-i18n="nav_role">System Manager</p>
+        </div>
+      </div>
+      <a href="../index.html" class="flex items-center gap-2 px-3 py-2 rounded text-sm font-semibold text-mid hover:bg-surface-mid hover:text-dark transition-colors w-full mb-1">
+        <span class="material-symbols-outlined text-[20px]">arrow_back</span>
+        <span data-i18n="nav_back">Back to Website</span>
+      </a>
+      <a href="login.html" class="flex items-center gap-2 px-3 py-2 rounded text-sm font-semibold text-mid hover:bg-error-bg hover:text-error transition-colors w-full">
+        <span class="material-symbols-outlined text-[20px]">logout</span>
+        <span data-i18n="nav_logout">Logout</span>
+      </a>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <div class="flex-1 flex flex-col overflow-hidden">
+    <!-- Header -->
+    <header class="bg-surface border-b border-border h-16 flex items-center gap-4 px-8 flex-shrink-0">
+      <h1 class="font-heading font-bold text-2xl uppercase tracking-wide text-dark flex-1" data-i18n="page_customers">Customer Database</h1>
+      <button onclick="exportCSV()" class="flex items-center gap-2 px-4 py-2 border border-primary text-primary rounded text-sm font-semibold hover:bg-primary hover:text-white transition-colors">
+        <span class="material-symbols-outlined text-[20px]">download</span>
+        <span data-i18n="btn_export">Export CSV</span>
+      </button>
+      <button onclick="openAddRecord()" class="flex items-center gap-2 px-4 py-2 bg-gold text-white rounded text-sm font-semibold hover:bg-gold-hover transition-colors">
+        <span class="material-symbols-outlined text-[20px]">add</span>
+        <span data-i18n="btn_add_record">Add Record →</span>
+      </button>
+    </header>
+
+    <!-- Controls Bar -->
+    <div class="px-8 py-4 bg-surface border-b border-border flex items-center gap-4 flex-shrink-0">
+      <div class="relative w-96">
+        <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-light text-[20px]">search</span>
+        <input type="text" data-i18n-ph="ph_search_cust" placeholder="Search customers…" class="w-full pl-10 pr-4 py-2 border border-border rounded bg-bg text-sm text-dark placeholder-light focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"/>
+      </div>
+      <button class="flex items-center gap-2 px-4 py-2 border border-border rounded text-sm font-semibold text-mid hover:bg-surface-mid hover:text-dark transition-colors">
+        <span class="material-symbols-outlined text-[20px]">filter_list</span>
+        <span data-i18n="btn_filter">Filter</span>
+      </button>
+      <button class="flex items-center gap-2 px-4 py-2 border border-border rounded text-sm font-semibold text-mid hover:bg-surface-mid hover:text-dark transition-colors">
+        <span class="material-symbols-outlined text-[20px]">sort</span>
+        <span data-i18n="btn_sort">Sort</span>
+      </button>
+    </div>
+
+    <!-- Table -->
+    <main class="flex-1 overflow-y-auto">
+      <div class="bg-surface">
+        <table class="w-full">
+          <thead class="bg-surface-dim border-b border-border sticky top-0">
+            <tr>
+              <th class="px-6 py-3 w-10">
+                <input type="checkbox" class="rounded border-border text-primary focus:ring-primary"/>
+              </th>
+              <th class="text-left px-4 py-3 text-xs font-semibold text-light uppercase tracking-wide" data-i18n="th_cust_name">Customer Name</th>
+              <th class="text-left px-4 py-3 text-xs font-semibold text-light uppercase tracking-wide" data-i18n="th_email">Email</th>
+              <th class="text-left px-4 py-3 text-xs font-semibold text-light uppercase tracking-wide" data-i18n="th_phone">Phone</th>
+              <th class="text-left px-4 py-3 text-xs font-semibold text-light uppercase tracking-wide" data-i18n="th_last_activity">Last Activity</th>
+              <th class="text-left px-4 py-3 text-xs font-semibold text-light uppercase tracking-wide" data-i18n="th_location_c">Location</th>
+              <th class="px-4 py-3 w-10"></th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-border">
+            <!-- Row 1 -->
+            <tr class="bg-surface hover:bg-surface-dim transition-colors group">
+              <td class="px-6 py-4">
+                <input type="checkbox" class="rounded border-border text-primary focus:ring-primary"/>
+              </td>
+              <td class="px-4 py-4">
+                <div class="flex items-center gap-3">
+                  <div class="w-9 h-9 rounded-full bg-primary-lt/30 text-primary flex items-center justify-center flex-shrink-0">
+                    <span class="text-xs font-bold">MA</span>
+                  </div>
+                  <span class="text-sm font-semibold text-dark">Marcus Aurelius</span>
+                </div>
+              </td>
+              <td class="px-4 py-4 text-sm text-light">marcus.a@construction.sa</td>
+              <td class="px-4 py-4 text-sm text-light">+966 50 123 4567</td>
+              <td class="px-4 py-4">
+                <span class="bg-primary-lt/30 text-primary border border-primary-lt text-xs font-semibold px-3 py-1 rounded-full">Booked Concrete</span>
+              </td>
+              <td class="px-4 py-4 text-sm text-light">Riyadh, SA</td>
+              <td class="px-4 py-4">
+                <span class="action-col text-sm font-semibold text-primary hover:underline cursor-pointer whitespace-nowrap" data-i18n="action_view">View Details →</span>
+              </td>
+            </tr>
+            <!-- Row 2 -->
+            <tr class="bg-surface hover:bg-surface-dim transition-colors group">
+              <td class="px-6 py-4">
+                <input type="checkbox" class="rounded border-border text-primary focus:ring-primary"/>
+              </td>
+              <td class="px-4 py-4">
+                <div class="flex items-center gap-3">
+                  <div class="w-9 h-9 rounded-full bg-gold-bg flex items-center justify-center flex-shrink-0">
+                    <span class="text-xs font-bold text-dark">SJ</span>
+                  </div>
+                  <span class="text-sm font-semibold text-dark">Sarah Jenkins</span>
+                </div>
+              </td>
+              <td class="px-4 py-4 text-sm text-light">s.jenkins@buildersllc.com</td>
+              <td class="px-4 py-4 text-sm text-light">+966 55 987 6543</td>
+              <td class="px-4 py-4">
+                <span class="bg-surface-mid text-mid border border-border text-xs font-semibold px-3 py-1 rounded-full">Used Calculator</span>
+              </td>
+              <td class="px-4 py-4 text-sm text-light">Jeddah, SA</td>
+              <td class="px-4 py-4">
+                <span class="action-col text-sm font-semibold text-primary hover:underline cursor-pointer whitespace-nowrap">View Details →</span>
+              </td>
+            </tr>
+            <!-- Row 3 -->
+            <tr class="bg-surface hover:bg-surface-dim transition-colors group">
+              <td class="px-6 py-4">
+                <input type="checkbox" class="rounded border-border text-primary focus:ring-primary"/>
+              </td>
+              <td class="px-4 py-4">
+                <div class="flex items-center gap-3">
+                  <div class="w-9 h-9 rounded-full bg-primary-lt/30 text-primary flex items-center justify-center flex-shrink-0">
+                    <span class="text-xs font-bold">OT</span>
+                  </div>
+                  <span class="text-sm font-semibold text-dark">Omar Tariq</span>
+                </div>
+              </td>
+              <td class="px-4 py-4 text-sm text-light">omar.tariq@supply.sa</td>
+              <td class="px-4 py-4 text-sm text-light">+966 54 456 7890</td>
+              <td class="px-4 py-4">
+                <span class="bg-gold-bg text-dark border border-gold text-xs font-semibold px-3 py-1 rounded-full">Supply Request</span>
+              </td>
+              <td class="px-4 py-4 text-sm text-light">Dammam, SA</td>
+              <td class="px-4 py-4">
+                <span class="action-col text-sm font-semibold text-primary hover:underline cursor-pointer whitespace-nowrap">View Details →</span>
+              </td>
+            </tr>
+            <!-- Row 4 -->
+            <tr class="bg-surface hover:bg-surface-dim transition-colors group">
+              <td class="px-6 py-4">
+                <input type="checkbox" class="rounded border-border text-primary focus:ring-primary"/>
+              </td>
+              <td class="px-4 py-4">
+                <div class="flex items-center gap-3">
+                  <div class="w-9 h-9 rounded-full bg-surface-high flex items-center justify-center flex-shrink-0">
+                    <span class="text-xs font-bold text-mid">EK</span>
+                  </div>
+                  <span class="text-sm font-semibold text-dark">Elena Kova</span>
+                </div>
+              </td>
+              <td class="px-4 py-4 text-sm text-light">elena.kova@intldev.co.uk</td>
+              <td class="px-4 py-4 text-sm text-light">+44 20 7946 0320</td>
+              <td class="px-4 py-4">
+                <span class="bg-surface-mid text-mid border border-border text-xs font-semibold px-3 py-1 rounded-full">Downloaded Specs</span>
+              </td>
+              <td class="px-4 py-4 text-sm text-light">London, UK</td>
+              <td class="px-4 py-4">
+                <span class="action-col text-sm font-semibold text-primary hover:underline cursor-pointer whitespace-nowrap">View Details →</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination Footer -->
+      <div class="px-8 py-4 bg-surface border-t border-border flex items-center justify-between">
+        <p class="text-sm text-light" data-i18n="pagination_cust">Showing 1 to 4 of 97 results</p>
+        <div class="flex items-center gap-1">
+          <button class="px-3 py-1.5 rounded text-sm font-semibold text-mid hover:bg-surface-mid transition-colors border border-border">
+            <span class="material-symbols-outlined text-lg">chevron_left</span>
+          </button>
+          <button class="px-3 py-1.5 rounded text-sm font-semibold bg-primary text-white border border-primary">1</button>
+          <button class="px-3 py-1.5 rounded text-sm font-semibold text-mid hover:bg-surface-mid transition-colors border border-border">2</button>
+          <button class="px-3 py-1.5 rounded text-sm font-semibold text-mid hover:bg-surface-mid transition-colors border border-border">3</button>
+          <span class="px-2 text-light">…</span>
+          <button class="px-3 py-1.5 rounded text-sm font-semibold text-mid hover:bg-surface-mid transition-colors border border-border">
+            <span class="material-symbols-outlined text-lg">chevron_right</span>
+          </button>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Add Record Modal -->
+  <div id="add-record-overlay" onclick="closeAddRecord()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:50;"></div>
+  <div id="add-record-modal" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:51;width:100%;max-width:520px;background:#fff;border-radius:8px;box-shadow:0 8px 40px rgba(0,0,0,0.18);overflow:hidden;">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:20px 24px;border-bottom:1px solid #DCDBD7;">
+      <h2 style="font-family:'Barlow Condensed',Arial,sans-serif;font-size:1.25rem;font-weight:700;letter-spacing:0.03em;color:#1E1E1E;margin:0;">ADD CUSTOMER RECORD</h2>
+      <button onclick="closeAddRecord()" style="background:none;border:none;cursor:pointer;color:#888;padding:4px;" title="Close">
+        <span class="material-symbols-outlined" style="font-size:22px;">close</span>
+      </button>
+    </div>
+    <div style="padding:24px;display:flex;flex-direction:column;gap:16px;max-height:70vh;overflow-y:auto;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+        <div>
+          <label style="display:block;font-size:0.75rem;font-weight:600;color:#444;margin-bottom:6px;">Full Name <span style="color:#ba1a1a;">*</span></label>
+          <input id="rec-name" type="text" placeholder="e.g. Ahmad Al-Rashid" style="width:100%;padding:9px 12px;border:1px solid #DCDBD7;border-radius:4px;font-size:0.875rem;color:#1E1E1E;background:#F2F1EE;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='#3D5A34'" onblur="this.style.borderColor='#DCDBD7'"/>
+        </div>
+        <div>
+          <label style="display:block;font-size:0.75rem;font-weight:600;color:#444;margin-bottom:6px;">Phone</label>
+          <input id="rec-phone" type="tel" placeholder="+966 5X XXX XXXX" style="width:100%;padding:9px 12px;border:1px solid #DCDBD7;border-radius:4px;font-size:0.875rem;color:#1E1E1E;background:#F2F1EE;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='#3D5A34'" onblur="this.style.borderColor='#DCDBD7'"/>
+        </div>
+      </div>
+      <div>
+        <label style="display:block;font-size:0.75rem;font-weight:600;color:#444;margin-bottom:6px;">Email <span style="color:#ba1a1a;">*</span></label>
+        <input id="rec-email" type="email" placeholder="name@company.com" style="width:100%;padding:9px 12px;border:1px solid #DCDBD7;border-radius:4px;font-size:0.875rem;color:#1E1E1E;background:#F2F1EE;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='#3D5A34'" onblur="this.style.borderColor='#DCDBD7'"/>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+        <div>
+          <label style="display:block;font-size:0.75rem;font-weight:600;color:#444;margin-bottom:6px;">Location</label>
+          <input id="rec-location" type="text" placeholder="e.g. Riyadh, SA" style="width:100%;padding:9px 12px;border:1px solid #DCDBD7;border-radius:4px;font-size:0.875rem;color:#1E1E1E;background:#F2F1EE;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='#3D5A34'" onblur="this.style.borderColor='#DCDBD7'"/>
+        </div>
+        <div>
+          <label style="display:block;font-size:0.75rem;font-weight:600;color:#444;margin-bottom:6px;">Last Activity</label>
+          <select id="rec-activity" style="width:100%;padding:9px 12px;border:1px solid #DCDBD7;border-radius:4px;font-size:0.875rem;color:#1E1E1E;background:#F2F1EE;outline:none;box-sizing:border-box;">
+            <option value="Booked Concrete">Booked Concrete</option>
+            <option value="Used Calculator">Used Calculator</option>
+            <option value="Supply Request">Supply Request</option>
+            <option value="Downloaded Specs">Downloaded Specs</option>
+            <option value="Enquiry">Enquiry</option>
+          </select>
+        </div>
+      </div>
+      <div>
+        <label style="display:block;font-size:0.75rem;font-weight:600;color:#444;margin-bottom:6px;">Notes</label>
+        <textarea id="rec-notes" rows="3" placeholder="Optional internal notes…" style="width:100%;padding:9px 12px;border:1px solid #DCDBD7;border-radius:4px;font-size:0.875rem;color:#1E1E1E;background:#F2F1EE;outline:none;resize:vertical;box-sizing:border-box;" onfocus="this.style.borderColor='#3D5A34'" onblur="this.style.borderColor='#DCDBD7'"></textarea>
+      </div>
+    </div>
+    <div style="padding:16px 24px;border-top:1px solid #DCDBD7;display:flex;gap:12px;justify-content:flex-end;">
+      <button onclick="closeAddRecord()" style="padding:9px 20px;border:1px solid #DCDBD7;background:none;border-radius:4px;font-size:0.875rem;font-weight:600;color:#444;cursor:pointer;">Cancel</button>
+      <button onclick="saveNewRecord()" style="padding:9px 24px;background:#C49A1A;border:none;border-radius:4px;font-size:0.875rem;font-weight:700;color:#fff;cursor:pointer;">Save Record</button>
+    </div>
+  </div>
+  <div id="rec-toast" style="display:none;position:fixed;bottom:32px;left:50%;transform:translateX(-50%);background:#3D5A34;color:#fff;font-weight:600;font-size:0.875rem;padding:12px 24px;border-radius:6px;z-index:60;box-shadow:0 4px 16px rgba(0,0,0,0.18);">Customer record added successfully!</div>
+
+  <script src="js/dash-lang.js"></script>
+  <script>
+    function openAddRecord() {
+      document.getElementById('add-record-modal').style.display = 'block';
+      document.getElementById('add-record-overlay').style.display = 'block';
+      document.body.style.overflow = 'hidden';
+      document.getElementById('rec-name').focus();
+    }
+    function closeAddRecord() {
+      document.getElementById('add-record-modal').style.display = 'none';
+      document.getElementById('add-record-overlay').style.display = 'none';
+      document.body.style.overflow = '';
+    }
+    function saveNewRecord() {
+      var name = document.getElementById('rec-name').value.trim();
+      var email = document.getElementById('rec-email').value.trim();
+      if (!name || !email) {
+        alert('Please fill in Name and Email.');
+        return;
+      }
+      var phone    = document.getElementById('rec-phone').value.trim() || '—';
+      var location = document.getElementById('rec-location').value.trim() || '—';
+      var activity = document.getElementById('rec-activity').value;
+      var initials = name.split(' ').map(function(w){ return w[0]; }).slice(0,2).join('').toUpperCase();
+      var tbody = document.querySelector('tbody');
+      var tr = document.createElement('tr');
+      tr.className = 'bg-surface hover:bg-surface-dim transition-colors group';
+      tr.innerHTML =
+        '<td class="px-6 py-4"><input type="checkbox" class="rounded border-border text-primary focus:ring-primary"/></td>' +
+        '<td class="px-4 py-4"><div class="flex items-center gap-3"><div class="w-9 h-9 rounded-full bg-primary-lt/30 text-primary flex items-center justify-center flex-shrink-0"><span class="text-xs font-bold">' + initials + '</span></div><span class="text-sm font-semibold text-dark">' + name + '</span></div></td>' +
+        '<td class="px-4 py-4 text-sm text-light">' + email + '</td>' +
+        '<td class="px-4 py-4 text-sm text-light">' + phone + '</td>' +
+        '<td class="px-4 py-4"><span class="bg-surface-mid text-mid border border-border text-xs font-semibold px-3 py-1 rounded-full">' + activity + '</span></td>' +
+        '<td class="px-4 py-4 text-sm text-light">' + location + '</td>' +
+        '<td class="px-4 py-4"><span class="action-col text-sm font-semibold text-primary hover:underline cursor-pointer whitespace-nowrap">View Details →</span></td>';
+      tbody.insertBefore(tr, tbody.firstChild);
+      closeAddRecord();
+      ['rec-name','rec-email','rec-phone','rec-location','rec-notes'].forEach(function(id){ document.getElementById(id).value=''; });
+      var toast = document.getElementById('rec-toast');
+      toast.style.display = 'block';
+      setTimeout(function(){ toast.style.display = 'none'; }, 3000);
+    }
+    document.addEventListener('keydown', function(e){ if (e.key === 'Escape') closeAddRecord(); });
+
+    function exportCSV() {
+      var headers = ['Customer Name', 'Email', 'Phone', 'Last Activity', 'Location'];
+      var rows = [];
+      document.querySelectorAll('tbody tr').forEach(function(tr) {
+        var cells = tr.querySelectorAll('td');
+        if (cells.length < 6) return;
+        var name     = cells[1].querySelector('span.font-semibold') ? cells[1].querySelector('span.font-semibold').textContent.trim() : '';
+        var email    = cells[2].textContent.trim();
+        var phone    = cells[3].textContent.trim();
+        var activity = cells[4].textContent.trim();
+        var location = cells[5].textContent.trim();
+        rows.push([name, email, phone, activity, location].map(function(v) {
+          return '"' + v.replace(/"/g, '""') + '"';
+        }).join(','));
+      });
+      var csv = [headers.join(',')].concat(rows).join('\r\n');
+      var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = 'jehan-customers.csv';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+  </script>
+</body>
+</html>

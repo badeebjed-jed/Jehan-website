@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Booking Requests - Jehan Holding Group</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600;700&family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+  <script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          primary:      '#3D5A34',
+          'primary-mid':'#5C7A48',
+          'primary-lt': '#8CAE78',
+          gold:         '#C49A1A',
+          'gold-hover': '#A07D10',
+          bg:           '#F2F1EE',
+          surface:      '#FFFFFF',
+          'surface-dim':'#F8F7F4',
+          'surface-mid':'#EEEDE9',
+          'surface-high':'#E4E3DF',
+          dark:         '#1E1E1E',
+          mid:          '#444444',
+          light:        '#888888',
+          border:       '#DCDBD7',
+          error:        '#ba1a1a',
+          'error-bg':   '#ffdad6',
+          'gold-bg':    '#FBF0C4',
+        },
+        fontFamily: {
+          heading: ['"Barlow Condensed"', 'Arial', 'sans-serif'],
+          body:    ['Barlow', 'Arial', 'sans-serif'],
+        },
+        borderRadius: {
+          DEFAULT: '4px',
+          full: '9999px',
+        },
+      }
+    }
+  };
+  </script>
+  <style>
+    body { font-family: 'Barlow', Arial, sans-serif; }
+    h1,h2,h3,h4,h5 { font-family: 'Barlow Condensed', Arial, sans-serif; font-weight: 700; letter-spacing: 0.02em; }
+    .material-symbols-outlined { font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24; }
+  </style>
+</head>
+<body class="bg-bg text-dark h-screen flex overflow-hidden">
+
+  <!-- Sidebar -->
+  <aside class="w-64 h-full flex flex-col bg-surface border-r border-border flex-shrink-0">
+    <div class="px-6 py-5 border-b border-border flex items-center justify-between">
+      <img src="../assets/images/logo.png" class="h-8 object-contain" alt="Jehan Holding Group"/>
+      <button onclick="toggleDashLang()" id="dash-lang-btn" class="text-xs font-bold px-2.5 py-1 rounded border border-border text-mid hover:bg-surface-mid hover:text-primary transition-colors flex-shrink-0">&#x0639;&#x0631;&#x0628;&#x064A;</button>
+    </div>
+    <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+      <a href="overview.html" class="flex items-center gap-3 px-4 py-2.5 rounded text-sm font-semibold tracking-wide transition-colors text-mid hover:bg-surface-mid hover:text-dark">
+        <span class="material-symbols-outlined text-[20px]">dashboard</span>
+        <span data-i18n="nav_overview">Overview</span>
+      </a>
+      <a href="bookings.html" class="flex items-center gap-3 px-4 py-2.5 rounded text-sm font-semibold tracking-wide transition-colors bg-primary text-white">
+        <span class="material-symbols-outlined text-[20px]">list_alt</span>
+        <span data-i18n="nav_bookings">Booking Requests</span>
+      </a>
+      <a href="inbox.html" class="flex items-center gap-3 px-4 py-2.5 rounded text-sm font-semibold tracking-wide transition-colors text-mid hover:bg-surface-mid hover:text-dark">
+        <span class="material-symbols-outlined text-[20px]">inbox</span>
+        <span data-i18n="nav_inbox">Inbox</span>
+        <span class="ml-auto bg-gold text-white text-xs font-bold px-2 py-0.5 rounded-full">12</span>
+      </a>
+      <a href="customers.html" class="flex items-center gap-3 px-4 py-2.5 rounded text-sm font-semibold tracking-wide transition-colors text-mid hover:bg-surface-mid hover:text-dark">
+        <span class="material-symbols-outlined text-[20px]">group</span>
+        <span data-i18n="nav_customers">Customer Database</span>
+      </a>
+      <a href="access.html" class="flex items-center gap-3 px-4 py-2.5 rounded text-sm font-semibold tracking-wide transition-colors text-mid hover:bg-surface-mid hover:text-dark">
+        <span class="material-symbols-outlined text-[20px]">admin_panel_settings</span>
+        <span data-i18n="nav_access">User Access</span>
+      </a>
+      <a href="settings.html" class="flex items-center gap-3 px-4 py-2.5 rounded text-sm font-semibold tracking-wide transition-colors text-mid hover:bg-surface-mid hover:text-dark">
+        <span class="material-symbols-outlined text-[20px]">settings</span>
+        <span data-i18n="nav_settings">Settings</span>
+      </a>
+    </nav>
+    <div class="px-4 py-4 border-t border-border">
+      <div class="flex items-center gap-3 mb-3">
+        <div class="w-9 h-9 rounded-full bg-primary-lt/30 text-primary flex items-center justify-center flex-shrink-0">
+          <span class="text-xs font-bold">AU</span>
+        </div>
+        <div class="overflow-hidden">
+          <p class="text-sm font-semibold text-dark truncate">Admin User</p>
+          <p class="text-xs text-light truncate" data-i18n="nav_role">System Manager</p>
+        </div>
+      </div>
+      <a href="../index.html" class="flex items-center gap-2 px-3 py-2 rounded text-sm font-semibold text-mid hover:bg-surface-mid hover:text-dark transition-colors w-full mb-1">
+        <span class="material-symbols-outlined text-[20px]">arrow_back</span>
+        <span data-i18n="nav_back">Back to Website</span>
+      </a>
+      <a href="login.html" class="flex items-center gap-2 px-3 py-2 rounded text-sm font-semibold text-mid hover:bg-error-bg hover:text-error transition-colors w-full">
+        <span class="material-symbols-outlined text-[20px]">logout</span>
+        <span data-i18n="nav_logout">Logout</span>
+      </a>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <div class="flex-1 flex flex-col overflow-hidden">
+    <!-- Header -->
+    <header class="bg-surface border-b border-border h-16 flex items-center justify-between px-8 flex-shrink-0">
+      <h1 class="font-heading font-bold text-2xl uppercase tracking-wide text-dark" data-i18n="page_bookings">Booking Requests</h1>
+      <div class="flex items-center gap-3">
+        <div class="relative">
+          <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-light text-[20px]">search</span>
+          <input type="text" data-i18n-ph="ph_search_req" placeholder="Search requests…" class="pl-10 pr-4 py-2 border border-border rounded bg-bg text-sm text-dark placeholder-light focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary w-64"/>
+        </div>
+        <div class="relative">
+          <button id="filter-btn" onclick="toggleFilter()" class="flex items-center gap-2 px-4 py-2 border border-border rounded text-sm font-semibold text-mid hover:bg-surface-mid hover:text-dark transition-colors">
+            <span class="material-symbols-outlined text-[20px]">filter_list</span>
+            <span data-i18n="btn_filter">Filter</span>
+          </button>
+          <!-- Filter dropdown -->
+          <div id="filter-dropdown" class="hidden absolute right-0 top-full mt-2 w-56 bg-surface border border-border rounded shadow-[0_4px_20px_rgba(0,0,0,0.12)] z-30 p-4 space-y-3">
+            <p class="text-xs font-semibold text-light uppercase tracking-widest" data-i18n="filter_by_status">Filter by Status</p>
+            <label class="flex items-center gap-2.5 cursor-pointer group">
+              <input type="checkbox" value="all" class="accent-primary" checked onchange="applyFilter(this)"/>
+              <span class="text-sm font-semibold text-dark group-hover:text-primary transition-colors" data-i18n="filter_all">All Requests</span>
+            </label>
+            <label class="flex items-center gap-2.5 cursor-pointer group">
+              <input type="checkbox" value="Pending" class="accent-primary" onchange="applyFilter(this)"/>
+              <span class="text-sm text-dark group-hover:text-primary transition-colors" data-i18n="status_pending" data-i18n="status_pending">Pending</span>
+            </label>
+            <label class="flex items-center gap-2.5 cursor-pointer group">
+              <input type="checkbox" value="Contacted" class="accent-primary" onchange="applyFilter(this)"/>
+              <span class="text-sm text-dark group-hover:text-primary transition-colors" data-i18n="status_contacted">Contacted</span>
+            </label>
+            <label class="flex items-center gap-2.5 cursor-pointer group">
+              <input type="checkbox" value="Quote Sent" class="accent-primary" onchange="applyFilter(this)"/>
+              <span class="text-sm text-dark group-hover:text-primary transition-colors" data-i18n="status_quote_sent">Quote Sent</span>
+            </label>
+            <label class="flex items-center gap-2.5 cursor-pointer group">
+              <input type="checkbox" value="Approved" class="accent-primary" onchange="applyFilter(this)"/>
+              <span class="text-sm text-dark group-hover:text-primary transition-colors" data-i18n="status_approved">Approved</span>
+            </label>
+            <label class="flex items-center gap-2.5 cursor-pointer group">
+              <input type="checkbox" value="Rejected" class="accent-primary" onchange="applyFilter(this)"/>
+              <span class="text-sm text-dark group-hover:text-primary transition-colors" data-i18n="status_rejected">Rejected</span>
+            </label>
+            <div class="pt-2 border-t border-border">
+              <button onclick="clearFilters()" class="text-xs font-semibold text-light hover:text-dark transition-colors" data-i18n="filter_clear">Clear filters</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Scrollable Content -->
+    <main class="flex-1 overflow-y-auto p-8 space-y-6">
+
+      <!-- Card 1: Req #1042 -->
+      <div data-status="Pending" class="bg-surface border border-border rounded shadow-[0_2px_12px_rgba(0,0,0,0.07)] overflow-hidden">
+        <div class="flex">
+          <!-- Left -->
+          <div class="flex-1 p-6">
+            <p class="text-xs font-semibold text-light uppercase tracking-widest mb-2">Request #1042</p>
+            <h2 class="font-heading text-2xl font-bold text-dark mb-5">Foundation Pour - Commercial Build</h2>
+            <div class="grid grid-cols-3 gap-4 mb-5">
+              <div>
+                <p class="text-xs font-semibold text-light uppercase tracking-wide mb-1" data-i18n="modal_qty" data-i18n="label_quantity">Quantity</p>
+                <p class="text-sm font-semibold text-dark">120 m³</p>
+              </div>
+              <div>
+                <p class="text-xs font-semibold text-light uppercase tracking-wide mb-1" data-i18n="modal_mix" data-i18n="label_mix">Mix Type</p>
+                <p class="text-sm font-semibold text-dark">C35 High Strength</p>
+              </div>
+              <div>
+                <p class="text-xs font-semibold text-light uppercase tracking-wide mb-1" data-i18n="label_location">Location</p>
+                <p class="text-sm font-semibold text-dark">North Industrial Park, Sector 4</p>
+              </div>
+            </div>
+            <div class="bg-surface-dim rounded p-4">
+              <p class="text-xs font-semibold text-light uppercase tracking-wide mb-2" data-i18n="label_client_msg">Client Message</p>
+              <p class="text-sm text-dark">We require a 6AM pour start time to avoid peak traffic disruption on site. Please confirm availability and arrange for 3 mixer trucks. Access via Gate B only.</p>
+            </div>
+          </div>
+          <!-- Right -->
+          <div class="w-56 border-l border-border p-6 flex flex-col justify-between flex-shrink-0">
+            <div>
+              <p class="text-xs font-semibold text-light uppercase tracking-wide mb-1" data-i18n="label_client">Client</p>
+              <p class="text-sm font-semibold text-dark mb-1">Ahmed Constructor</p>
+              <p class="text-sm text-light mb-4">Oct 12, 2023</p>
+              <span class="bg-gold-bg text-dark border border-gold text-xs font-semibold px-3 py-1 rounded-full">Pending</span>
+            </div>
+            <button class="btn-generate-quote mt-6 w-full bg-gold text-white font-semibold tracking-wide py-2.5 px-4 rounded hover:bg-gold-hover transition-colors text-sm text-center"
+              data-req="Request #1042" data-client="Ahmed Constructor" data-qty="120" data-mix="C35 High Strength">
+              <span data-i18n="btn_gen_quote">Generate Quote →</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 2: Req #1041 -->
+      <div data-status="Contacted" class="bg-surface border border-border rounded shadow-[0_2px_12px_rgba(0,0,0,0.07)] overflow-hidden">
+        <div class="flex">
+          <!-- Left -->
+          <div class="flex-1 p-6">
+            <p class="text-xs font-semibold text-light uppercase tracking-widest mb-2">Request #1041</p>
+            <h2 class="font-heading text-2xl font-bold text-dark mb-5">Residential Slab</h2>
+            <div class="grid grid-cols-3 gap-4 mb-5">
+              <div>
+                <p class="text-xs font-semibold text-light uppercase tracking-wide mb-1" data-i18n="label_quantity">Quantity</p>
+                <p class="text-sm font-semibold text-dark">45 m³</p>
+              </div>
+              <div>
+                <p class="text-xs font-semibold text-light uppercase tracking-wide mb-1" data-i18n="label_mix">Mix Type</p>
+                <p class="text-sm font-semibold text-dark">C25 Standard</p>
+              </div>
+              <div>
+                <p class="text-xs font-semibold text-light uppercase tracking-wide mb-1">Location</p>
+                <p class="text-sm font-semibold text-dark">Jumeirah Village Circle, Plot 22</p>
+              </div>
+            </div>
+            <div class="bg-surface-dim rounded p-4">
+              <p class="text-xs font-semibold text-light uppercase tracking-wide mb-2">Client Message</p>
+              <p class="text-sm text-dark">Standard slab pour, easy access. No special requirements. Flexible on timing.</p>
+            </div>
+          </div>
+          <!-- Right -->
+          <div class="w-56 border-l border-border p-6 flex flex-col justify-between flex-shrink-0">
+            <div>
+              <p class="text-xs font-semibold text-light uppercase tracking-wide mb-1" data-i18n="label_client">Client</p>
+              <p class="text-sm font-semibold text-dark mb-1">Sarah Builders LLC</p>
+              <p class="text-sm text-light mb-4">Oct 11, 2023</p>
+              <span class="bg-surface-mid text-mid border border-border text-xs font-semibold px-3 py-1 rounded-full">Contacted</span>
+            </div>
+            <button class="btn-update-status mt-6 w-full border border-primary text-primary font-semibold tracking-wide py-2.5 px-4 rounded hover:bg-primary hover:text-white transition-colors text-sm text-center"
+              data-req="Request #1041" data-client="Sarah Builders LLC" data-current="Contacted">
+              <span data-i18n="btn_upd_status">Update Status</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- Update Status Modal -->
+  <div id="status-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div class="absolute inset-0 bg-black/40" onclick="closeStatusModal()"></div>
+    <div class="relative bg-surface border border-border rounded shadow-[0_8px_40px_rgba(0,0,0,0.18)] w-full max-w-md z-10">
+      <div class="flex items-center justify-between px-6 py-4 border-b border-border">
+        <div>
+          <p id="status-modal-req" class="text-xs font-semibold text-light uppercase tracking-widest mb-0.5">Request #1041</p>
+          <h2 class="font-heading text-xl font-bold text-dark uppercase tracking-wide" data-i18n="modal_upd_status">Update Status</h2>
+        </div>
+        <button onclick="closeStatusModal()" class="text-light hover:text-dark transition-colors">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+      <div class="p-6 space-y-4">
+        <div class="bg-surface-dim rounded p-3 flex items-center justify-between">
+          <span class="text-xs font-semibold text-light uppercase tracking-wide">Client</span>
+          <span id="status-modal-client" class="text-sm font-semibold text-dark">Sarah Builders LLC</span>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-2" data-i18n="modal_new_status">New Status</label>
+          <div class="space-y-2" id="status-options">
+            <label class="flex items-center gap-3 p-3 border border-border rounded cursor-pointer hover:bg-surface-dim transition-colors">
+              <input type="radio" name="new-status" value="Pending" class="accent-gold"/>
+              <span class="text-sm font-semibold text-dark">Pending</span>
+              <span class="ml-auto bg-gold-bg text-dark border border-gold text-xs font-semibold px-2 py-0.5 rounded-full">Pending</span>
+            </label>
+            <label class="flex items-center gap-3 p-3 border border-border rounded cursor-pointer hover:bg-surface-dim transition-colors">
+              <input type="radio" name="new-status" value="Contacted" class="accent-primary" checked/>
+              <span class="text-sm font-semibold text-dark">Contacted</span>
+              <span class="ml-auto bg-surface-mid text-mid border border-border text-xs font-semibold px-2 py-0.5 rounded-full">Contacted</span>
+            </label>
+            <label class="flex items-center gap-3 p-3 border border-border rounded cursor-pointer hover:bg-surface-dim transition-colors">
+              <input type="radio" name="new-status" value="Quote Sent" class="accent-primary"/>
+              <span class="text-sm font-semibold text-dark">Quote Sent</span>
+              <span class="ml-auto bg-surface-mid text-mid border border-border text-xs font-semibold px-2 py-0.5 rounded-full">Quote Sent</span>
+            </label>
+            <label class="flex items-center gap-3 p-3 border border-border rounded cursor-pointer hover:bg-surface-dim transition-colors">
+              <input type="radio" name="new-status" value="Approved" class="accent-primary"/>
+              <span class="text-sm font-semibold text-dark">Approved</span>
+              <span class="ml-auto bg-primary-lt/30 text-primary border border-primary-lt text-xs font-semibold px-2 py-0.5 rounded-full">Approved</span>
+            </label>
+            <label class="flex items-center gap-3 p-3 border border-border rounded cursor-pointer hover:bg-surface-dim transition-colors">
+              <input type="radio" name="new-status" value="Rejected" class="accent-error"/>
+              <span class="text-sm font-semibold text-dark">Rejected</span>
+              <span class="ml-auto bg-error-bg text-error border border-error/30 text-xs font-semibold px-2 py-0.5 rounded-full">Rejected</span>
+            </label>
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5" data-i18n="modal_int_note">Internal Note (optional)</label>
+          <textarea rows="2" data-i18n-ph="ph_int_note" placeholder="Add an internal note about this status change…"
+            class="w-full border border-border rounded px-3 py-2.5 text-sm text-dark bg-bg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors resize-none"></textarea>
+        </div>
+      </div>
+      <div class="px-6 py-4 border-t border-border flex gap-3 justify-end">
+        <button onclick="closeStatusModal()" class="px-5 py-2 border border-border rounded text-sm font-semibold text-mid hover:bg-surface-mid transition-colors">
+          Cancel
+        </button>
+        <button onclick="saveStatus()" class="flex items-center gap-2 bg-primary hover:bg-primary-mid text-white text-sm font-semibold px-5 py-2 rounded transition-colors">
+          <span class="material-symbols-outlined text-[18px]">check_circle</span>
+          <span data-i18n="modal_save_status">Save Status</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Status update toast -->
+  <div id="status-toast" class="hidden fixed bottom-6 right-6 z-50 bg-primary text-white text-sm font-semibold px-5 py-3 rounded shadow-lg flex items-center gap-2">
+    <span class="material-symbols-outlined text-[18px]">check_circle</span>
+    Status updated successfully!
+  </div>
+
+  <!-- Generate Quote Modal -->
+  <div id="quote-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+    <!-- Backdrop -->
+    <div class="absolute inset-0 bg-black/40" onclick="closeModal()"></div>
+    <!-- Panel -->
+    <div class="relative bg-surface border border-border rounded shadow-[0_8px_40px_rgba(0,0,0,0.18)] w-full max-w-lg z-10">
+      <!-- Modal header -->
+      <div class="flex items-center justify-between px-6 py-4 border-b border-border">
+        <div>
+          <p id="modal-req" class="text-xs font-semibold text-light uppercase tracking-widest mb-0.5">Request #1042</p>
+          <h2 class="font-heading text-xl font-bold text-dark uppercase tracking-wide" data-i18n="modal_gen_quote">Generate Quote</h2>
+        </div>
+        <button onclick="closeModal()" class="text-light hover:text-dark transition-colors">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+      <!-- Modal body -->
+      <div class="p-6 space-y-4">
+        <!-- Summary row -->
+        <div class="bg-surface-dim rounded p-4 grid grid-cols-3 gap-3 text-center">
+          <div>
+            <p class="text-xs font-semibold text-light uppercase tracking-wide mb-1">Client</p>
+            <p id="modal-client" class="text-sm font-semibold text-dark">Ahmed Constructor</p>
+          </div>
+          <div>
+            <p class="text-xs font-semibold text-light uppercase tracking-wide mb-1">Quantity</p>
+            <p id="modal-qty" class="text-sm font-semibold text-dark">120 m³</p>
+          </div>
+          <div>
+            <p class="text-xs font-semibold text-light uppercase tracking-wide mb-1">Mix Type</p>
+            <p id="modal-mix" class="text-sm font-semibold text-dark">C35 High Strength</p>
+          </div>
+        </div>
+        <!-- Price fields -->
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5" data-i18n="modal_price">Price per m³ (SAR)</label>
+            <input id="modal-rate" type="number" placeholder="e.g. 250" oninput="calcTotal()"
+              class="w-full border border-border rounded px-3 py-2.5 text-sm text-dark bg-bg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors"/>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5" data-i18n="modal_total">Total (SAR)</label>
+            <input id="modal-total" type="text" placeholder="Auto-calculated" readonly
+              class="w-full border border-border rounded px-3 py-2.5 text-sm font-semibold text-primary bg-surface-dim cursor-not-allowed"/>
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5" data-i18n="modal_delivery">Delivery Date</label>
+          <input type="date"
+            class="w-full border border-border rounded px-3 py-2.5 text-sm text-dark bg-bg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors"/>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5" data-i18n="modal_notes">Notes to Client</label>
+          <textarea rows="3" data-i18n-ph="ph_notes" placeholder="Add any delivery notes, conditions, or instructions…"
+            class="w-full border border-border rounded px-3 py-2.5 text-sm text-dark bg-bg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors resize-none"></textarea>
+        </div>
+      </div>
+      <!-- Modal footer -->
+      <div class="px-6 py-4 border-t border-border flex gap-3 justify-end">
+        <button onclick="closeModal()" class="px-5 py-2 border border-border rounded text-sm font-semibold text-mid hover:bg-surface-mid transition-colors">
+          Cancel
+        </button>
+        <button onclick="sendQuote()" class="flex items-center gap-2 bg-gold hover:bg-gold-hover text-white text-sm font-semibold px-5 py-2 rounded transition-colors">
+          <span class="material-symbols-outlined text-[18px]">send</span>
+          <span data-i18n="modal_send_quote">Send Quote</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Success toast -->
+  <div id="quote-toast" class="hidden fixed bottom-6 right-6 z-50 bg-primary text-white text-sm font-semibold px-5 py-3 rounded shadow-lg flex items-center gap-2">
+    <span class="material-symbols-outlined text-[18px]">check_circle</span>
+    Quote sent successfully!
+  </div>
+
+  <script>
+    // Attach click to all Generate Quote buttons
+    document.querySelectorAll('.btn-generate-quote').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.getElementById('modal-req').textContent    = btn.dataset.req;
+        document.getElementById('modal-client').textContent = btn.dataset.client;
+        document.getElementById('modal-qty').textContent    = btn.dataset.qty;
+        document.getElementById('modal-mix').textContent    = btn.dataset.mix;
+        document.getElementById('modal-rate').value = '';
+        document.getElementById('modal-total').value = '';
+        document.getElementById('quote-modal').classList.remove('hidden');
+      });
+    });
+
+    function closeModal() {
+      document.getElementById('quote-modal').classList.add('hidden');
+    }
+
+    function calcTotal() {
+      const rate = parseFloat(document.getElementById('modal-rate').value) || 0;
+      const qty  = parseFloat(document.getElementById('modal-qty').textContent) || 0;
+      document.getElementById('modal-total').value = rate && qty ? (rate * qty).toLocaleString() + ' SAR' : '';
+    }
+
+    function sendQuote() {
+      closeModal();
+      const toast = document.getElementById('quote-toast');
+      toast.classList.remove('hidden');
+      setTimeout(() => toast.classList.add('hidden'), 3000);
+    }
+
+    // Filter dropdown
+    function toggleFilter() {
+      document.getElementById('filter-dropdown').classList.toggle('hidden');
+    }
+    document.addEventListener('click', e => {
+      if (!document.getElementById('filter-btn').contains(e.target) &&
+          !document.getElementById('filter-dropdown').contains(e.target)) {
+        document.getElementById('filter-dropdown').classList.add('hidden');
+      }
+    });
+
+    function applyFilter(changed) {
+      const checkboxes = document.querySelectorAll('#filter-dropdown input[type=checkbox]');
+      if (changed.value === 'all') {
+        checkboxes.forEach(cb => { if (cb.value !== 'all') cb.checked = false; });
+      } else {
+        document.querySelector('#filter-dropdown input[value=all]').checked = false;
+      }
+      const active = [...checkboxes].filter(cb => cb.checked && cb.value !== 'all').map(cb => cb.value);
+      document.querySelectorAll('main > div[data-status]').forEach(card => {
+        card.style.display = (!active.length || active.includes(card.dataset.status)) ? '' : 'none';
+      });
+      const btn = document.getElementById('filter-btn');
+      btn.classList.toggle('border-primary', active.length > 0);
+      btn.classList.toggle('text-primary', active.length > 0);
+    }
+
+    function clearFilters() {
+      document.querySelectorAll('#filter-dropdown input[type=checkbox]').forEach(cb => cb.checked = false);
+      document.querySelector('#filter-dropdown input[value=all]').checked = true;
+      document.querySelectorAll('main > div[data-status]').forEach(card => card.style.display = '');
+      const btn = document.getElementById('filter-btn');
+      btn.classList.remove('border-primary', 'text-primary');
+      document.getElementById('filter-dropdown').classList.add('hidden');
+    }
+
+    // Update Status buttons
+    document.querySelectorAll('.btn-update-status').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.getElementById('status-modal-req').textContent    = btn.dataset.req;
+        document.getElementById('status-modal-client').textContent = btn.dataset.client;
+        const current = btn.dataset.current;
+        document.querySelectorAll('#status-options input[type=radio]').forEach(r => {
+          r.checked = r.value === current;
+        });
+        document.getElementById('status-modal').classList.remove('hidden');
+      });
+    });
+
+    function closeStatusModal() {
+      document.getElementById('status-modal').classList.add('hidden');
+    }
+
+    function saveStatus() {
+      closeStatusModal();
+      const toast = document.getElementById('status-toast');
+      toast.classList.remove('hidden');
+      setTimeout(() => toast.classList.add('hidden'), 3000);
+    }
+
+    // Close on Escape
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeModal(); closeStatusModal(); } });
+  </script>
+
+  <script src="js/dash-lang.js"></script>
+</body>
+</html>

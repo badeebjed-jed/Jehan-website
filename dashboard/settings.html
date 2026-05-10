@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Settings - Jehan Holding Group</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600;700&family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+  <script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          primary:       '#3D5A34',
+          'primary-mid': '#5C7A48',
+          'primary-lt':  '#8CAE78',
+          gold:          '#C49A1A',
+          'gold-hover':  '#A07D10',
+          bg:            '#F2F1EE',
+          surface:       '#FFFFFF',
+          'surface-dim': '#F8F7F4',
+          'surface-mid': '#EEEDE9',
+          'surface-high':'#E4E3DF',
+          dark:          '#1E1E1E',
+          mid:           '#444444',
+          light:         '#888888',
+          border:        '#DCDBD7',
+          error:         '#ba1a1a',
+          'error-bg':    '#ffdad6',
+          'gold-bg':     '#FBF0C4',
+        },
+        fontFamily: {
+          heading: ['"Barlow Condensed"', 'Arial', 'sans-serif'],
+          body:    ['Barlow', 'Arial', 'sans-serif'],
+        },
+        borderRadius: {
+          DEFAULT: '4px',
+          full: '9999px',
+        },
+      }
+    }
+  };
+  </script>
+  <style>
+    body { font-family: 'Barlow', Arial, sans-serif; }
+    h1,h2,h3,h4,h5 { font-family: 'Barlow Condensed', Arial, sans-serif; font-weight: 700; letter-spacing: 0.02em; }
+    .material-symbols-outlined { font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24; }
+    .toggle { position: relative; display: inline-block; width: 44px; height: 24px; }
+    .toggle input { opacity: 0; width: 0; height: 0; }
+    .toggle-slider { position: absolute; cursor: pointer; inset: 0; background: #DCDBD7; border-radius: 9999px; transition: .2s; }
+    .toggle-slider:before { content: ''; position: absolute; height: 18px; width: 18px; left: 3px; bottom: 3px; background: white; border-radius: 50%; transition: .2s; }
+    input:checked + .toggle-slider { background: #3D5A34; }
+    input:checked + .toggle-slider:before { transform: translateX(20px); }
+  </style>
+</head>
+<body class="bg-bg text-dark h-screen flex overflow-hidden">
+
+  <!-- Sidebar -->
+  <aside class="w-64 h-full flex flex-col bg-surface border-r border-border flex-shrink-0">
+    <div class="px-6 py-5 border-b border-border flex items-center justify-between">
+      <img src="../assets/images/logo.png" class="h-8 object-contain" alt="Jehan Holding Group"/>
+      <button onclick="toggleDashLang()" id="dash-lang-btn" class="text-xs font-bold px-2.5 py-1 rounded border border-border text-mid hover:bg-surface-mid hover:text-primary transition-colors flex-shrink-0">&#x0639;&#x0631;&#x0628;&#x064A;</button>
+    </div>
+    <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+      <a href="overview.html" class="flex items-center gap-3 px-4 py-2.5 rounded text-sm font-semibold tracking-wide transition-colors text-mid hover:bg-surface-mid hover:text-dark">
+        <span class="material-symbols-outlined text-[20px]">dashboard</span>
+        <span data-i18n="nav_overview">Overview</span>
+      </a>
+      <a href="bookings.html" class="flex items-center gap-3 px-4 py-2.5 rounded text-sm font-semibold tracking-wide transition-colors text-mid hover:bg-surface-mid hover:text-dark">
+        <span class="material-symbols-outlined text-[20px]">list_alt</span>
+        <span data-i18n="nav_bookings">Booking Requests</span>
+      </a>
+      <a href="inbox.html" class="flex items-center gap-3 px-4 py-2.5 rounded text-sm font-semibold tracking-wide transition-colors text-mid hover:bg-surface-mid hover:text-dark">
+        <span class="material-symbols-outlined text-[20px]">inbox</span>
+        <span data-i18n="nav_inbox">Inbox</span>
+        <span class="ml-auto bg-gold text-white text-xs font-bold px-2 py-0.5 rounded-full">12</span>
+      </a>
+      <a href="customers.html" class="flex items-center gap-3 px-4 py-2.5 rounded text-sm font-semibold tracking-wide transition-colors text-mid hover:bg-surface-mid hover:text-dark">
+        <span class="material-symbols-outlined text-[20px]">group</span>
+        <span data-i18n="nav_customers">Customer Database</span>
+      </a>
+      <a href="access.html" class="flex items-center gap-3 px-4 py-2.5 rounded text-sm font-semibold tracking-wide transition-colors text-mid hover:bg-surface-mid hover:text-dark">
+        <span class="material-symbols-outlined text-[20px]">admin_panel_settings</span>
+        <span data-i18n="nav_access">User Access</span>
+      </a>
+      <a href="settings.html" class="flex items-center gap-3 px-4 py-2.5 rounded text-sm font-semibold tracking-wide transition-colors bg-primary text-white">
+        <span class="material-symbols-outlined text-[20px]">settings</span>
+        <span data-i18n="nav_settings">Settings</span>
+      </a>
+    </nav>
+    <div class="px-4 py-4 border-t border-border">
+      <div class="flex items-center gap-3 mb-3">
+        <div class="w-9 h-9 rounded-full bg-primary-lt/30 text-primary flex items-center justify-center flex-shrink-0">
+          <span class="text-xs font-bold">AU</span>
+        </div>
+        <div class="overflow-hidden">
+          <p class="text-sm font-semibold text-dark truncate">Admin User</p>
+          <p class="text-xs text-light truncate" data-i18n="nav_role">System Manager</p>
+        </div>
+      </div>
+      <a href="../index.html" class="flex items-center gap-2 px-3 py-2 rounded text-sm font-semibold text-mid hover:bg-surface-mid hover:text-dark transition-colors w-full mb-1">
+        <span class="material-symbols-outlined text-[20px]">arrow_back</span>
+        <span data-i18n="nav_back">Back to Website</span>
+      </a>
+      <a href="login.html" class="flex items-center gap-2 px-3 py-2 rounded text-sm font-semibold text-mid hover:bg-error-bg hover:text-error transition-colors w-full">
+        <span class="material-symbols-outlined text-[20px]">logout</span>
+        <span data-i18n="nav_logout">Logout</span>
+      </a>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <div class="flex-1 flex flex-col overflow-hidden">
+
+    <!-- Header -->
+    <header class="bg-surface border-b border-border h-16 flex items-center justify-between px-8 flex-shrink-0">
+      <h1 class="text-2xl font-800 uppercase tracking-wide text-dark" data-i18n="page_settings">Settings</h1>
+      <button onclick="document.getElementById('save-toast').classList.remove('hidden')" class="flex items-center gap-2 bg-gold hover:bg-gold-hover text-white text-sm font-semibold tracking-wide px-5 py-2 rounded transition-colors">
+        <span class="material-symbols-outlined text-[18px]">save</span>
+        <span data-i18n="btn_save_changes">Save Changes</span>
+      </button>
+    </header>
+
+    <!-- Toast -->
+    <div id="save-toast" class="hidden fixed top-5 right-5 z-50 bg-primary text-white text-sm font-semibold px-5 py-3 rounded shadow-lg flex items-center gap-2" onclick="this.classList.add('hidden')">
+      <span class="material-symbols-outlined text-[18px]">check_circle</span>
+      <span data-i18n="toast_saved">Settings saved successfully</span>
+    </div>
+
+    <!-- Scrollable content -->
+    <div class="flex-1 overflow-y-auto p-8">
+      <div class="max-w-3xl mx-auto space-y-8">
+
+        <!-- Company Information -->
+        <section class="bg-surface border border-border rounded shadow-[0_2px_12px_rgba(0,0,0,0.07)]">
+          <div class="px-6 py-4 border-b border-border flex items-center gap-3">
+            <span class="material-symbols-outlined text-primary text-[20px]">business</span>
+            <h2 class="text-lg uppercase tracking-wide" data-i18n="sect_company">Company Information</h2>
+          </div>
+          <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div>
+              <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5" data-i18n="lbl_co_name">Company Name</label>
+              <input type="text" value="Jehan Holding Group" class="w-full border border-border rounded px-3 py-2.5 text-sm text-dark bg-bg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors"/>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5" data-i18n="lbl_website">Website URL</label>
+              <input type="text" value="www.jehanholding.com" class="w-full border border-border rounded px-3 py-2.5 text-sm text-dark bg-bg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors"/>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5" data-i18n="lbl_co_email">Contact Email</label>
+              <input type="email" value="info@jehanholding.com" class="w-full border border-border rounded px-3 py-2.5 text-sm text-dark bg-bg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors"/>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5" data-i18n="lbl_co_phone">Phone Number</label>
+              <input type="tel" value="+966 11 000 0000" class="w-full border border-border rounded px-3 py-2.5 text-sm text-dark bg-bg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors"/>
+            </div>
+            <div class="md:col-span-2">
+              <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5" data-i18n="lbl_address">Head Office Address</label>
+              <input type="text" value="Jeddah, Saudi Arabia, 6653 Sari Branch Road, 23446" class="w-full border border-border rounded px-3 py-2.5 text-sm text-dark bg-bg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors"/>
+            </div>
+          </div>
+        </section>
+
+        <!-- Account & Password -->
+        <section class="bg-surface border border-border rounded shadow-[0_2px_12px_rgba(0,0,0,0.07)]">
+          <div class="px-6 py-4 border-b border-border flex items-center gap-3">
+            <span class="material-symbols-outlined text-primary text-[20px]">lock</span>
+            <h2 class="text-lg uppercase tracking-wide" data-i18n="sect_account">Account & Password</h2>
+          </div>
+          <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div>
+              <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5" data-i18n="lbl_username">Admin Username</label>
+              <input type="text" value="admin" class="w-full border border-border rounded px-3 py-2.5 text-sm text-dark bg-bg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors"/>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5" data-i18n="lbl_cur_pass">Current Password</label>
+              <input type="password" placeholder="••••••••" class="w-full border border-border rounded px-3 py-2.5 text-sm text-dark bg-bg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors"/>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5" data-i18n="lbl_new_pass">New Password</label>
+              <input type="password" placeholder="••••••••" class="w-full border border-border rounded px-3 py-2.5 text-sm text-dark bg-bg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors"/>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5" data-i18n="lbl_confirm_pass">Confirm New Password</label>
+              <input type="password" placeholder="••••••••" class="w-full border border-border rounded px-3 py-2.5 text-sm text-dark bg-bg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors"/>
+            </div>
+          </div>
+        </section>
+
+        <!-- Notifications -->
+        <section class="bg-surface border border-border rounded shadow-[0_2px_12px_rgba(0,0,0,0.07)]">
+          <div class="px-6 py-4 border-b border-border flex items-center gap-3">
+            <span class="material-symbols-outlined text-primary text-[20px]">notifications</span>
+            <h2 class="text-lg uppercase tracking-wide" data-i18n="sect_notif">Notification Preferences</h2>
+          </div>
+          <div class="divide-y divide-border">
+            <div class="px-6 py-4 flex items-center justify-between">
+              <div>
+                <p class="text-sm font-semibold text-dark" data-i18n="notif1_t">New Booking Request</p>
+                <p class="text-xs text-light mt-0.5" data-i18n="notif1_d">Get notified when a new concrete booking is submitted</p>
+              </div>
+              <label class="toggle"><input type="checkbox" checked/><span class="toggle-slider"></span></label>
+            </div>
+            <div class="px-6 py-4 flex items-center justify-between">
+              <div>
+                <p class="text-sm font-semibold text-dark" data-i18n="notif2_t">New Inbox Message</p>
+                <p class="text-xs text-light mt-0.5" data-i18n="notif2_d">Get notified when a customer submits a contact form</p>
+              </div>
+              <label class="toggle"><input type="checkbox" checked/><span class="toggle-slider"></span></label>
+            </div>
+            <div class="px-6 py-4 flex items-center justify-between">
+              <div>
+                <p class="text-sm font-semibold text-dark" data-i18n="notif3_t">New Customer Record</p>
+                <p class="text-xs text-light mt-0.5" data-i18n="notif3_d">Alert when a new customer is added to the database</p>
+              </div>
+              <label class="toggle"><input type="checkbox"/><span class="toggle-slider"></span></label>
+            </div>
+            <div class="px-6 py-4 flex items-center justify-between">
+              <div>
+                <p class="text-sm font-semibold text-dark" data-i18n="notif4_t">Weekly Summary Report</p>
+                <p class="text-xs text-light mt-0.5" data-i18n="notif4_d">Receive a weekly digest of requests, leads, and volumes</p>
+              </div>
+              <label class="toggle"><input type="checkbox" checked/><span class="toggle-slider"></span></label>
+            </div>
+          </div>
+        </section>
+
+        <!-- System -->
+        <section class="bg-surface border border-border rounded shadow-[0_2px_12px_rgba(0,0,0,0.07)]">
+          <div class="px-6 py-4 border-b border-border flex items-center gap-3">
+            <span class="material-symbols-outlined text-primary text-[20px]">tune</span>
+            <h2 class="text-lg uppercase tracking-wide" data-i18n="sect_system">System Preferences</h2>
+          </div>
+          <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div>
+              <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5" data-i18n="lbl_lang">Default Language</label>
+              <select class="w-full border border-border rounded px-3 py-2.5 text-sm text-dark bg-bg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors">
+                <option>English</option>
+                <option>العربية</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5" data-i18n="lbl_tz">Timezone</label>
+              <select class="w-full border border-border rounded px-3 py-2.5 text-sm text-dark bg-bg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors">
+                <option>Asia/Riyadh (GMT+3)</option>
+                <option>Asia/Dubai (GMT+4)</option>
+                <option>UTC (GMT+0)</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5" data-i18n="lbl_date_fmt">Date Format</label>
+              <select class="w-full border border-border rounded px-3 py-2.5 text-sm text-dark bg-bg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors">
+                <option>DD/MM/YYYY</option>
+                <option>MM/DD/YYYY</option>
+                <option>YYYY-MM-DD</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5" data-i18n="lbl_vol_unit">Volume Unit</label>
+              <select class="w-full border border-border rounded px-3 py-2.5 text-sm text-dark bg-bg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors">
+                <option>Cubic Metres (m³)</option>
+                <option>Cubic Feet (ft³)</option>
+              </select>
+            </div>
+          </div>
+        </section>
+
+        <!-- Danger Zone -->
+        <section class="bg-surface border border-error/30 rounded shadow-[0_2px_12px_rgba(0,0,0,0.07)]">
+          <div class="px-6 py-4 border-b border-error/20 flex items-center gap-3">
+            <span class="material-symbols-outlined text-error text-[20px]">warning</span>
+            <h2 class="text-lg uppercase tracking-wide text-error" data-i18n="sect_danger">Danger Zone</h2>
+          </div>
+          <div class="p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div>
+              <p class="text-sm font-semibold text-dark" data-i18n="danger_t">Clear All Booking Records</p>
+              <p class="text-xs text-light mt-0.5" data-i18n="danger_d">Permanently delete all booking requests from the system. This cannot be undone.</p>
+            </div>
+            <button class="flex-shrink-0 border border-error text-error hover:bg-error hover:text-white text-sm font-semibold px-5 py-2 rounded transition-colors">
+              <span data-i18n="btn_clear">Clear Records</span>
+            </button>
+          </div>
+        </section>
+
+      </div>
+    </div>
+  </div>
+
+  <script src="js/dash-lang.js"></script>
+</body>
+</html>

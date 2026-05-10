@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Dashboard Overview - Jehan Holding Group</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600;700&family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+  <script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          primary:      '#3D5A34',
+          'primary-mid':'#5C7A48',
+          'primary-lt': '#8CAE78',
+          gold:         '#C49A1A',
+          'gold-hover': '#A07D10',
+          bg:           '#F2F1EE',
+          surface:      '#FFFFFF',
+          'surface-dim':'#F8F7F4',
+          'surface-mid':'#EEEDE9',
+          'surface-high':'#E4E3DF',
+          dark:         '#1E1E1E',
+          mid:          '#444444',
+          light:        '#888888',
+          border:       '#DCDBD7',
+          error:        '#ba1a1a',
+          'error-bg':   '#ffdad6',
+          'gold-bg':    '#FBF0C4',
+        },
+        fontFamily: {
+          heading: ['"Barlow Condensed"', 'Arial', 'sans-serif'],
+          body:    ['Barlow', 'Arial', 'sans-serif'],
+        },
+        borderRadius: {
+          DEFAULT: '4px',
+          full: '9999px',
+        },
+      }
+    }
+  };
+  </script>
+  <style>
+    body { font-family: 'Barlow', Arial, sans-serif; }
+    h1,h2,h3,h4,h5 { font-family: 'Barlow Condensed', Arial, sans-serif; font-weight: 700; letter-spacing: 0.02em; }
+    .material-symbols-outlined { font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24; }
+  </style>
+</head>
+<body class="bg-bg text-dark h-screen flex overflow-hidden">
+
+  <!-- Sidebar -->
+  <aside class="w-64 h-full flex flex-col bg-surface border-r border-border flex-shrink-0">
+    <div class="px-6 py-5 border-b border-border flex items-center justify-between">
+      <img src="../assets/images/logo.png" class="h-8 object-contain" alt="Jehan Holding Group"/>
+      <button onclick="toggleDashLang()" id="dash-lang-btn" class="text-xs font-bold px-2.5 py-1 rounded border border-border text-mid hover:bg-surface-mid hover:text-primary transition-colors flex-shrink-0">&#x0639;&#x0631;&#x0628;&#x064A;</button>
+    </div>
+    <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+      <a href="overview.html" class="flex items-center gap-3 px-4 py-2.5 rounded text-sm font-semibold tracking-wide transition-colors bg-primary text-white">
+        <span class="material-symbols-outlined text-[20px]">dashboard</span>
+        <span data-i18n="nav_overview">Overview</span>
+      </a>
+      <a href="bookings.html" class="flex items-center gap-3 px-4 py-2.5 rounded text-sm font-semibold tracking-wide transition-colors text-mid hover:bg-surface-mid hover:text-dark">
+        <span class="material-symbols-outlined text-[20px]">list_alt</span>
+        <span data-i18n="nav_bookings">Booking Requests</span>
+      </a>
+      <a href="inbox.html" class="flex items-center gap-3 px-4 py-2.5 rounded text-sm font-semibold tracking-wide transition-colors text-mid hover:bg-surface-mid hover:text-dark">
+        <span class="material-symbols-outlined text-[20px]">inbox</span>
+        <span data-i18n="nav_inbox">Inbox</span>
+        <span class="ml-auto bg-gold text-white text-xs font-bold px-2 py-0.5 rounded-full">12</span>
+      </a>
+      <a href="customers.html" class="flex items-center gap-3 px-4 py-2.5 rounded text-sm font-semibold tracking-wide transition-colors text-mid hover:bg-surface-mid hover:text-dark">
+        <span class="material-symbols-outlined text-[20px]">group</span>
+        <span data-i18n="nav_customers">Customer Database</span>
+      </a>
+      <a href="access.html" class="flex items-center gap-3 px-4 py-2.5 rounded text-sm font-semibold tracking-wide transition-colors text-mid hover:bg-surface-mid hover:text-dark">
+        <span class="material-symbols-outlined text-[20px]">admin_panel_settings</span>
+        <span data-i18n="nav_access">User Access</span>
+      </a>
+      <a href="settings.html" class="flex items-center gap-3 px-4 py-2.5 rounded text-sm font-semibold tracking-wide transition-colors text-mid hover:bg-surface-mid hover:text-dark">
+        <span class="material-symbols-outlined text-[20px]">settings</span>
+        <span data-i18n="nav_settings">Settings</span>
+      </a>
+    </nav>
+    <div class="px-4 py-4 border-t border-border">
+      <div class="flex items-center gap-3 mb-3">
+        <div class="w-9 h-9 rounded-full bg-primary-lt/30 text-primary flex items-center justify-center flex-shrink-0">
+          <span class="text-xs font-bold">AU</span>
+        </div>
+        <div class="overflow-hidden">
+          <p class="text-sm font-semibold text-dark truncate">Admin User</p>
+          <p class="text-xs text-light truncate" data-i18n="nav_role">System Manager</p>
+        </div>
+      </div>
+      <a href="../index.html" class="flex items-center gap-2 px-3 py-2 rounded text-sm font-semibold text-mid hover:bg-surface-mid hover:text-dark transition-colors w-full mb-1">
+        <span class="material-symbols-outlined text-[20px]">arrow_back</span>
+        <span data-i18n="nav_back">Back to Website</span>
+      </a>
+      <a href="login.html" class="flex items-center gap-2 px-3 py-2 rounded text-sm font-semibold text-mid hover:bg-error-bg hover:text-error transition-colors w-full">
+        <span class="material-symbols-outlined text-[20px]">logout</span>
+        <span data-i18n="nav_logout">Logout</span>
+      </a>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <div class="flex-1 flex flex-col overflow-hidden">
+    <!-- Header -->
+    <header class="bg-surface border-b border-border h-16 flex items-center justify-between px-8 flex-shrink-0">
+      <h1 class="font-heading font-bold text-2xl uppercase tracking-wide text-dark" data-i18n="page_overview">Dashboard Overview</h1>
+      <div class="flex items-center gap-4">
+        <div class="relative">
+          <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-light text-[20px]">search</span>
+          <input type="text" data-i18n-ph="ph_search" placeholder="Search…" class="pl-10 pr-4 py-2 border border-border rounded bg-bg text-sm text-dark placeholder-light focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary w-64"/>
+        </div>
+        <div class="relative" id="notif-wrapper">
+          <button onclick="toggleNotif()" class="relative p-2 rounded hover:bg-surface-mid transition-colors">
+            <span class="material-symbols-outlined text-mid">notifications</span>
+            <span id="notif-dot" class="absolute top-1.5 right-1.5 w-2 h-2 bg-error rounded-full"></span>
+          </button>
+          <!-- Notification Panel -->
+          <div id="notif-panel" style="display:none;position:absolute;top:calc(100% + 8px);right:0;width:340px;background:#fff;border:1px solid #DCDBD7;border-radius:8px;box-shadow:0 8px 32px rgba(0,0,0,0.14);z-index:50;overflow:hidden;">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid #DCDBD7;">
+              <span style="font-family:'Barlow Condensed',Arial,sans-serif;font-size:1rem;font-weight:700;letter-spacing:0.03em;color:#1E1E1E;">NOTIFICATIONS</span>
+              <button onclick="markAllRead()" style="background:none;border:none;font-size:0.75rem;font-weight:600;color:#3D5A34;cursor:pointer;padding:0;">Mark all read</button>
+            </div>
+            <div id="notif-list" style="max-height:340px;overflow-y:auto;">
+              <div class="notif-item unread" data-id="1" style="display:flex;gap:12px;padding:14px 18px;border-bottom:1px solid #DCDBD7;background:#F8F7F4;cursor:pointer;" onclick="readNotif(1)">
+                <span class="material-symbols-outlined" style="color:#C49A1A;font-size:20px;flex-shrink:0;margin-top:2px;">list_alt</span>
+                <div style="flex:1;">
+                  <p style="font-size:0.8125rem;font-weight:600;color:#1E1E1E;margin:0 0 2px;">New booking request</p>
+                  <p style="font-size:0.75rem;color:#888;margin:0;">Al-Rashid Contractors submitted a new concrete order for 120 m³.</p>
+                  <p style="font-size:0.7rem;color:#aaa;margin:4px 0 0;">2 minutes ago</p>
+                </div>
+                <span style="width:8px;height:8px;border-radius:50%;background:#ba1a1a;flex-shrink:0;margin-top:6px;"></span>
+              </div>
+              <div class="notif-item unread" data-id="2" style="display:flex;gap:12px;padding:14px 18px;border-bottom:1px solid #DCDBD7;background:#F8F7F4;cursor:pointer;" onclick="readNotif(2)">
+                <span class="material-symbols-outlined" style="color:#3D5A34;font-size:20px;flex-shrink:0;margin-top:2px;">group</span>
+                <div style="flex:1;">
+                  <p style="font-size:0.8125rem;font-weight:600;color:#1E1E1E;margin:0 0 2px;">New customer registered</p>
+                  <p style="font-size:0.75rem;color:#888;margin:0;">Sarah Jenkins signed up via the calculator.</p>
+                  <p style="font-size:0.7rem;color:#aaa;margin:4px 0 0;">18 minutes ago</p>
+                </div>
+                <span style="width:8px;height:8px;border-radius:50%;background:#ba1a1a;flex-shrink:0;margin-top:6px;"></span>
+              </div>
+              <div class="notif-item unread" data-id="3" style="display:flex;gap:12px;padding:14px 18px;border-bottom:1px solid #DCDBD7;background:#F8F7F4;cursor:pointer;" onclick="readNotif(3)">
+                <span class="material-symbols-outlined" style="color:#C49A1A;font-size:20px;flex-shrink:0;margin-top:2px;">inbox</span>
+                <div style="flex:1;">
+                  <p style="font-size:0.8125rem;font-weight:600;color:#1E1E1E;margin:0 0 2px;">12 unread messages</p>
+                  <p style="font-size:0.75rem;color:#888;margin:0;">You have 12 messages waiting in your inbox.</p>
+                  <p style="font-size:0.7rem;color:#aaa;margin:4px 0 0;">1 hour ago</p>
+                </div>
+                <span style="width:8px;height:8px;border-radius:50%;background:#ba1a1a;flex-shrink:0;margin-top:6px;"></span>
+              </div>
+              <div class="notif-item" data-id="4" style="display:flex;gap:12px;padding:14px 18px;border-bottom:1px solid #DCDBD7;background:#fff;cursor:pointer;" onclick="readNotif(4)">
+                <span class="material-symbols-outlined" style="color:#888;font-size:20px;flex-shrink:0;margin-top:2px;">check_circle</span>
+                <div style="flex:1;">
+                  <p style="font-size:0.8125rem;font-weight:600;color:#1E1E1E;margin:0 0 2px;">Order #1038 approved</p>
+                  <p style="font-size:0.75rem;color:#888;margin:0;">Prime Real Estate Dev order has been confirmed.</p>
+                  <p style="font-size:0.7rem;color:#aaa;margin:4px 0 0;">Yesterday</p>
+                </div>
+              </div>
+            </div>
+            <div style="padding:12px 18px;text-align:center;border-top:1px solid #DCDBD7;">
+              <a href="inbox.html" style="font-size:0.8rem;font-weight:600;color:#3D5A34;text-decoration:none;">View all notifications →</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Scrollable Content -->
+    <main class="flex-1 overflow-y-auto p-8 space-y-8">
+
+      <!-- KPI Cards -->
+      <div class="grid grid-cols-2 xl:grid-cols-4 gap-6">
+        <!-- Total Requests -->
+        <div class="bg-surface border border-border rounded shadow-[0_2px_12px_rgba(0,0,0,0.07)] p-6">
+          <div class="flex items-start justify-between mb-4">
+            <div class="w-10 h-10 bg-primary-lt/20 rounded flex items-center justify-center">
+              <span class="material-symbols-outlined text-primary text-xl">assignment</span>
+            </div>
+            <span class="text-xs font-semibold text-primary bg-primary-lt/20 px-2 py-0.5 rounded-full">↑ 12%</span>
+          </div>
+          <p class="text-xs font-semibold text-light uppercase tracking-wide mb-1" data-i18n="kpi_requests">Total Requests</p>
+          <p class="font-heading text-4xl font-bold text-dark">1,248</p>
+        </div>
+
+        <!-- New Leads -->
+        <div class="bg-surface border border-border rounded shadow-[0_2px_12px_rgba(0,0,0,0.07)] p-6">
+          <div class="flex items-start justify-between mb-4">
+            <div class="w-10 h-10 bg-gold-bg rounded flex items-center justify-center">
+              <span class="material-symbols-outlined text-gold text-xl">person_add</span>
+            </div>
+            <span class="text-xs font-semibold text-primary bg-primary-lt/20 px-2 py-0.5 rounded-full">↑ 8%</span>
+          </div>
+          <p class="text-xs font-semibold text-light uppercase tracking-wide mb-1" data-i18n="kpi_leads">New Leads</p>
+          <p class="font-heading text-4xl font-bold text-dark">342</p>
+        </div>
+
+        <!-- Est. Volume -->
+        <div class="bg-surface border border-border rounded shadow-[0_2px_12px_rgba(0,0,0,0.07)] p-6">
+          <div class="flex items-start justify-between mb-4">
+            <div class="w-10 h-10 bg-surface-high rounded flex items-center justify-center">
+              <span class="material-symbols-outlined text-mid text-xl">layers</span>
+            </div>
+            <span class="text-xs font-semibold text-light bg-surface-mid px-2 py-0.5 rounded-full">→ 0%</span>
+          </div>
+          <p class="text-xs font-semibold text-light uppercase tracking-wide mb-1" data-i18n="kpi_volume">Est. Volume (m³)</p>
+          <p class="font-heading text-4xl font-bold text-dark">45,900</p>
+        </div>
+
+        <!-- Active Quotes -->
+        <div class="bg-surface border border-border rounded shadow-[0_2px_12px_rgba(0,0,0,0.07)] p-6">
+          <div class="flex items-start justify-between mb-4">
+            <div class="w-10 h-10 bg-error-bg rounded flex items-center justify-center">
+              <span class="material-symbols-outlined text-error text-xl">request_quote</span>
+            </div>
+            <span class="text-xs font-semibold text-error bg-error-bg px-2 py-0.5 rounded-full">↓ 3%</span>
+          </div>
+          <p class="text-xs font-semibold text-light uppercase tracking-wide mb-1" data-i18n="kpi_quotes">Active Quotes</p>
+          <p class="font-heading text-4xl font-bold text-dark">89</p>
+        </div>
+      </div>
+
+      <!-- Recent Booking Requests -->
+      <div class="bg-surface border border-border rounded shadow-[0_2px_12px_rgba(0,0,0,0.07)] overflow-hidden">
+        <div class="flex items-center justify-between px-6 py-4 border-b border-border">
+          <h2 class="font-heading text-xl font-bold text-dark" data-i18n="recent_title">Recent Booking Requests</h2>
+          <a href="bookings.html" class="text-sm font-semibold text-primary hover:underline" data-i18n="recent_view_all">View All →</a>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full">
+            <thead class="bg-surface-dim">
+              <tr>
+                <th class="text-left px-6 py-3 text-xs font-semibold text-light uppercase tracking-wide" data-i18n="th_client_name">Client Name</th>
+                <th class="text-left px-6 py-3 text-xs font-semibold text-light uppercase tracking-wide" data-i18n="th_date">Date Submitted</th>
+                <th class="text-left px-6 py-3 text-xs font-semibold text-light uppercase tracking-wide" data-i18n="th_qty_m3">Quantity (m³)</th>
+                <th class="text-left px-6 py-3 text-xs font-semibold text-light uppercase tracking-wide" data-i18n="th_status">Status</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-border">
+              <tr class="bg-surface hover:bg-surface-dim transition-colors">
+                <td class="px-6 py-4 text-sm text-dark">Al-Safa Construction</td>
+                <td class="px-6 py-4 text-sm text-light">Oct 24, 2023</td>
+                <td class="px-6 py-4 text-sm text-dark">1,200</td>
+                <td class="px-6 py-4">
+                  <span class="bg-gold-bg text-dark border border-gold text-xs font-semibold px-3 py-1 rounded-full" data-i18n="status_pending_r">Pending Review</span>
+                </td>
+              </tr>
+              <tr class="bg-surface hover:bg-surface-dim transition-colors">
+                <td class="px-6 py-4 text-sm text-dark">Modern Edifice Group</td>
+                <td class="px-6 py-4 text-sm text-light">Oct 23, 2023</td>
+                <td class="px-6 py-4 text-sm text-dark">450</td>
+                <td class="px-6 py-4">
+                  <span class="bg-surface-mid text-mid border border-border text-xs font-semibold px-3 py-1 rounded-full" data-i18n="status_quote_sent">Quote Sent</span>
+                </td>
+              </tr>
+              <tr class="bg-surface hover:bg-surface-dim transition-colors">
+                <td class="px-6 py-4 text-sm text-dark">United Builders LLC</td>
+                <td class="px-6 py-4 text-sm text-light">Oct 22, 2023</td>
+                <td class="px-6 py-4 text-sm text-dark">8,500</td>
+                <td class="px-6 py-4">
+                  <span class="bg-primary-lt/30 text-primary border border-primary-lt text-xs font-semibold px-3 py-1 rounded-full" data-i18n="status_approved">Approved</span>
+                </td>
+              </tr>
+              <tr class="bg-surface hover:bg-surface-dim transition-colors">
+                <td class="px-6 py-4 text-sm text-dark">Prime Real Estate Dev</td>
+                <td class="px-6 py-4 text-sm text-light">Oct 20, 2023</td>
+                <td class="px-6 py-4 text-sm text-dark">320</td>
+                <td class="px-6 py-4">
+                  <span class="bg-gold-bg text-dark border border-gold text-xs font-semibold px-3 py-1 rounded-full">Pending Review</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <script src="js/dash-lang.js"></script>
+  <script>
+    function toggleNotif() {
+      var panel = document.getElementById('notif-panel');
+      panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+    }
+    function readNotif(id) {
+      var item = document.querySelector('.notif-item[data-id="' + id + '"]');
+      if (!item) return;
+      item.classList.remove('unread');
+      item.style.background = '#fff';
+      var dot = item.querySelector('span[style*="ba1a1a"]');
+      if (dot) dot.remove();
+      updateDot();
+    }
+    function markAllRead() {
+      document.querySelectorAll('.notif-item.unread').forEach(function(item) {
+        item.classList.remove('unread');
+        item.style.background = '#fff';
+        var dot = item.querySelector('span[style*="ba1a1a"]');
+        if (dot) dot.remove();
+      });
+      updateDot();
+    }
+    function updateDot() {
+      var hasUnread = document.querySelectorAll('.notif-item.unread').length > 0;
+      document.getElementById('notif-dot').style.display = hasUnread ? 'block' : 'none';
+    }
+    document.addEventListener('click', function(e) {
+      var wrapper = document.getElementById('notif-wrapper');
+      if (wrapper && !wrapper.contains(e.target)) {
+        document.getElementById('notif-panel').style.display = 'none';
+      }
+    });
+  </script>
+</body>
+</html>

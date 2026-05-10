@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Concrete Calculator — Jehan Holding Group</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600;700&family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css?v=3">
+</head>
+<body>
+
+  <!-- ── Navigation ── -->
+  <nav class="navbar">
+    <div class="container navbar__inner">
+      <a class="navbar__logo" href="index.html">
+        <img src="assets/images/logo.png" alt="Jehan Holding Group">
+      </a>
+      <div class="navbar__search">
+        <input type="text" data-i18n-placeholder="nav_search" placeholder="Search our site...">
+        <span class="search-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        </span>
+      </div>
+      <div class="navbar__actions">
+        <button class="lang-toggle" onclick="toggleLanguage()" data-i18n="lang_switch">عربي</button>
+        <a href="dashboard/login.html">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0"/></svg>
+          <span data-i18n="nav_account">Account</span>
+        </a>
+        <a href="#" class="basket-badge">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 0 0-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 0 0-16.536-1.84M7.5 14.25 5.106 5.272M6 20.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Zm12.75 0a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z"/></svg>
+          <span data-i18n="nav_basket">Basket</span>
+          <span class="count">0</span>
+        </a>
+        <button class="hamburger" aria-label="Menu">
+          <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"/></svg>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ── Sub-nav ── -->
+  <div class="subnav">
+    <div class="container subnav__inner">
+      <a href="index.html" data-i18n="nav_home">Home</a>
+      <a href="book-concrete.html" data-i18n="nav_book">Book Concrete</a>
+      <a href="calculator.html" class="active" data-i18n="nav_calc">Concrete Calculator</a>
+      <a href="help.html" data-i18n="nav_help">Help & Advice</a>
+      <a href="about.html" data-i18n="nav_about">About Us</a>
+      <a href="contact.html" data-i18n="nav_contact">Contact Us</a>
+    </div>
+  </div>
+
+  <!-- ── Page Header ── -->
+  <div class="page-header">
+    <div class="container">
+      <h1 data-i18n="calc_title">CONCRETE CALCULATOR</h1>
+      <p data-i18n="calc_sub">Please select the shape of your project and then enter the dimensions to be provided with an estimate of the amount of readymix you need.</p>
+    </div>
+  </div>
+
+  <!-- ── Calculator Body ── -->
+  <main class="calculator-page">
+    <div class="container calculator-layout">
+
+      <!-- Left: Shapes -->
+      <div>
+        <div id="shapes-container">
+          <!-- Shape blocks injected by calculator.js -->
+        </div>
+
+        <button class="add-shape-btn" onclick="addShape()">
+          <span data-i18n="calc_add">Add Another Shape</span>
+          <span>→</span>
+        </button>
+
+        <p class="calc-note" data-i18n="calc_note">* Please note the tool will calculate the minimum amount required and does not factor in overages to avoid waste.</p>
+      </div>
+
+      <!-- Right: Volume Panel -->
+      <div class="volume-panel">
+        <div class="volume-panel__logo">
+          <img src="assets/images/logo.png" alt="Jehan Holding Group">
+        </div>
+        <div class="volume-panel__title" data-i18n="calc_vol_title">VOLUME DETAILS</div>
+        <table class="volume-table">
+          <thead>
+            <tr>
+              <th data-i18n="calc_shape_col">SHAPE</th>
+              <th data-i18n="calc_vol_col">VOLUME</th>
+            </tr>
+          </thead>
+          <tbody id="volume-tbody">
+            <tr>
+              <td colspan="2" style="padding:12px 20px;color:var(--text-light);font-size:0.82rem;" data-i18n="calc_placeholder">Please Select A Shape</td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="volume-total">
+          <span class="label" data-i18n="calc_total">TOTAL VOLUME</span>
+          <span class="value" id="total-volume">0.000 m³</span>
+        </div>
+        <div class="volume-panel__cta">
+          <a href="book-concrete.html" class="btn btn-gold">
+            <span data-i18n="calc_view_prod">Book Concrete</span>
+            <span>→</span>
+          </a>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- ── Footer ── -->
+  <footer class="footer">
+    <div class="container footer__inner">
+      <span class="footer__copy" data-i18n="footer_copy">© Jehan Holding Group</span>
+      <div class="footer__links">
+        <a href="supply-request.html" data-i18n="footer_supply">Supply Request</a>
+        <a href="contact.html" data-i18n="footer_privacy">Privacy Policy</a>
+        <a href="contact.html" data-i18n="footer_terms">Terms & Conditions</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/lang.js?v=2"></script>
+  <script src="js/calculator.js"></script>
+
+  <!-- Basket Drawer -->
+  <div id="basket-overlay" onclick="closeBasket()"></div>
+  <div id="basket-drawer">
+    <div class="bsk-header">
+      <h2>Your Basket</h2>
+      <button class="bsk-close-btn" onclick="closeBasket()" title="Close">
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div id="basket-empty">
+      <svg xmlns="http://www.w3.org/2000/svg" width="52" height="52" fill="none" viewBox="0 0 24 24" stroke="#DCDBD7" stroke-width="1.2" style="margin-bottom:16px;"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 0 0-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 0 0-16.536-1.84M7.5 14.25 5.106 5.272M6 20.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Zm12.75 0a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z"/></svg>
+      <p>Your basket is empty</p>
+      <p>Add concrete products to get started.</p>
+      <a href="book-concrete.html" class="bsk-cta" onclick="closeBasket()">Book Concrete →</a>
+    </div>
+    <div id="basket-items"></div>
+    <div id="basket-footer" style="display:none;">
+      <div class="bsk-total-row">
+        <span class="bsk-total-label">Total Volume</span>
+        <span id="basket-subtotal"></span>
+      </div>
+      <a href="book-concrete.html" class="bsk-checkout-btn" onclick="closeBasket()">Proceed to Booking →</a>
+      <button class="bsk-clear-btn" onclick="basketClear()">Clear Basket</button>
+    </div>
+  </div>
+  <script src="js/basket.js"></script>
+</body>
+</html>
