@@ -82,6 +82,22 @@
         <span class="material-symbols-outlined text-[20px]">settings</span>
         <span data-i18n="nav_settings">Settings</span>
       </a>
+      <!-- Company Profile Upload -->
+      <div class="px-3 py-1">
+        <div class="border border-border rounded p-3 bg-surface-dim">
+          <div class="flex items-center gap-2 mb-1.5">
+            <span class="material-symbols-outlined text-[18px] text-primary flex-shrink-0">description</span>
+            <span class="text-xs font-semibold text-dark uppercase tracking-wide" data-i18n="nav_profile">Company Profile</span>
+          </div>
+          <p id="profile-date" class="text-[11px] text-light mb-2 leading-tight">No profile uploaded yet</p>
+          <label class="flex items-center justify-center gap-1.5 w-full py-1.5 px-3 bg-primary text-white text-xs font-semibold rounded cursor-pointer hover:bg-primary-mid transition-colors">
+            <span class="material-symbols-outlined text-[15px]">upload</span>
+            <span data-i18n="nav_upload_profile">Upload PDF</span>
+            <input type="file" accept=".pdf" class="hidden" onchange="uploadProfile(this)">
+          </label>
+        </div>
+      </div>
+
     </nav>
     <div class="px-4 py-4 border-t border-border">
       <div class="flex items-center gap-3 mb-3">
@@ -282,6 +298,45 @@
   </div>
 
   <script src="js/dash-lang.js"></script>
+  <script>
+    // ── Company Profile Upload ────────────────────────────────────
+    function uploadProfile(input) {
+      if (!input.files || !input.files[0]) return;
+      var file = input.files[0];
+      var reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          localStorage.setItem("jehan_profile_data", e.target.result);
+          var now = new Date();
+          var dateStr = now.toLocaleDateString("en-GB", {day:"2-digit",month:"short",year:"numeric"});
+          localStorage.setItem("jehan_profile_date", dateStr);
+          updateProfileDateUI();
+          var lang = localStorage.getItem("dashLang") || "en";
+          var msg = lang === "ar" ? "تم تحديث ملف الشركة بنجاح!" : "Company profile updated successfully!";
+          var t = document.createElement("div");
+          t.style.cssText = "position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#3D5A34;color:#fff;padding:10px 20px;border-radius:4px;font-size:.8rem;font-weight:600;z-index:9999;box-shadow:0 4px 12px rgba(0,0,0,.2);white-space:nowrap;";
+          t.textContent = msg;
+          document.body.appendChild(t);
+          setTimeout(function() { if (t.parentNode) t.parentNode.removeChild(t); }, 3000);
+        } catch(err) { alert("File too large. Please use a PDF under 4MB."); }
+      };
+      reader.readAsDataURL(file);
+    }
+    function updateProfileDateUI() {
+      var el = document.getElementById("profile-date");
+      if (!el) return;
+      var date = localStorage.getItem("jehan_profile_date");
+      var lang = localStorage.getItem("dashLang") || "en";
+      el.textContent = date
+        ? (lang === "ar" ? "آخر تحديث: " + date : "Last updated: " + date)
+        : (lang === "ar" ? "لم يتم رفع ملف بعد" : "No profile uploaded yet");
+    }
+    (function() {
+      var _orig = window.toggleDashLang;
+      if (_orig) { window.toggleDashLang = function() { _orig(); setTimeout(updateProfileDateUI, 60); }; }
+    })();
+    updateProfileDateUI();
+  </script>
   <script>
     function toggleNotif() {
       var panel = document.getElementById('notif-panel');

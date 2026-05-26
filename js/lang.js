@@ -7,7 +7,8 @@ const translations = {
   en: {
     /* ── Navigation ── */
     nav_home:        "Home",
-    nav_book:        "Book Concrete",
+    nav_products:    "Products",
+    nav_book:        "Get a Quote",
     nav_calc:        "Concrete Calculator",
     nav_locations:   "Our Locations & Delivery",
     nav_help:        "Help & Advice",
@@ -30,7 +31,7 @@ const translations = {
     home_title:      "PROFESSIONAL CONCRETE SOLUTIONS. PRECISION CALCULATED.",
     home_sub:        "Your integrated service for precise estimation and reliable readymix delivery. Simple, clean, and efficient.",
     home_use_calc:   "USE CALCULATOR",
-    home_book:       "BOOK CONCRETE",
+    home_book:       "GET A QUOTE",
     feat1_title:     "Fast Deliveries from Local Centres",
     feat1_desc:      "Ensure your project stays on schedule with our seamless delivery service.",
     feat2_title:     "Precision Engineered Mixes",
@@ -45,6 +46,25 @@ const translations = {
     prod2_desc:      "Durable & Custom-Engineered Solutions.",
     prod3_name:      "BUILDING BLOCKS",
     prod3_desc:      "Certified Standard Blocks for Strength.",
+    /* ── Products Page Toggle ── */
+    btn_readymix_name:  "Ready Mix Concrete",
+    btn_readymix_count: "7 products available",
+    btn_precast_name:   "Precast Concrete",
+    btn_precast_count:  "13 products available",
+    btn_blocks_name:    "Building Blocks",
+    btn_blocks_count:   "8 products available",
+    /* ── Category Filters ── */
+    cat_all:            "All",
+    cat_storm:          "Storm",
+    cat_water:          "Water",
+    cat_transport:      "Transportation",
+    cat_boundary:       "Boundary Wall",
+    cat_sanitary:       "Sanitary",
+    cat_electrical:     "Electrical & Comm.",
+    /* ── Filter Bar ── */
+    filter_showing:     "Showing",
+    filter_products:    "products",
+    filter_search_ph:   "Search products...",
 
     /* ── Calculator ── */
     calc_title:      "CONCRETE CALCULATOR",
@@ -61,7 +81,7 @@ const translations = {
     calc_vol_col:    "VOLUME",
     calc_placeholder:"Please Select A Shape",
     calc_total:      "TOTAL VOLUME",
-    calc_view_prod:  "Book Concrete",
+    calc_view_prod:  "Get a Quote",
     calc_width:      "Width (m)",
     calc_length:     "Length (m)",
     calc_depth:      "Depth (m)",
@@ -72,7 +92,7 @@ const translations = {
     calc_volume_lbl: "Volume",
 
     /* ── Book Concrete ── */
-    book_title:      "BOOK CONCRETE",
+    book_title:      "GET A QUOTE",
     book_desc:       "Please provide your project details below to initiate your concrete booking and receive a tailored quotation.",
     book_name:       "Name",
     book_email:      "E-Mail",
@@ -90,6 +110,7 @@ const translations = {
     about_p4:        "At Jehan, quality is not a promise. It's our track record.",
     about_tagline:   "Since 1996, Jehan Holding Group is fast becoming the name contractors, developers, and homebuilders across the Kingdom rely on.",
     about_tagline2:  "...built to the standards that contractors, developers and homebuilders across the Kingdom rely on.",
+    about_download_profile: "Download Company Profile",
 
     /* ── Locations ── */
     loc_title:       "OUR LOCATIONS & DELIVERY",
@@ -164,7 +185,8 @@ const translations = {
   ar: {
     /* ── Navigation ── */
     nav_home:        "الرئيسية",
-    nav_book:        "احجز خرسانة",
+    nav_products:    "المنتجات",
+    nav_book:        "احصل على عرض سعر",
     nav_calc:        "حاسبة الخرسانة",
     nav_locations:   "مواقعنا والتوصيل",
     nav_help:        "المساعدة والنصائح",
@@ -187,7 +209,7 @@ const translations = {
     home_title:      "حلول خرسانية احترافية. دقة محسوبة.",
     home_sub:        "خدمتك المتكاملة للتقدير الدقيق وتوصيل الخرسانة الجاهزة بشكل موثوق. بسيطة، نظيفة، وفعّالة.",
     home_use_calc:   "استخدم الحاسبة",
-    home_book:       "احجز خرسانة",
+    home_book:       "احصل على عرض سعر",
     feat1_title:     "توصيل سريع من مراكز محلية",
     feat1_desc:      "نضمن أن يلتزم مشروعك بالجدول الزمني من خلال خدمة توصيل سلسة.",
     feat2_title:     "خلطات مهندسة بدقة",
@@ -202,6 +224,25 @@ const translations = {
     prod2_desc:      "حلول متينة ومهندسة حسب الطلب.",
     prod3_name:      "البلوكات الإنشائية",
     prod3_desc:      "بلوكات قياسية معتمدة للمتانة.",
+    /* ── Products Page Toggle ── */
+    btn_readymix_name:  "الخرسانة الجاهزة",
+    btn_readymix_count: "٧ منتجات متاحة",
+    btn_precast_name:   "الخرسانة المسبقة الصنع",
+    btn_precast_count:  "١٣ منتجاً متاحاً",
+    btn_blocks_name:    "البلوكات الإنشائية",
+    btn_blocks_count:   "٨ منتجات متاحة",
+    /* ── Category Filters ── */
+    cat_all:            "الكل",
+    cat_storm:          "الصرف المطري",
+    cat_water:          "المياه",
+    cat_transport:      "المواصلات",
+    cat_boundary:       "الجدار الحدودي",
+    cat_sanitary:       "الصرف الصحي",
+    cat_electrical:     "الكهرباء والاتصالات",
+    /* ── Filter Bar ── */
+    filter_showing:     "عرض",
+    filter_products:    "منتجات",
+    filter_search_ph:   "ابحث في المنتجات...",
 
     /* ── Calculator ── */
     calc_title:      "حاسبة الخرسانة",
@@ -229,7 +270,7 @@ const translations = {
     calc_volume_lbl: "الحجم",
 
     /* ── Book Concrete ── */
-    book_title:      "احجز خرسانة",
+    book_title:      "احصل على عرض سعر",
     book_desc:       "يرجى تقديم تفاصيل مشروعك أدناه لبدء حجز الخرسانة والحصول على عرض سعر مخصص.",
     book_name:       "الاسم",
     book_email:      "البريد الإلكتروني",
@@ -247,6 +288,7 @@ const translations = {
     about_p4:        "في جيهان، الجودة ليست وعداً. إنها سجلنا الحافل.",
     about_tagline:   "منذ عام 1996، أصبحت مجموعة جيهان القابضة الاسم الذي يعتمد عليه المقاولون والمطورون وبناة المنازل في جميع أنحاء المملكة.",
     about_tagline2:  "...مبنية وفق المعايير التي يعتمد عليها المقاولون والمطورون وبناة المنازل في جميع أنحاء المملكة.",
+    about_download_profile: "تحميل ملف تعريف الشركة",
 
     /* ── Locations ── */
     loc_title:       "مواقعنا والتوصيل",
@@ -364,6 +406,21 @@ document.addEventListener('DOMContentLoaded', () => {
   const ham = document.querySelector('.hamburger');
   const subnav = document.querySelector('.subnav');
   if (ham && subnav) {
-    ham.addEventListener('click', () => subnav.classList.toggle('mobile-open'));
+    /* Open / close on hamburger click */
+    ham.addEventListener('click', (e) => {
+      e.stopPropagation();
+      subnav.classList.toggle('mobile-open');
+    });
+    /* Close when any nav link is tapped */
+    subnav.querySelectorAll('a').forEach(a => {
+      a.addEventListener('click', () => subnav.classList.remove('mobile-open'));
+    });
+    /* Close when tapping outside the menu */
+    document.addEventListener('click', (e) => {
+      if (subnav.classList.contains('mobile-open') &&
+          !subnav.contains(e.target) && !ham.contains(e.target)) {
+        subnav.classList.remove('mobile-open');
+      }
+    });
   }
 });

@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Product — Jehan Holding Group</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600;700&family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css?v=11">
+  <style>
+    /* ── Product Detail Layout ── */
+    :root { --ink: #1E1E1E; }
+    .pd-page { background: var(--bg); min-height: 80vh; padding: 48px 0 80px; }
+
+    .pd-layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 56px;
+      align-items: start;
+    }
+    @media (max-width: 860px) {
+      .pd-layout { grid-template-columns: 1fr; gap: 32px; }
+    }
+
+    /* Image Column */
+    .pd-image-col { position: sticky; top: 100px; }
+    .pd-image-wrap {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      overflow: hidden;
+      aspect-ratio: 4/3;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .pd-image-wrap img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      padding: 24px;
+    }
+
+    /* Info Column */
+    .pd-breadcrumb {
+      font-size: 0.78rem;
+      color: var(--text-light);
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .pd-breadcrumb a { color: var(--text-light); text-decoration: none; }
+    .pd-breadcrumb a:hover { color: var(--green-dark); }
+    .pd-breadcrumb span { color: var(--border); }
+
+    .pd-category {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--green-dark);
+      margin: 0 0 10px;
+    }
+    .pd-name {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 2.4rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      color: var(--ink);
+      line-height: 1.1;
+      margin: 0 0 20px;
+    }
+    .pd-description {
+      font-size: 0.95rem;
+      color: var(--text-mid);
+      line-height: 1.75;
+      margin: 0 0 32px;
+    }
+
+    /* CTA Buttons */
+    .pd-actions {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 40px;
+      flex-wrap: wrap;
+    }
+
+    /* Accordion */
+    .pd-accordion { border-top: 1px solid var(--border); }
+    .pd-accordion-item { border-bottom: 1px solid var(--border); }
+    .pd-accordion-trigger {
+      width: 100%;
+      background: none;
+      border: none;
+      padding: 18px 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      font-family: 'Barlow', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--ink);
+      text-align: left;
+    }
+    .pd-accordion-trigger:hover { color: var(--green-dark); }
+    .pd-accordion-trigger .acc-icon {
+      font-size: 1.2rem;
+      color: var(--text-light);
+      transition: transform 0.2s;
+      flex-shrink: 0;
+    }
+    .pd-accordion-trigger.open .acc-icon { transform: rotate(45deg); color: var(--green-dark); }
+    .pd-accordion-body {
+      display: none;
+      padding: 0 0 20px;
+      font-size: 0.88rem;
+      color: var(--text-mid);
+      line-height: 1.7;
+    }
+    .pd-accordion-body.open { display: block; }
+    .pd-accordion-body p { margin: 0 0 10px; }
+
+    /* Specs table inside accordion */
+    .pd-specs { width: 100%; border-collapse: collapse; margin-top: 8px; }
+    .pd-specs td {
+      padding: 8px 12px;
+      font-size: 0.84rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .pd-specs td:first-child { font-weight: 600; color: var(--ink); width: 44%; }
+    .pd-specs tr:last-child td { border-bottom: none; }
+
+    /* Prev / Next Navigation */
+    .pd-prevnext {
+      border-top: 1px solid var(--border);
+      margin-top: 64px;
+      padding-top: 32px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .pd-prevnext a {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      text-decoration: none;
+      color: var(--ink);
+      transition: color 0.2s;
+    }
+    .pd-prevnext a:hover { color: var(--green-dark); }
+    .pd-prevnext .pn-dir {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-light);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .pd-prevnext .pn-name {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 1rem;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    .pd-prevnext a:last-child { text-align: right; }
+    .pd-prevnext a.hidden { visibility: hidden; }
+  </style>
+</head>
+<body>
+
+  <!-- ── Navigation ── -->
+  <nav class="navbar">
+    <div class="container navbar__inner">
+      <a class="navbar__logo" href="index.html">
+        <img src="assets/images/logo.png" alt="Jehan Holding Group">
+      </a>
+      <div class="navbar__search">
+        <input type="text" data-i18n-placeholder="nav_search" placeholder="Search our site...">
+        <span class="search-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        </span>
+      </div>
+      <div class="navbar__actions">
+        <button class="lang-toggle" onclick="toggleLanguage()" data-i18n="lang_switch">عربي</button>
+        <a href="dashboard/login.html">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0"/></svg>
+          <span data-i18n="nav_account">Account</span>
+        </a>
+        <button class="hamburger" aria-label="Menu">
+          <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"/></svg>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ── Sub-nav ── -->
+  <div class="subnav">
+    <div class="container subnav__inner">
+      <a href="index.html" data-i18n="nav_home">Home</a>
+      <a href="products.html" class="active" data-i18n="nav_products">Products</a>
+      <a href="calculator.html" data-i18n="nav_calc">Concrete Calculator</a>
+      <a href="book-concrete.html" data-i18n="nav_book">Book Concrete</a>
+      <a href="help.html" data-i18n="nav_help">Help & Advice</a>
+      <a href="about.html" data-i18n="nav_about">About Us</a>
+      <a href="contact.html" data-i18n="nav_contact">Contact Us</a>
+    </div>
+  </div>
+
+  <!-- ── Product Detail ── -->
+  <main class="pd-page">
+    <div class="container">
+
+      <div class="pd-layout">
+        <!-- Image -->
+        <div class="pd-image-col">
+          <div class="pd-image-wrap">
+            <img id="pd-img" src="" alt="">
+          </div>
+        </div>
+
+        <!-- Info -->
+        <div class="pd-info-col">
+          <div class="pd-breadcrumb">
+            <a href="products.html" data-i18n="nav_products">Products</a>
+            <span>›</span>
+            <span id="pd-breadcrumb-cat"></span>
+            <span>›</span>
+            <span id="pd-breadcrumb-name"></span>
+          </div>
+
+          <p class="pd-category" id="pd-cat"></p>
+          <h1 class="pd-name" id="pd-name"></h1>
+          <p class="pd-description" id="pd-desc"></p>
+
+          <div class="pd-actions">
+            <a href="book-concrete.html" class="btn btn-gold">Get a Quote <span>→</span></a>
+            <a href="contact.html" class="btn btn-outline">Contact Us <span>→</span></a>
+          </div>
+
+          <!-- Accordion -->
+          <div class="pd-accordion">
+            <div class="pd-accordion-item">
+              <button type="button" class="pd-accordion-trigger open" onclick="toggleAcc(this)">
+                Product Information
+                <span class="acc-icon">+</span>
+              </button>
+              <div class="pd-accordion-body open">
+                <table class="pd-specs" id="pd-specs"></table>
+              </div>
+            </div>
+            <div class="pd-accordion-item">
+              <button type="button" class="pd-accordion-trigger" onclick="toggleAcc(this)">
+                Applications
+                <span class="acc-icon">+</span>
+              </button>
+              <div class="pd-accordion-body">
+                <p id="pd-applications"></p>
+              </div>
+            </div>
+            <div class="pd-accordion-item">
+              <button type="button" class="pd-accordion-trigger" onclick="toggleAcc(this)">
+                FAQ
+                <span class="acc-icon">+</span>
+              </button>
+              <div class="pd-accordion-body" id="pd-faq"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Prev / Next -->
+      <div class="pd-prevnext">
+        <a id="pd-prev" href="#">
+          <span class="pn-dir">← Previous</span>
+          <span class="pn-name" id="pd-prev-name"></span>
+        </a>
+        <a id="pd-next" href="#">
+          <span class="pn-dir">Next →</span>
+          <span class="pn-name" id="pd-next-name"></span>
+        </a>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- ── Footer ── -->
+  <footer class="footer">
+    <div class="container footer__inner">
+      <span class="footer__copy" data-i18n="footer_copy">© Jehan Holding Group</span>
+      <div class="footer__links">
+        <a href="supply-request.html" data-i18n="footer_supply">Supply Request</a>
+        <a href="contact.html" data-i18n="footer_privacy">Privacy Policy</a>
+        <a href="contact.html" data-i18n="footer_terms">Terms & Conditions</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/lang.js?v=5"></script>
+
+  <script>
+  // ── Product Data ──
+  const PRODUCTS = [
+    {
+      id: 'storm-manholes',
+      name: 'Storm Manholes (1–5 Ways)',
+      category: 'Storm Product',
+      image: 'assets/images/products/storm-manhole.png',
+      description: 'Jehan\'s precast concrete storm manholes are available in 1 to 5-way configurations, engineered for efficient stormwater collection and drainage infrastructure across Saudi Arabia. Manufactured under strict quality control to withstand heavy traffic loading, corrosive environments, and the demands of large-scale civil works.',
+      specs: [
+        ['Material', 'High-strength precast concrete'],
+        ['Configurations', '1-Way, 2-Way, 3-Way, 4-Way, 5-Way'],
+        ['Standard', 'SASO / BS EN 1917'],
+        ['Cover Class', 'A15 to F900 (project specific)'],
+        ['Finish', 'Smooth internal, brush-finished external'],
+      ],
+      applications: 'Road drainage systems, highway infrastructure, municipal stormwater networks, residential and commercial developments, industrial sites.',
+      faq: [
+        { q: 'Can manholes be customised to non-standard dimensions?', a: 'Yes — Jehan can manufacture manholes to project-specific dimensions with prior engineering approval.' },
+        { q: 'What cover classes are available?', a: 'Standard cover classes from A15 (pedestrian) up to F900 (heavy airport loading) are available.' },
+      ]
+    },
+    {
+      id: 'junction-box-lift-station',
+      name: 'Junction Box / Lift Station',
+      category: 'Storm & Sanitary Product',
+      image: 'assets/images/products/junction-box.png',
+      description: 'Jehan\'s precast concrete junction boxes and lift stations serve as central hubs connecting stormwater and sanitary pipe networks. Engineered for durability, watertightness, and easy installation, they are a reliable solution for managing drainage runoff and wastewater flows in residential, commercial, and infrastructure projects.',
+      specs: [
+        ['Material', 'Reinforced precast concrete'],
+        ['Applications', 'Storm drainage & sanitary sewerage'],
+        ['Joint Type', 'Rubber-ring sealed or mortar joints'],
+        ['Standard', 'SASO / BS EN 1917'],
+        ['Custom Sizes', 'Available on request'],
+      ],
+      applications: 'Stormwater drainage networks, sanitary sewer systems, utility corridors, road and highway projects.',
+      faq: [
+        { q: 'Are these suitable for both storm and sanitary systems?', a: 'Yes — the units are designed for use in both storm and sanitary drainage applications.' },
+        { q: 'Can penetrations be cast in at manufacture?', a: 'Yes — pipe penetration locations and sizes can be specified at the time of order.' },
+      ]
+    },
+    {
+      id: 'water-tank',
+      name: 'Water Tank',
+      category: 'Water Product',
+      image: 'assets/images/products/water-tank.png',
+      description: 'Jehan precast concrete water storage tanks are engineered for residential, commercial, and municipal potable water storage. Designed for watertightness and long-term structural performance in Saudi Arabia\'s demanding climate, they offer a durable and cost-effective alternative to conventional in-situ tanks.',
+      specs: [
+        ['Material', 'Waterproof reinforced precast concrete'],
+        ['Capacity Range', 'From 5,000 L to 500,000 L+'],
+        ['Lining', 'Food-grade coating available'],
+        ['Standard', 'SASO / BS 8007'],
+        ['Access', 'Precast lid with manhole access'],
+      ],
+      applications: 'Potable water storage, irrigation systems, fire fighting reserves, residential compounds, commercial and industrial facilities.',
+      faq: [
+        { q: 'Are Jehan water tanks suitable for potable water?', a: 'Yes — tanks can be supplied with food-grade internal coatings meeting potable water standards.' },
+        { q: 'What is the maximum capacity available?', a: 'Standard sizes up to 500,000 litres are available; larger capacities can be engineered on request.' },
+      ]
+    },
+    {
+      id: 'back-flow-assemblies',
+      name: 'Back Flow Assemblies',
+      category: 'Water Product',
+      image: 'assets/images/products/back-flow-assembly.png',
+      description: 'Jehan\'s precast concrete backflow assembly enclosures provide robust protection for critical water supply backflow prevention devices. Designed to comply with local authority requirements, they ensure safe and accessible installation in both buried and surface-mounted configurations.',
+      specs: [
+        ['Material', 'Reinforced precast concrete'],
+        ['Configuration', 'Single & double backflow unit enclosures'],
+        ['Access', 'Removable precast lid or steel hatch'],
+        ['Standard', 'Local authority approved'],
+        ['Finish', 'Natural grey or painted'],
+      ],
+      applications: 'Potable water supply protection, commercial and industrial sites, municipal water networks, irrigation systems.',
+      faq: [
+        { q: 'Do enclosures comply with Saudi authority requirements?', a: 'Yes — Jehan manufactures backflow enclosures to local authority specifications and can provide compliance documentation.' },
+        { q: 'Are custom dimensions available?', a: 'Yes — enclosures can be sized to accommodate specific backflow prevention assemblies.' },
+      ]
+    },
+    {
+      id: 'new-jersey-barrier',
+      name: 'New Jersey Barrier',
+      category: 'Transportation Product',
+      image: 'assets/images/products/new-jersey-barrier.png',
+      description: 'Jehan\'s precast concrete New Jersey barriers provide high-performance traffic management and road safety solutions for highway, construction, and urban applications. Manufactured to international standards, they deliver reliable vehicle containment and directional control for both temporary and permanent installations.',
+      specs: [
+        ['Material', 'High-strength precast concrete'],
+        ['Profile', 'New Jersey (F-shape)'],
+        ['Length', '1.0 m, 2.0 m, 3.0 m, 4.0 m'],
+        ['Weight', 'Approx. 800 kg/m'],
+        ['Standard', 'AASHTO / EN 1317'],
+      ],
+      applications: 'Highway lane separation, construction site perimeters, bridge parapets, crowd control, car park barriers, work zone protection.',
+      faq: [
+        { q: 'Are barriers available for temporary or permanent use?', a: 'Both — lightweight lifting-eye variants for temporary repositioning and fixed foundation options are available.' },
+        { q: 'Can they be manufactured in custom lengths?', a: 'Standard lengths are 1–4 m; custom lengths can be produced subject to minimum order quantities.' },
+      ]
+    },
+    {
+      id: 'bridge-beams',
+      name: 'Bridge Beams / Columns / Side Bridge Wall',
+      category: 'Transportation Product',
+      image: 'assets/images/products/bridge-beams.png',
+      description: 'Precision-engineered precast concrete bridge beams, columns, and side bridge walls manufactured to the exacting structural standards required for Saudi Arabia\'s highway and infrastructure programmes. Jehan\'s bridge elements are produced under rigorous QC to deliver consistent strength, durability, and dimensional accuracy.',
+      specs: [
+        ['Material', 'Post-tensioned / reinforced precast concrete'],
+        ['Beam Types', 'I-Beam, Box Beam, U-Beam, T-Beam'],
+        ['Concrete Grade', 'C40 – C60'],
+        ['Standard', 'AASHTO LRFD / Saudi MOT'],
+        ['Finish', 'As-cast or painted'],
+      ],
+      applications: 'Road and highway bridges, pedestrian overpasses, railway bridges, flyovers and interchanges, culverts.',
+      faq: [
+        { q: 'What beam spans are achievable?', a: 'Spans from 10 m to 40+ m are achievable depending on beam type and cross-section.' },
+        { q: 'Is third-party structural testing available?', a: 'Yes — load testing and structural certification can be arranged in coordination with the project engineer.' },
+      ]
+    },
+    {
+      id: 'under-train-rail-foundation',
+      name: 'Under Train-Rail Foundation',
+      category: 'Transportation Product',
+      image: 'assets/images/products/under-train-rail-foundation.png',
+      description: 'Specialised precast concrete foundations engineered for rail infrastructure, providing stable, high-load-bearing support beneath train tracks and rail systems. Manufactured to tight dimensional tolerances to ensure correct track geometry and long-term performance under dynamic loading.',
+      specs: [
+        ['Material', 'Reinforced precast concrete'],
+        ['Concrete Grade', 'C45 minimum'],
+        ['Application', 'Light rail, heavy rail, metro'],
+        ['Standard', 'Project-specific (Railway Authority)'],
+        ['Tolerance', '±2 mm dimensional accuracy'],
+      ],
+      applications: 'Metro and light rail systems, high-speed rail corridors, freight rail infrastructure, railway maintenance yards.',
+      faq: [
+        { q: 'Can units be produced to Railway Authority specifications?', a: 'Yes — Jehan works directly with project engineers and Railway Authority consultants to meet all technical requirements.' },
+        { q: 'What concrete grade is used?', a: 'Typically C45 or higher, subject to structural design requirements.' },
+      ]
+    },
+    {
+      id: 'wall-panel-column-foundation',
+      name: 'Wall Panel + Column + Foundation',
+      category: 'Boundary Wall',
+      image: 'assets/images/products/wall-panel-column-foundation.png',
+      description: 'A complete precast concrete boundary wall system comprising wall panels, structural columns, and integrated foundations. This three-component system enables rapid, efficient installation of perimeter enclosures, delivering a consistent, high-quality finish for residential, commercial, and industrial applications.',
+      specs: [
+        ['System Components', 'Panel, Column, Foundation'],
+        ['Panel Height', '1.0 m, 1.5 m, 2.0 m, 2.5 m, 3.0 m'],
+        ['Panel Width', '2.0 m, 2.5 m, 3.0 m'],
+        ['Concrete Grade', 'C30'],
+        ['Finishes', 'Smooth, Ribbed, Exposed aggregate'],
+      ],
+      applications: 'Residential compound perimeters, industrial facility boundaries, infrastructure project sites, government and institutional enclosures.',
+      faq: [
+        { q: 'What heights and finishes are available?', a: 'Panels are available in heights from 1.0 m to 3.0 m with smooth, ribbed, or exposed aggregate finishes.' },
+        { q: 'Can the system accommodate site-level variations?', a: 'Yes — foundation depths and column heights can be adjusted to suit sloping or uneven ground conditions.' },
+      ]
+    },
+    {
+      id: 'wall-panel-foundation',
+      name: 'Wall Panel + Foundation',
+      category: 'Boundary Wall',
+      image: 'assets/images/products/wall-panel-foundation.png',
+      description: 'Jehan\'s precast concrete wall panel and foundation system provides an efficient two-component boundary wall solution for projects where integrated columns are not required. Offering speed of installation and consistent quality, the system is widely used across residential and commercial developments throughout the Kingdom.',
+      specs: [
+        ['System Components', 'Panel + Foundation'],
+        ['Panel Height', '1.0 m to 2.5 m'],
+        ['Foundation Type', 'Pre-formed precast base'],
+        ['Concrete Grade', 'C30'],
+        ['Finishes', 'Smooth or Ribbed'],
+      ],
+      applications: 'Residential developments, subdivision boundaries, roadside perimeter walls, temporary and permanent site enclosures.',
+      faq: [
+        { q: 'How quickly can a wall panel system be installed?', a: 'Experienced crews can typically install 50–80 linear metres per day depending on site conditions.' },
+        { q: 'Is a crane required for installation?', a: 'Yes — a suitable mobile crane or telehandler is required for panel placement.' },
+      ]
+    },
+    {
+      id: 'sanitary-manholes',
+      name: 'Sanitary Manholes',
+      category: 'Sanitary Product',
+      image: 'assets/images/products/sanitary-manholes.png',
+      description: 'Jehan\'s precast concrete sanitary manholes are precision-manufactured for sewage and wastewater collection systems. Available in standard and custom configurations, they provide safe access for inspection and maintenance while delivering long-term watertight performance in aggressive sewer environments.',
+      specs: [
+        ['Material', 'Sulphate-resistant reinforced precast concrete'],
+        ['Diameter', '600 mm, 900 mm, 1200 mm, 1500 mm'],
+        ['Depth', 'Up to 6.0 m (extensions available)'],
+        ['Standard', 'SASO / BS EN 1917'],
+        ['Joint Seal', 'EPDM rubber ring'],
+      ],
+      applications: 'Municipal sewerage networks, residential and commercial drainage, industrial wastewater systems, pumping station access.',
+      faq: [
+        { q: 'Are manholes suitable for aggressive sewer gases?', a: 'Yes — sulphate-resistant concrete mix and optional polymer lining options are available for H₂S environments.' },
+        { q: 'What depths can be achieved?', a: 'Standard precast sections can be stacked to achieve depths of 6.0 m; deeper installations can be designed with engineer approval.' },
+      ]
+    },
+    {
+      id: 'electrical-communication-vaults',
+      name: 'Electrical/Communication Vaults & Manholes',
+      category: 'Electrical / Communication',
+      image: 'assets/images/products/electrical-communication-vaults.png',
+      description: 'Jehan\'s precast concrete electrical and communication vaults and manholes provide durable, secure enclosures for underground utility infrastructure. Designed for safe access and long-term performance, they protect high-voltage cables, fibre optic lines, and communication networks from damage and environmental exposure.',
+      specs: [
+        ['Material', 'Reinforced precast concrete'],
+        ['Types', 'Pull boxes, vaults, cable manholes'],
+        ['Cover Class', 'T-rated (traffic loading)'],
+        ['Standard', 'SEC / STC specifications'],
+        ['Access Covers', 'Cast iron or ductile iron'],
+      ],
+      applications: 'High-voltage cable networks, telecom and fibre optic infrastructure, smart city utilities, road and highway electrical corridors.',
+      faq: [
+        { q: 'Can vaults be manufactured to SEC or STC specifications?', a: 'Yes — Jehan produces electrical vaults to Saudi Electricity Company (SEC) and Saudi Telecom Company (STC) approved specifications.' },
+        { q: 'Are duct penetrations cast in during manufacture?', a: 'Yes — duct entry locations and sizes are cast in per the approved shop drawing.' },
+      ]
+    },
+    {
+      id: 'transformer-equipment-foundation',
+      name: 'Transformer & Equipment Foundation',
+      category: 'Electrical / Communication',
+      image: 'assets/images/products/equipment-foundation.png',
+      description: 'Heavy-duty precast concrete foundations engineered to support electrical transformers, switchgear, and heavy equipment. Designed for precise load distribution, accurate equipment alignment, and ease of on-site installation, Jehan\'s equipment foundations reduce construction time and ensure consistent quality.',
+      specs: [
+        ['Material', 'High-strength reinforced precast concrete'],
+        ['Concrete Grade', 'C35 – C45'],
+        ['Load Capacity', 'Up to 50 tonnes (project specific)'],
+        ['Anchor Bolts', 'Cast-in stainless steel'],
+        ['Standard', 'SEC / project engineer specifications'],
+      ],
+      applications: 'Electrical substations, transformer pads, generator bases, HVAC equipment, industrial plant and machinery.',
+      faq: [
+        { q: 'Can anchor bolt layouts be customised?', a: 'Yes — anchor bolt positions, sizes, and embedment depths are cast in per the equipment manufacturer\'s template.' },
+        { q: 'What is the lead time for custom foundations?', a: 'Typically 2–4 weeks from approved shop drawings, depending on size and quantity.' },
+      ]
+    },
+    {
+      id: 'light-pole-base-foundation',
+      name: 'Light Pole Base Foundation',
+      category: 'Electrical / Communication',
+      image: 'assets/images/products/light-pole-base-foundation.png',
+      description: 'Jehan\'s precast concrete light pole base foundations provide stable, corrosion-resistant support for street lighting, highway lighting, and urban illumination infrastructure. Manufactured with precision-cast anchor bolt cages, they ensure correct pole alignment and reduce installation time significantly.',
+      specs: [
+        ['Material', 'Reinforced precast concrete'],
+        ['Concrete Grade', 'C35'],
+        ['Anchor Bolt Pattern', 'Per pole manufacturer template'],
+        ['Conduit Duct', 'Cast-in cable duct'],
+        ['Standard', 'Municipality / SEC specifications'],
+      ],
+      applications: 'Street and road lighting, highway and expressway illumination, sports facilities, parking lots, urban public realm projects.',
+      faq: [
+        { q: 'Are bases compatible with all light pole types?', a: 'Yes — anchor bolt cages are fabricated to match each specific pole manufacturer\'s base plate template.' },
+        { q: 'Is a cable duct built in?', a: 'Yes — a cast-in PVC or HDPE conduit duct is standard for cable routing from ground to pole base.' },
+      ]
+    },
+
+    // ── READY MIX PRODUCTS ──
+    {
+      id: 'structural-concrete',
+      name: 'Structural Concrete',
+      category: 'Ready Mix Concrete',
+      image: 'assets/images/products/rm-structural.png',
+      description: 'Jehan\'s structural ready mix concrete is the standard choice for residential and commercial foundations, walls, and slabs. Batched to precise specifications at our modern mixing plants, every load is tested for consistency and strength before delivery to your site.',
+      specs: [
+        ['Type', 'Normal Portland Cement mix'],
+        ['Grade Range', 'C15 – C50'],
+        ['Slump', 'Per project specification'],
+        ['Standard', 'SASO / BS EN 206'],
+        ['Delivery', 'Transit mixer — same day'],
+      ],
+      applications: 'Residential foundations and slabs, commercial building structures, retaining walls, mass concrete pours.',
+      faq: [
+        { q: 'What grades are available?', a: 'Grades from C20 to C40 are available as standard; higher grades can be designed on request.' },
+        { q: 'How quickly can delivery be arranged?', a: 'Same-day delivery is available subject to plant capacity; advance booking is recommended for large pours.' },
+      ]
+    },
+    {
+      id: 'high-strength-concrete',
+      name: 'High-Strength / Performance Concrete',
+      category: 'Ready Mix Concrete',
+      image: 'assets/images/products/rm-high-strength.png',
+      description: 'Engineered for demanding structural applications, Jehan\'s high-strength ready mix concrete delivers superior load capacity for columns, transfer plates, and high-rise construction. Formulated with low water-cement ratios and supplementary cementitious materials for exceptional strength and durability.',
+      specs: [
+        ['Grade Range', 'C50 – C100+'],
+        ['W/C Ratio', '≤ 0.35'],
+        ['Admixtures', 'Superplasticisers, silica fume'],
+        ['Standard', 'SASO / BS EN 206'],
+        ['Testing', 'Full QC cube testing included'],
+      ],
+      applications: 'High-rise columns and cores, post-tensioned slabs, bridge decks, heavy industrial structures.',
+      faq: [
+        { q: 'What is the maximum grade available?', a: 'Jehan can produce mixes up to C100 and beyond using specialist mix design — contact our technical team.' },
+        { q: 'Is third-party testing available?', a: 'Yes — cube samples are taken at point of delivery; independent testing by approved labs can be arranged.' },
+      ]
+    },
+    {
+      id: 'self-compacting-concrete',
+      name: 'Self-Compacting Concrete (SCC)',
+      category: 'Ready Mix Concrete',
+      image: 'assets/images/products/rm-self-compacting.png',
+      description: 'Jehan\'s Self-Compacting Concrete flows under its own weight to fill formwork completely, requiring no mechanical vibration. Ideal for congested reinforcement, complex geometries, and architectural finishes where vibration access is restricted.',
+      specs: [
+        ['Flow Class', 'SF1 – SF3 (per EN 206-9)'],
+        ['Viscosity Class', 'VS1 / VS2'],
+        ['Grade Range', 'C30 – C60'],
+        ['Standard', 'BS EN 206-9'],
+        ['Admixtures', 'High-range water reducers, VMA'],
+      ],
+      applications: 'Densely reinforced elements, precast and in-situ walls, architectural concrete, columns with restricted vibration access.',
+      faq: [
+        { q: 'Does SCC require special formwork?', a: 'Yes — formwork must be watertight and designed for full hydrostatic pressure as SCC exerts greater lateral load than conventional concrete.' },
+        { q: 'Can SCC be used for exposed architectural finishes?', a: 'Yes — SCC produces smooth, blemish-free surfaces ideal for fair-faced or exposed architectural concrete.' },
+      ]
+    },
+    {
+      id: 'fiber-reinforced-concrete',
+      name: 'Fiber-Reinforced Concrete',
+      category: 'Ready Mix Concrete',
+      image: 'assets/images/products/rm-fiber-reinforced.png',
+      description: 'Jehan\'s fiber-reinforced ready mix concrete contains steel or synthetic fibers distributed uniformly throughout the mix to enhance tensile strength, control cracking, and improve impact and fatigue resistance. An effective supplement or replacement for traditional mesh reinforcement.',
+      specs: [
+        ['Fiber Types', 'Steel, polypropylene, synthetic blend'],
+        ['Dosage Rate', '3 – 40 kg/m³ (design dependent)'],
+        ['Grade Range', 'C25 – C50'],
+        ['Standard', 'ASTM C1116 / TR34'],
+        ['Applications', 'Industrial floors, tunnels, shotcrete'],
+      ],
+      applications: 'Industrial warehouse floors, tunnel linings, precast elements, slope stabilisation, pavements and hardstands.',
+      faq: [
+        { q: 'Can fibers replace traditional reinforcement?', a: 'In some applications (e.g. ground-bearing slabs) fibers can replace mesh — a structural engineer should confirm suitability.' },
+        { q: 'Are steel and synthetic fibers both available?', a: 'Yes — both are available; the choice depends on the structural requirement, exposure class, and budget.' },
+      ]
+    },
+    {
+      id: 'green-sustainable-concrete',
+      name: 'Green / Sustainable Concrete',
+      category: 'Ready Mix Concrete',
+      image: 'assets/images/products/rm-green-sustainable.png',
+      description: 'Jehan\'s green concrete range uses supplementary cementitious materials (SCMs) such as GGBS, fly ash, and silica fume to significantly reduce the carbon footprint of each pour. These eco-friendly mixes meet full structural requirements while supporting Saudi Vision 2030 sustainability targets.',
+      specs: [
+        ['SCM Content', 'Up to 70% GGBS replacement'],
+        ['CO₂ Reduction', 'Up to 60% vs standard OPC'],
+        ['Grade Range', 'C25 – C50'],
+        ['Standard', 'BS EN 206 / BS 8500'],
+        ['Certification', 'Environmental compliance docs available'],
+      ],
+      applications: 'LEED/Green Star certified projects, government infrastructure, foundations, slabs, walls where sustainability credentials are required.',
+      faq: [
+        { q: 'Does green concrete meet the same strength requirements?', a: 'Yes — all green concrete mixes are fully designed and tested to meet the specified structural grade.' },
+        { q: 'Can environmental documentation be provided?', a: 'Yes — environmental product declarations (EPDs) and carbon calculation sheets are available on request.' },
+      ]
+    },
+    {
+      id: 'waterproof-concrete',
+      name: 'Waterproof Concrete',
+      category: 'Ready Mix Concrete',
+      image: 'assets/images/products/rm-waterproof.png',
+      description: 'Jehan\'s waterproof ready mix concrete is specially formulated for structures requiring long-term resistance to water ingress. Using integral crystalline or hydrophobic admixtures, the mix provides reliable waterproofing performance for basements, water tanks, tunnels, and below-grade structures without relying solely on external membrane systems.',
+      specs: [
+        ['Waterproofing System', 'Integral crystalline or hydrophobic'],
+        ['Grade Range', 'C30 – C50'],
+        ['W/C Ratio', '≤ 0.45'],
+        ['Standard', 'BS EN 206 / BS 8007'],
+        ['Permeability', '< 10mm water penetration (BS EN 12390-8)'],
+      ],
+      applications: 'Basements, water and sewage tanks, tunnels, swimming pools, below-grade foundations, pump stations.',
+      faq: [
+        { q: 'Is waterproof concrete a replacement for external waterproofing membranes?', a: 'In many below-grade applications yes, but a structural engineer should assess whether a standalone or combined approach is required.' },
+        { q: 'What standards does the mix comply with?', a: 'Mixes comply with BS EN 206 and BS 8007 (water-retaining structures), with permeability testing available on request.' },
+      ]
+    },
+    {
+      id: 'shotcrete-gunite',
+      name: 'Shotcrete / Gunite',
+      category: 'Ready Mix Concrete',
+      image: 'assets/images/products/rm-shotcrete.png',
+      description: 'Jehan\'s shotcrete (wet process) and gunite (dry process) mixes are designed for spray application, providing excellent adhesion and versatility for curved surfaces, slopes, and hard-to-reach areas. Widely used in pool construction, slope stabilisation, tunnel linings, and repair works.',
+      specs: [
+        ['Process', 'Wet-mix (shotcrete) & Dry-mix (gunite)'],
+        ['Compressive Strength', '25 – 50 MPa'],
+        ['Rebound', 'Low rebound admixtures available'],
+        ['Standard', 'ACI 506 / EN 14487'],
+        ['Fibers', 'Steel or synthetic fiber options available'],
+      ],
+      applications: 'Swimming pools, slope and embankment stabilisation, tunnel linings, retaining wall faces, structural repair and rehabilitation.',
+      faq: [
+        { q: 'What is the difference between shotcrete and gunite?', a: 'Shotcrete uses a pre-mixed wet concrete pumped through a hose; gunite uses dry materials that mix with water at the nozzle. Both achieve similar results.' },
+        { q: 'Can shotcrete be used for structural repair?', a: 'Yes — shotcrete is widely used for structural repair and section enlargement where traditional formwork is impractical.' },
+      ]
+    },
+
+    // ── BUILDING BLOCKS ──
+    {
+      id: 'automatic-insulated-block',
+      name: 'Automatic Insulated Block',
+      category: 'Building Block — 20cm',
+      image: 'assets/images/blocks-icon.png',
+      description: 'Jehan\'s Automatic Insulated Block is a 20cm hollow concrete masonry unit with a 7.8 cm polystyrene insulation core. The integrated insulation reduces thermal bridging and improves energy efficiency in walls, making it an ideal choice for residential and commercial buildings across Saudi Arabia\'s hot climate.',
+      specs: [
+        ['Dimensions', '20 × 20 × 40 cm'],
+        ['Holes', '2 holes'],
+        ['Insulation', '7.8 cm polystyrene core'],
+        ['Weight', '18 kg'],
+        ['Standard', 'SASO 1858'],
+      ],
+      applications: 'External walls requiring thermal insulation, residential buildings, commercial developments, energy-efficient construction.',
+      faq: [
+        { q: 'Does the insulation meet Saudi energy code requirements?', a: 'Yes — the polystyrene insulation core helps comply with the Saudi Energy Efficiency Code for buildings.' },
+        { q: 'Can insulated blocks be used in load-bearing walls?', a: 'Subject to structural design — consult a structural engineer for load-bearing applications.' },
+      ]
+    },
+    {
+      id: 'decoration-split-face-block',
+      name: 'Decoration Split Face Block',
+      category: 'Building Block — 20cm',
+      image: 'assets/images/blocks-icon.png',
+      description: 'The Decoration Split Face Block features one smooth face and one stone-textured split face, delivering a natural masonry appearance without the cost of natural stone. Ideal for feature walls, boundary walls, and architectural facades where aesthetics are a priority.',
+      specs: [
+        ['Dimensions', '20 × 20 × 40 cm'],
+        ['Holes', '2 holes'],
+        ['Face Finish', '1 normal face + 1 split stone face'],
+        ['Weight', '20 kg'],
+        ['Standard', 'SASO 1858'],
+      ],
+      applications: 'Feature walls, building facades, boundary and garden walls, retail and hospitality architecture.',
+      faq: [
+        { q: 'Is the split face finish consistent across blocks?', a: 'Yes — blocks are machine-split for consistency, though natural variation in texture is part of the aesthetic character.' },
+        { q: 'Can these blocks be painted or sealed?', a: 'Yes — a masonry sealer or breathable paint can be applied to the split face for added weather protection.' },
+      ]
+    },
+    {
+      id: 'fair-face-hollow-block-20',
+      name: 'Fair Face Hollow Block (20cm)',
+      category: 'Building Block — 20cm',
+      image: 'assets/images/blocks-icon.png',
+      description: 'Jehan\'s 20cm Fair Face Hollow Block provides a high-quality smooth face finish suitable for exposed masonry walls requiring no render or plaster. With 3 holes and a closed bottom, it offers excellent structural performance and a clean architectural finish.',
+      specs: [
+        ['Dimensions', '20 × 20 × 40 cm'],
+        ['Holes', '3 holes'],
+        ['Base', 'Closed bottom'],
+        ['Face Finish', '2 fair face sides'],
+        ['Weight', '20 kg'],
+      ],
+      applications: 'Exposed internal and external walls, architectural masonry, stairwells, corridors, and areas where a plaster-free finish is desired.',
+      faq: [
+        { q: 'What makes a "fair face" block different?', a: 'Fair face blocks are manufactured with tighter dimensional tolerances and a smoother surface texture, designed to be left exposed without render.' },
+        { q: 'Is pointing compound required?', a: 'Yes — joints are typically finished with a coloured or natural mortar pointing compound for a clean result.' },
+      ]
+    },
+    {
+      id: 'normal-hollow-block-20',
+      name: 'Normal Hollow Block (20cm)',
+      category: 'Building Block — 20cm',
+      image: 'assets/images/blocks-icon.png',
+      description: 'The standard 20cm Normal Hollow Block is the most widely used masonry unit in Saudi Arabia. Manufactured to SASO standards with 3 holes and a closed bottom, it offers proven structural strength for load-bearing and non-load-bearing walls in all building types.',
+      specs: [
+        ['Dimensions', '20 × 20 × 40 cm'],
+        ['Holes', '3 holes'],
+        ['Base', 'Closed bottom'],
+        ['Weight', '19 kg'],
+        ['Standard', 'SASO 1858'],
+      ],
+      applications: 'Load-bearing and non-load-bearing walls, residential, commercial and industrial construction, partition walls.',
+      faq: [
+        { q: 'Are these blocks suitable for load-bearing walls?', a: 'Yes — when specified and laid correctly to a structural engineer\'s design, 20cm hollow blocks are widely used for load-bearing masonry.' },
+        { q: 'What mortar mix should be used?', a: 'A standard 1:4 or 1:5 cement:sand mortar mix is typical; your structural engineer will specify the required strength class.' },
+      ]
+    },
+    {
+      id: 'fair-face-hollow-block-15',
+      name: 'Fair Face Hollow Block (15cm)',
+      category: 'Building Block — 15cm',
+      image: 'assets/images/blocks-icon.png',
+      description: 'The 15cm Fair Face Hollow Block delivers the same clean, exposed-masonry finish as the 20cm variant in a slimmer profile. Ideal for partition walls, infill panels, and internal feature walls where a rendered finish is not required.',
+      specs: [
+        ['Dimensions', '15 × 20 × 40 cm'],
+        ['Holes', '3 holes'],
+        ['Base', 'Closed bottom'],
+        ['Face Finish', 'Fair face'],
+        ['Weight', '16 kg'],
+      ],
+      applications: 'Internal partition walls, infill panels, stairwells, architectural feature walls.',
+      faq: [
+        { q: 'Can 15cm fair face blocks be used externally?', a: 'Yes, though for exposed external walls additional weatherproofing or a sealant coat is recommended.' },
+        { q: 'What is the typical coursing height?', a: 'Standard coursing is 200mm per course (block height + mortar joint).' },
+      ]
+    },
+    {
+      id: 'standard-hollow-block-15',
+      name: 'Standard Hollow Block (15cm)',
+      category: 'Building Block — 15cm',
+      image: 'assets/images/blocks-icon.png',
+      description: 'Jehan\'s 15cm Standard Hollow Block is a versatile, cost-effective masonry unit for partition and infill wall construction. Manufactured to SASO standards with 3 holes and a closed bottom for consistent strength and easy laying.',
+      specs: [
+        ['Dimensions', '15 × 20 × 40 cm'],
+        ['Holes', '3 holes'],
+        ['Base', 'Closed bottom'],
+        ['Weight', '15 kg'],
+        ['Standard', 'SASO 1858'],
+      ],
+      applications: 'Partition walls, internal infill, non-load-bearing walls, apartment dividing walls.',
+      faq: [
+        { q: 'Are 15cm blocks available in bulk quantities?', a: 'Yes — Jehan supplies both project-specific and stock quantities; contact our sales team for bulk pricing.' },
+        { q: 'Can services be chased into 15cm blocks?', a: 'Yes — electrical conduit and small pipe runs can be chased into the block, though this should be done carefully to maintain structural integrity.' },
+      ]
+    },
+    {
+      id: 'fair-face-hollow-block-10',
+      name: 'Fair Face Hollow Block (10cm)',
+      category: 'Building Block — 10cm',
+      image: 'assets/images/blocks-icon.png',
+      description: 'The 10cm Fair Face Hollow Block is a slim-profile masonry unit with a smooth exposed finish on two faces. Perfect for lightweight partition walls and feature wall linings where minimal thickness and clean aesthetics are required.',
+      specs: [
+        ['Dimensions', '10 × 20 × 40 cm'],
+        ['Holes', '2 holes'],
+        ['Base', 'Closed bottom'],
+        ['Face Finish', '2 fair face sides'],
+        ['Weight', '12 kg'],
+      ],
+      applications: 'Lightweight internal partitions, feature wall linings, bathroom and utility room dividers.',
+      faq: [
+        { q: 'Are 10cm blocks suitable for wet areas?', a: 'With appropriate waterproof render or tile adhesive, 10cm blocks can be used in wet areas such as bathrooms.' },
+        { q: 'What is the maximum height for a 10cm partition wall?', a: 'Typically up to 3.5m with appropriate restraint at top and bottom — a structural engineer should confirm for specific projects.' },
+      ]
+    },
+    {
+      id: 'normal-hollow-block-10',
+      name: 'Normal Hollow Block (10cm)',
+      category: 'Building Block — 10cm',
+      image: 'assets/images/blocks-icon.png',
+      description: 'Jehan\'s 10cm Normal Hollow Block is the go-to masonry unit for slim internal partition walls. Lightweight, easy to lay, and manufactured to SASO standards, it provides reliable performance for non-structural dividing walls in residential and commercial projects.',
+      specs: [
+        ['Dimensions', '10 × 20 × 40 cm'],
+        ['Holes', '2 holes'],
+        ['Base', 'Closed bottom'],
+        ['Weight', '11 kg'],
+        ['Standard', 'SASO 1858'],
+      ],
+      applications: 'Internal partition walls, office dividers, apartment layouts, lightweight non-load-bearing walls.',
+      faq: [
+        { q: 'Can 10cm blocks be rendered?', a: 'Yes — a 10–15mm sand-cement render coat is standard on both faces for a smooth finish prior to painting or tiling.' },
+        { q: 'Are these blocks available in different colours?', a: 'Standard grey is stocked; pigmented blocks can be produced on request for fair-face applications.' },
+      ]
+    },
+  ];
+
+  // ── Accordion toggle ──
+  function toggleAcc(btn) {
+    const isOpen = btn.classList.contains('open');
+    // Close all
+    document.querySelectorAll('.pd-accordion-trigger').forEach(b => {
+      b.classList.remove('open');
+      b.nextElementSibling.classList.remove('open');
+    });
+    // If it was closed, open it
+    if (!isOpen) {
+      btn.classList.add('open');
+      btn.nextElementSibling.classList.add('open');
+    }
+  }
+
+  // ── Load product from URL param ──
+  function loadProduct() {
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get('id');
+    const idx = PRODUCTS.findIndex(p => p.id === id);
+
+    if (idx === -1) {
+      document.querySelector('.pd-page').innerHTML = '<div class="container" style="padding:80px 0;text-align:center;"><p>Product not found. <a href="products.html">Back to Products</a></p></div>';
+      return;
+    }
+
+    const p = PRODUCTS[idx];
+
+    // Update page title
+    document.title = p.name + ' — Jehan Holding Group';
+
+    // Image
+    document.getElementById('pd-img').src = p.image;
+    document.getElementById('pd-img').alt = p.name;
+
+    // Breadcrumb
+    document.getElementById('pd-breadcrumb-cat').textContent = p.category;
+    document.getElementById('pd-breadcrumb-name').textContent = p.name;
+
+    // Info
+    document.getElementById('pd-cat').textContent = p.category;
+    document.getElementById('pd-name').textContent = p.name;
+    document.getElementById('pd-desc').textContent = p.description;
+
+    // Specs table
+    const specsHtml = p.specs.map(row =>
+      `<tr><td>${row[0]}</td><td>${row[1]}</td></tr>`
+    ).join('');
+    document.getElementById('pd-specs').innerHTML = specsHtml;
+
+    // Applications
+    document.getElementById('pd-applications').textContent = p.applications;
+
+    // FAQ
+    const faqHtml = p.faq.map(item =>
+      `<p><strong>${item.q}</strong><br>${item.a}</p>`
+    ).join('');
+    document.getElementById('pd-faq').innerHTML = faqHtml;
+
+    // Prev / Next
+    const prev = PRODUCTS[idx - 1];
+    const next = PRODUCTS[idx + 1];
+
+    const prevEl = document.getElementById('pd-prev');
+    const nextEl = document.getElementById('pd-next');
+
+    if (prev) {
+      prevEl.href = 'product-detail.html?id=' + prev.id;
+      document.getElementById('pd-prev-name').textContent = prev.name;
+    } else {
+      prevEl.classList.add('hidden');
+    }
+
+    if (next) {
+      nextEl.href = 'product-detail.html?id=' + next.id;
+      document.getElementById('pd-next-name').textContent = next.name;
+    } else {
+      nextEl.classList.add('hidden');
+    }
+  }
+
+  loadProduct();
+  </script>
+</body>
+</html>

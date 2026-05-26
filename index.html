@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600;700&family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css?v=4">
+  <link rel="stylesheet" href="css/style.css?v=11">
 </head>
 <body>
 
@@ -29,11 +29,6 @@
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0"/></svg>
           <span data-i18n="nav_account">Account</span>
         </a>
-        <a href="#" class="basket-badge">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 0 0-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 0 0-16.536-1.84M7.5 14.25 5.106 5.272M6 20.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Zm12.75 0a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z"/></svg>
-          <span data-i18n="nav_basket">Basket</span>
-          <span class="count">0</span>
-        </a>
         <button class="hamburger" aria-label="Menu">
           <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"/></svg>
         </button>
@@ -45,8 +40,9 @@
   <div class="subnav">
     <div class="container subnav__inner">
       <a href="index.html" class="active" data-i18n="nav_home">Home</a>
-      <a href="book-concrete.html" data-i18n="nav_book">Book Concrete</a>
+      <a href="products.html" data-i18n="nav_products">Products</a>
       <a href="calculator.html" data-i18n="nav_calc">Concrete Calculator</a>
+      <a href="book-concrete.html" data-i18n="nav_book">Book Concrete</a>
       <a href="help.html" data-i18n="nav_help">Help & Advice</a>
       <a href="about.html" data-i18n="nav_about">About Us</a>
       <a href="contact.html" data-i18n="nav_contact">Contact Us</a>
@@ -76,7 +72,7 @@
   <!-- ── Feature Strip ── -->
   <section class="feature-strip">
     <div class="container feature-strip__inner">
-      <div class="feature-item">
+      <div class="feature-item reveal">
         <div class="feature-item__icon">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 0 1-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 0 0-3.213-9.193 2.056 2.056 0 0 0-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 0 0-10.026 0 1.106 1.106 0 0 0-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12"/></svg>
         </div>
@@ -85,7 +81,7 @@
           <p class="feature-item__desc" data-i18n="feat1_desc">Ensure your project stays on schedule with our seamless delivery service.</p>
         </div>
       </div>
-      <div class="feature-item">
+      <div class="feature-item reveal reveal-delay-1">
         <div class="feature-item__icon">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 0 1-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 0 1 4.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0 1 12 15a9.065 9.065 0 0 1-6.23-.693L5 14.5m14.8.8 1.402 1.402c1.232 1.232.65 3.318-1.067 3.611A48.309 48.309 0 0 1 12 21c-2.773 0-5.491-.235-8.135-.687-1.718-.293-2.3-2.379-1.067-3.61L5 14.5"/></svg>
         </div>
@@ -94,7 +90,7 @@
           <p class="feature-item__desc" data-i18n="feat2_desc">Custom concrete mixes designed for Saudi Arabia's demanding environment.</p>
         </div>
       </div>
-      <div class="feature-item">
+      <div class="feature-item reveal reveal-delay-2">
         <div class="feature-item__icon">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 0 1-1.043 3.296 3.745 3.745 0 0 1-3.296 1.043A3.745 3.745 0 0 1 12 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 0 1-3.296-1.043 3.745 3.745 0 0 1-1.043-3.296A3.745 3.745 0 0 1 3 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 0 1 1.043-3.296 3.746 3.746 0 0 1 3.296-1.043A3.746 3.746 0 0 1 12 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 0 1 3.296 1.043 3.746 3.746 0 0 1 1.043 3.296A3.745 3.745 0 0 1 21 12Z"/></svg>
         </div>
@@ -107,37 +103,69 @@
   </section>
 
   <!-- ── Products ── -->
-  <section class="products-section">
+  <section class="home-products">
     <div class="container">
-      <div class="section-title">
-        <h2 data-i18n="products_title">Our Products</h2>
-        <p data-i18n="products_sub">From readymix to precast — built to the standards the Kingdom relies on.</p>
+      <div class="home-products__header">
+        <div>
+          <p class="home-products__eyebrow">What We Offer</p>
+          <h2 data-i18n="products_title">Our Products</h2>
+        </div>
+        <a href="products.html" class="btn btn-outline" style="white-space:nowrap;">View All Products →</a>
       </div>
-      <div class="products-grid">
-        <div class="product-card">
-          <div class="product-card__icon">
-            <img src="assets/images/mixer-icon.png" alt="Ready-Mix Concrete" style="width:80px;height:80px;object-fit:contain;">
+
+      <div class="home-prod-grid">
+
+        <!-- Ready Mix -->
+        <div class="hpc reveal">
+          <div class="hpc__top">
+            <div class="hpc__icon-wrap">
+              <img src="assets/images/readymix-icon.png" alt="Ready-Mix Concrete">
+            </div>
+            <span class="hpc__num">01</span>
           </div>
-          <h3 data-i18n="prod1_name">READY-MIX CONCRETE</h3>
-          <p data-i18n="prod1_desc">Precise Estimation & Reliable Mixes.</p>
-          <button class="product-card__add" onclick="basketAdd('Ready-Mix Concrete','C30 Standard',1,'RM')">+ Add to Basket</button>
-        </div>
-        <div class="product-card">
-          <div class="product-card__icon">
-            <img src="assets/images/precast-icon.png" alt="Precast Concrete" style="width:80px;height:80px;object-fit:contain;">
+          <p class="hpc__cat">Ready-Mix</p>
+          <h3 class="hpc__title" data-i18n="prod1_name">Ready-Mix Concrete</h3>
+          <p class="hpc__desc" data-i18n="prod1_desc">Precisely batched mixes delivered fresh to site — from standard structural grades to high-performance and speciality concretes.</p>
+          <div class="hpc__actions">
+            <a href="products.html" class="hpc__link">Explore Range →</a>
+            <a href="book-concrete.html" class="hpc__cta">Get a Quote</a>
           </div>
-          <h3 data-i18n="prod2_name">PRECAST CONCRETE</h3>
-          <p data-i18n="prod2_desc">Durable & Custom-Engineered Solutions.</p>
-          <button class="product-card__add" onclick="basketAdd('Precast Concrete','Custom Mix',1,'PC')">+ Add to Basket</button>
         </div>
-        <div class="product-card">
-          <div class="product-card__icon">
-            <img src="assets/images/blocks-icon.png" alt="Building Blocks" style="width:80px;height:80px;object-fit:contain;">
+
+        <!-- Precast -->
+        <div class="hpc hpc--mid reveal reveal-delay-1">
+          <div class="hpc__top">
+            <div class="hpc__icon-wrap">
+              <img src="assets/images/precast-icon-new.png" alt="Precast Concrete">
+            </div>
+            <span class="hpc__num">02</span>
           </div>
-          <h3 data-i18n="prod3_name">BUILDING BLOCKS</h3>
-          <p data-i18n="prod3_desc">Certified Standard Blocks for Strength.</p>
-          <button class="product-card__add" onclick="basketAdd('Building Blocks','Standard Grade',1,'BB')">+ Add to Basket</button>
+          <p class="hpc__cat">Precast</p>
+          <h3 class="hpc__title" data-i18n="prod2_name">Precast Concrete</h3>
+          <p class="hpc__desc" data-i18n="prod2_desc">Factory-engineered precast elements for storm, sanitary, water, transportation, boundary, and electrical infrastructure.</p>
+          <div class="hpc__actions">
+            <a href="products.html" class="hpc__link">Explore Range →</a>
+            <a href="book-concrete.html" class="hpc__cta">Get a Quote</a>
+          </div>
         </div>
+
+        <!-- Building Blocks -->
+        <div class="hpc reveal reveal-delay-2">
+          <div class="hpc__top">
+            <div class="hpc__icon-wrap">
+              <img src="assets/images/blocks-icon-new.png" alt="Building Blocks">
+            </div>
+            <span class="hpc__num">03</span>
+          </div>
+          <p class="hpc__cat">Blocks</p>
+          <h3 class="hpc__title" data-i18n="prod3_name">Building Blocks</h3>
+          <p class="hpc__desc" data-i18n="prod3_desc">A full range of hollow, fair-face, insulated, and decorative concrete blocks in 10, 15, and 20 cm profiles.</p>
+          <div class="hpc__actions">
+            <a href="products.html" class="hpc__link">Explore Range →</a>
+            <a href="book-concrete.html" class="hpc__cta">Get a Quote</a>
+          </div>
+        </div>
+
       </div>
     </div>
   </section>
@@ -154,33 +182,13 @@
     </div>
   </footer>
 
-  <script src="js/lang.js?v=2"></script>
-
-  <!-- Basket Drawer -->
-  <div id="basket-overlay" onclick="closeBasket()"></div>
-  <div id="basket-drawer">
-    <div class="bsk-header">
-      <h2>Your Basket</h2>
-      <button class="bsk-close-btn" onclick="closeBasket()" title="Close">
-        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg>
-      </button>
-    </div>
-    <div id="basket-empty">
-      <svg xmlns="http://www.w3.org/2000/svg" width="52" height="52" fill="none" viewBox="0 0 24 24" stroke="#DCDBD7" stroke-width="1.2" style="margin-bottom:16px;"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 0 0-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 0 0-16.536-1.84M7.5 14.25 5.106 5.272M6 20.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Zm12.75 0a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z"/></svg>
-      <p>Your basket is empty</p>
-      <p>Add concrete products to get started.</p>
-      <a href="book-concrete.html" class="bsk-cta" onclick="closeBasket()">Book Concrete →</a>
-    </div>
-    <div id="basket-items"></div>
-    <div id="basket-footer" style="display:none;">
-      <div class="bsk-total-row">
-        <span class="bsk-total-label">Total Volume</span>
-        <span id="basket-subtotal"></span>
-      </div>
-      <a href="book-concrete.html" class="bsk-checkout-btn" onclick="closeBasket()">Proceed to Booking →</a>
-      <button class="bsk-clear-btn" onclick="basketClear()">Clear Basket</button>
-    </div>
-  </div>
-  <script src="js/basket.js"></script>
+  <script src="js/lang.js?v=5"></script>
+  <script>
+    // Scroll-reveal: fire .visible when element enters viewport
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); } });
+    }, { threshold: 0.15 });
+    document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+  </script>
 </body>
 </html>
