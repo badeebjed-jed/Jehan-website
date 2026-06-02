@@ -4,6 +4,9 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Settings - Jehan Holding Group</title>
+  <!-- Auth guard: redirects to login if no valid session -->
+  <script src="js/auth.js"></script>
+  <script>if (!window.JehanAuth || !window.JehanAuth.requireAuth()) { /* halted by redirect */ }</script>
   <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600;700&family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet"/>
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
@@ -119,7 +122,7 @@
         <span class="material-symbols-outlined text-[20px]">arrow_back</span>
         <span data-i18n="nav_back">Back to Website</span>
       </a>
-      <a href="login.html" class="flex items-center gap-2 px-3 py-2 rounded text-sm font-semibold text-mid hover:bg-error-bg hover:text-error transition-colors w-full">
+      <a href="login.html" onclick="event.preventDefault(); window.JehanAuth.logout();" class="flex items-center gap-2 px-3 py-2 rounded text-sm font-semibold text-mid hover:bg-error-bg hover:text-error transition-colors w-full">
         <span class="material-symbols-outlined text-[20px]">logout</span>
         <span data-i18n="nav_logout">Logout</span>
       </a>
@@ -165,11 +168,11 @@
             </div>
             <div>
               <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5" data-i18n="lbl_co_email">Contact Email</label>
-              <input type="email" value="info@jehanholding.com" class="w-full border border-border rounded px-3 py-2.5 text-sm text-dark bg-bg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors"/>
+              <input type="email" value="Info@Jehanreadymix.com" class="w-full border border-border rounded px-3 py-2.5 text-sm text-dark bg-bg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors"/>
             </div>
             <div>
               <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5" data-i18n="lbl_co_phone">Phone Number</label>
-              <input type="tel" value="+966 11 000 0000" class="w-full border border-border rounded px-3 py-2.5 text-sm text-dark bg-bg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors"/>
+              <input type="tel" value="+966 59 393 9882" class="w-full border border-border rounded px-3 py-2.5 text-sm text-dark bg-bg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors"/>
             </div>
             <div class="md:col-span-2">
               <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5" data-i18n="lbl_address">Head Office Address</label>

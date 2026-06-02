@@ -2039,3 +2039,129 @@ body.rtl #basket-drawer.bsk-open { transform: translateX(0); }
   .hpc:hover, .apc:hover, .prod-card:hover { transform: none; box-shadow: none; }
   .home-prod-card:hover { transform: none; box-shadow: none; }
 }
+
+/* ============================================================
+   FORM CONFIRMATION MODAL
+   ============================================================ */
+.jhg-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(30, 30, 30, 0.55);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.25s ease, visibility 0.25s ease;
+}
+.jhg-modal.is-open {
+  opacity: 1;
+  visibility: visible;
+}
+.jhg-modal__card {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+  max-width: 460px;
+  width: 100%;
+  padding: 40px 32px 32px;
+  text-align: center;
+  position: relative;
+  transform: translateY(20px) scale(0.96);
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.jhg-modal.is-open .jhg-modal__card {
+  transform: translateY(0) scale(1);
+}
+.jhg-modal__close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: none;
+  border: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  cursor: pointer;
+  color: var(--text-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s, color 0.2s;
+  font-size: 22px;
+  line-height: 1;
+}
+.jhg-modal__close:hover {
+  background: var(--bg);
+  color: var(--text-dark);
+}
+.jhg-modal__icon {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 20px;
+  border-radius: 50%;
+  background: rgba(140, 174, 120, 0.18);
+  color: var(--green-dark);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.jhg-modal__icon svg {
+  width: 32px;
+  height: 32px;
+  stroke-width: 2.5;
+}
+.jhg-modal__title {
+  font-family: 'Barlow Condensed', Arial, sans-serif;
+  font-weight: 700;
+  font-size: 1.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-dark);
+  margin: 0 0 12px;
+}
+.jhg-modal__message {
+  font-size: 0.95rem;
+  line-height: 1.55;
+  color: var(--text-mid);
+  margin: 0 0 28px;
+}
+.jhg-modal__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--gold);
+  color: #fff;
+  font-family: 'Barlow', Arial, sans-serif;
+  font-weight: 700;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 12px 32px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.2s;
+  min-width: 140px;
+}
+.jhg-modal__btn:hover {
+  background: var(--gold-hover, #A07D10);
+}
+
+/* Lock body scroll while modal open */
+body.jhg-modal-open {
+  overflow: hidden;
+}
+
+/* Tighter on small screens */
+@media (max-width: 480px) {
+  .jhg-modal__card { padding: 32px 20px 24px; }
+  .jhg-modal__title { font-size: 1.25rem; }
+  .jhg-modal__message { font-size: 0.9rem; }
+}

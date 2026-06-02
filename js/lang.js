@@ -19,6 +19,11 @@ const translations = {
     nav_search:      "Search our site...",
     lang_switch:     "عربي",
 
+    /* ── Confirmation Modal (Get Quote / Contact) ── */
+    confirm_title:   "Submission Received",
+    confirm_message: "We have received your form. Jehan Holding Group will reach out to you shortly.",
+    confirm_close:   "Close",
+
     /* ── Footer ── */
     footer_copy:     "© Jehan Holding Group",
     footer_privacy:  "Privacy Policy",
@@ -52,7 +57,7 @@ const translations = {
     btn_precast_name:   "Precast Concrete",
     btn_precast_count:  "13 products available",
     btn_blocks_name:    "Building Blocks",
-    btn_blocks_count:   "8 products available",
+    btn_blocks_count:   "7 products available",
     /* ── Category Filters ── */
     cat_all:            "All",
     cat_storm:          "Storm",
@@ -153,8 +158,8 @@ const translations = {
     contact_email:   "Email",
     contact_address: "Head Office Address",
     contact_hours:   "Working Hours",
-    contact_ph_val:  "+966 11 000 0000",
-    contact_em_val:  "info@jehanholding.com",
+    contact_ph_val:  "+966 59 393 9882",
+    contact_em_val:  "Info@Jehanreadymix.com",
     contact_addr_val:"Jeddah, Saudi Arabia, 6653 Sari Branch Road, 23446",
     contact_hrs_val: "Sunday – Thursday: 8:00 AM – 5:00 PM",
     contact_complex_label: "Jehan Industrial Complex",
@@ -197,6 +202,11 @@ const translations = {
     nav_search:      "ابحث في موقعنا...",
     lang_switch:     "English",
 
+    /* ── Confirmation Modal (Get Quote / Contact) ── */
+    confirm_title:   "تم استلام النموذج",
+    confirm_message: "لقد استلمنا النموذج الخاص بك. ستتواصل معك مجموعة جيهان القابضة قريباً.",
+    confirm_close:   "إغلاق",
+
     /* ── Footer ── */
     footer_copy:     "© مجموعة جيهان القابضة",
     footer_privacy:  "سياسة الخصوصية",
@@ -230,7 +240,7 @@ const translations = {
     btn_precast_name:   "الخرسانة المسبقة الصنع",
     btn_precast_count:  "١٣ منتجاً متاحاً",
     btn_blocks_name:    "البلوكات الإنشائية",
-    btn_blocks_count:   "٨ منتجات متاحة",
+    btn_blocks_count:   "٧ منتجات متاحة",
     /* ── Category Filters ── */
     cat_all:            "الكل",
     cat_storm:          "الصرف المطري",
@@ -331,8 +341,8 @@ const translations = {
     contact_email:   "البريد الإلكتروني",
     contact_address: "عنوان المكتب الرئيسي",
     contact_hours:   "ساعات العمل",
-    contact_ph_val:  "+966 11 000 0000",
-    contact_em_val:  "info@jehanholding.com",
+    contact_ph_val:  "+966 59 393 9882",
+    contact_em_val:  "Info@Jehanreadymix.com",
     contact_addr_val:"جدة، المملكة العربية السعودية، طريق صاري الفرعي 6653، 23446",
     contact_hrs_val: "الأحد – الخميس: 8:00 ص – 5:00 م",
     contact_complex_label: "المجمع الصناعي لجيهان",
