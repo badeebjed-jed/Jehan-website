@@ -6,7 +6,7 @@
   <title>Customer Database - Jehan Holding Group</title>
   <!-- Auth guard: redirects to login if no valid session -->
   <script src="js/auth.js"></script>
-  <script>if (!window.JehanAuth || !window.JehanAuth.requireAuth()) { /* halted by redirect */ }</script>
+  <script>if (!window.JehanAuth || !window.JehanAuth.enforce('customers')) { /* halted by redirect */ }</script>
   <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600;700&family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet"/>
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
@@ -144,7 +144,7 @@
     <div class="px-8 py-4 bg-surface border-b border-border flex items-center gap-4 flex-shrink-0">
       <div class="relative w-96">
         <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-light text-[20px]">search</span>
-        <input type="text" data-i18n-ph="ph_search_cust" placeholder="Search customers…" class="w-full pl-10 pr-4 py-2 border border-border rounded bg-bg text-sm text-dark placeholder-light focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"/>
+        <input id="cust-search" type="text" oninput="renderCustomers()" data-i18n-ph="ph_search_cust" placeholder="Search customers…" class="w-full pl-10 pr-4 py-2 border border-border rounded bg-bg text-sm text-dark placeholder-light focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"/>
       </div>
       <button class="flex items-center gap-2 px-4 py-2 border border-border rounded text-sm font-semibold text-mid hover:bg-surface-mid hover:text-dark transition-colors">
         <span class="material-symbols-outlined text-[20px]">filter_list</span>
@@ -173,118 +173,13 @@
               <th class="px-4 py-3 w-10"></th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-border">
-            <!-- Row 1 -->
-            <tr class="bg-surface hover:bg-surface-dim transition-colors group">
-              <td class="px-6 py-4">
-                <input type="checkbox" class="rounded border-border text-primary focus:ring-primary"/>
-              </td>
-              <td class="px-4 py-4">
-                <div class="flex items-center gap-3">
-                  <div class="w-9 h-9 rounded-full bg-primary-lt/30 text-primary flex items-center justify-center flex-shrink-0">
-                    <span class="text-xs font-bold">MA</span>
-                  </div>
-                  <span class="text-sm font-semibold text-dark">Marcus Aurelius</span>
-                </div>
-              </td>
-              <td class="px-4 py-4 text-sm text-light">marcus.a@construction.sa</td>
-              <td class="px-4 py-4 text-sm text-light">+966 50 123 4567</td>
-              <td class="px-4 py-4">
-                <span class="bg-primary-lt/30 text-primary border border-primary-lt text-xs font-semibold px-3 py-1 rounded-full">Booked Concrete</span>
-              </td>
-              <td class="px-4 py-4 text-sm text-light">Riyadh, SA</td>
-              <td class="px-4 py-4">
-                <span class="action-col text-sm font-semibold text-primary hover:underline cursor-pointer whitespace-nowrap" data-i18n="action_view">View Details →</span>
-              </td>
-            </tr>
-            <!-- Row 2 -->
-            <tr class="bg-surface hover:bg-surface-dim transition-colors group">
-              <td class="px-6 py-4">
-                <input type="checkbox" class="rounded border-border text-primary focus:ring-primary"/>
-              </td>
-              <td class="px-4 py-4">
-                <div class="flex items-center gap-3">
-                  <div class="w-9 h-9 rounded-full bg-gold-bg flex items-center justify-center flex-shrink-0">
-                    <span class="text-xs font-bold text-dark">SJ</span>
-                  </div>
-                  <span class="text-sm font-semibold text-dark">Sarah Jenkins</span>
-                </div>
-              </td>
-              <td class="px-4 py-4 text-sm text-light">s.jenkins@buildersllc.com</td>
-              <td class="px-4 py-4 text-sm text-light">+966 55 987 6543</td>
-              <td class="px-4 py-4">
-                <span class="bg-surface-mid text-mid border border-border text-xs font-semibold px-3 py-1 rounded-full">Used Calculator</span>
-              </td>
-              <td class="px-4 py-4 text-sm text-light">Jeddah, SA</td>
-              <td class="px-4 py-4">
-                <span class="action-col text-sm font-semibold text-primary hover:underline cursor-pointer whitespace-nowrap">View Details →</span>
-              </td>
-            </tr>
-            <!-- Row 3 -->
-            <tr class="bg-surface hover:bg-surface-dim transition-colors group">
-              <td class="px-6 py-4">
-                <input type="checkbox" class="rounded border-border text-primary focus:ring-primary"/>
-              </td>
-              <td class="px-4 py-4">
-                <div class="flex items-center gap-3">
-                  <div class="w-9 h-9 rounded-full bg-primary-lt/30 text-primary flex items-center justify-center flex-shrink-0">
-                    <span class="text-xs font-bold">OT</span>
-                  </div>
-                  <span class="text-sm font-semibold text-dark">Omar Tariq</span>
-                </div>
-              </td>
-              <td class="px-4 py-4 text-sm text-light">omar.tariq@supply.sa</td>
-              <td class="px-4 py-4 text-sm text-light">+966 54 456 7890</td>
-              <td class="px-4 py-4">
-                <span class="bg-gold-bg text-dark border border-gold text-xs font-semibold px-3 py-1 rounded-full">Supply Request</span>
-              </td>
-              <td class="px-4 py-4 text-sm text-light">Dammam, SA</td>
-              <td class="px-4 py-4">
-                <span class="action-col text-sm font-semibold text-primary hover:underline cursor-pointer whitespace-nowrap">View Details →</span>
-              </td>
-            </tr>
-            <!-- Row 4 -->
-            <tr class="bg-surface hover:bg-surface-dim transition-colors group">
-              <td class="px-6 py-4">
-                <input type="checkbox" class="rounded border-border text-primary focus:ring-primary"/>
-              </td>
-              <td class="px-4 py-4">
-                <div class="flex items-center gap-3">
-                  <div class="w-9 h-9 rounded-full bg-surface-high flex items-center justify-center flex-shrink-0">
-                    <span class="text-xs font-bold text-mid">EK</span>
-                  </div>
-                  <span class="text-sm font-semibold text-dark">Elena Kova</span>
-                </div>
-              </td>
-              <td class="px-4 py-4 text-sm text-light">elena.kova@intldev.co.uk</td>
-              <td class="px-4 py-4 text-sm text-light">+44 20 7946 0320</td>
-              <td class="px-4 py-4">
-                <span class="bg-surface-mid text-mid border border-border text-xs font-semibold px-3 py-1 rounded-full">Downloaded Specs</span>
-              </td>
-              <td class="px-4 py-4 text-sm text-light">London, UK</td>
-              <td class="px-4 py-4">
-                <span class="action-col text-sm font-semibold text-primary hover:underline cursor-pointer whitespace-nowrap">View Details →</span>
-              </td>
-            </tr>
-          </tbody>
+          <tbody id="cust-tbody" class="divide-y divide-border"></tbody>
         </table>
       </div>
 
-      <!-- Pagination Footer -->
+      <!-- Footer count -->
       <div class="px-8 py-4 bg-surface border-t border-border flex items-center justify-between">
-        <p class="text-sm text-light" data-i18n="pagination_cust">Showing 1 to 4 of 97 results</p>
-        <div class="flex items-center gap-1">
-          <button class="px-3 py-1.5 rounded text-sm font-semibold text-mid hover:bg-surface-mid transition-colors border border-border">
-            <span class="material-symbols-outlined text-lg">chevron_left</span>
-          </button>
-          <button class="px-3 py-1.5 rounded text-sm font-semibold bg-primary text-white border border-primary">1</button>
-          <button class="px-3 py-1.5 rounded text-sm font-semibold text-mid hover:bg-surface-mid transition-colors border border-border">2</button>
-          <button class="px-3 py-1.5 rounded text-sm font-semibold text-mid hover:bg-surface-mid transition-colors border border-border">3</button>
-          <span class="px-2 text-light">…</span>
-          <button class="px-3 py-1.5 rounded text-sm font-semibold text-mid hover:bg-surface-mid transition-colors border border-border">
-            <span class="material-symbols-outlined text-lg">chevron_right</span>
-          </button>
-        </div>
+        <p id="cust-count" class="text-sm text-light">No customers yet</p>
       </div>
     </main>
   </div>
@@ -381,7 +276,61 @@
     })();
     updateProfileDateUI();
   </script>
+  <script src="js/dash-data.js"></script>
   <script>
+    var D = window.JehanData;
+
+    function activityPill(activity) {
+      switch (activity) {
+        case 'Booked Concrete': return 'bg-primary-lt/30 text-primary border border-primary-lt';
+        case 'Supply Request':  return 'bg-gold-bg text-dark border border-gold';
+        default:                return 'bg-surface-mid text-mid border border-border';
+      }
+    }
+
+    function renderCustomers() {
+      var all = D.getCustomers();
+      var q = (document.getElementById('cust-search').value || '').trim().toLowerCase();
+      var rows = all.filter(function (c) {
+        if (!q) return true;
+        return [c.name, c.email, c.phone, c.location, c.activity].join(' ').toLowerCase().indexOf(q) !== -1;
+      });
+      var tbody = document.getElementById('cust-tbody');
+      var count = document.getElementById('cust-count');
+
+      if (!all.length) {
+        tbody.innerHTML = '<tr><td colspan="7" class="px-6 py-20 text-center">' +
+          '<div class="flex flex-col items-center justify-center">' +
+            '<div class="w-14 h-14 rounded-full bg-surface-dim flex items-center justify-center mb-3"><span class="material-symbols-outlined text-light text-3xl">group</span></div>' +
+            '<p class="font-heading text-lg font-bold text-dark mb-1">No customers yet</p>' +
+            '<p class="text-sm text-light max-w-sm">Add a record manually, or use “Add to Customers” on a quote request to build your database.</p>' +
+          '</div></td></tr>';
+        count.textContent = 'No customers yet';
+        return;
+      }
+      if (!rows.length) {
+        tbody.innerHTML = '<tr><td colspan="7" class="px-6 py-16 text-center text-sm text-light">No customers match “' + D.escapeHtml(q) + '”.</td></tr>';
+        count.textContent = 'Showing 0 of ' + all.length;
+        return;
+      }
+
+      tbody.innerHTML = rows.map(function (c) {
+        return '<tr class="bg-surface hover:bg-surface-dim transition-colors group">' +
+          '<td class="px-6 py-4"><input type="checkbox" class="rounded border-border text-primary focus:ring-primary"/></td>' +
+          '<td class="px-4 py-4"><div class="flex items-center gap-3">' +
+            '<div class="w-9 h-9 rounded-full bg-primary-lt/30 text-primary flex items-center justify-center flex-shrink-0"><span class="text-xs font-bold">' + D.initials(c.name) + '</span></div>' +
+            '<span class="text-sm font-semibold text-dark">' + D.escapeHtml(c.name) + '</span></div></td>' +
+          '<td class="px-4 py-4 text-sm text-light">' + (c.email ? D.escapeHtml(c.email) : '—') + '</td>' +
+          '<td class="px-4 py-4 text-sm text-light">' + (c.phone ? D.escapeHtml(c.phone) : '—') + '</td>' +
+          '<td class="px-4 py-4"><span class="' + activityPill(c.activity) + ' text-xs font-semibold px-3 py-1 rounded-full">' + D.escapeHtml(c.activity) + '</span></td>' +
+          '<td class="px-4 py-4 text-sm text-light">' + (c.location ? D.escapeHtml(c.location) : '—') + '</td>' +
+          '<td class="px-4 py-4 text-sm text-light whitespace-nowrap">' + D.fmtDate(c.date) + '</td>' +
+        '</tr>';
+      }).join('');
+      count.innerHTML = 'Showing <span class="font-semibold text-dark">' + rows.length + '</span> of ' + all.length + ' customer' + (all.length === 1 ? '' : 's');
+      if (window.reapplyDashLang) { try { window.reapplyDashLang(); } catch (e) {} }
+    }
+
     function openAddRecord() {
       document.getElementById('add-record-modal').style.display = 'block';
       document.getElementById('add-record-overlay').style.display = 'block';
@@ -396,60 +345,43 @@
     function saveNewRecord() {
       var name = document.getElementById('rec-name').value.trim();
       var email = document.getElementById('rec-email').value.trim();
-      if (!name || !email) {
-        alert('Please fill in Name and Email.');
-        return;
-      }
-      var phone    = document.getElementById('rec-phone').value.trim() || '—';
-      var location = document.getElementById('rec-location').value.trim() || '—';
-      var activity = document.getElementById('rec-activity').value;
-      var initials = name.split(' ').map(function(w){ return w[0]; }).slice(0,2).join('').toUpperCase();
-      var tbody = document.querySelector('tbody');
-      var tr = document.createElement('tr');
-      tr.className = 'bg-surface hover:bg-surface-dim transition-colors group';
-      tr.innerHTML =
-        '<td class="px-6 py-4"><input type="checkbox" class="rounded border-border text-primary focus:ring-primary"/></td>' +
-        '<td class="px-4 py-4"><div class="flex items-center gap-3"><div class="w-9 h-9 rounded-full bg-primary-lt/30 text-primary flex items-center justify-center flex-shrink-0"><span class="text-xs font-bold">' + initials + '</span></div><span class="text-sm font-semibold text-dark">' + name + '</span></div></td>' +
-        '<td class="px-4 py-4 text-sm text-light">' + email + '</td>' +
-        '<td class="px-4 py-4 text-sm text-light">' + phone + '</td>' +
-        '<td class="px-4 py-4"><span class="bg-surface-mid text-mid border border-border text-xs font-semibold px-3 py-1 rounded-full">' + activity + '</span></td>' +
-        '<td class="px-4 py-4 text-sm text-light">' + location + '</td>' +
-        '<td class="px-4 py-4"><span class="action-col text-sm font-semibold text-primary hover:underline cursor-pointer whitespace-nowrap">View Details →</span></td>';
-      tbody.insertBefore(tr, tbody.firstChild);
+      if (!name || !email) { alert('Please fill in Name and Email.'); return; }
+      D.addCustomer({
+        name: name,
+        email: email,
+        phone: document.getElementById('rec-phone').value.trim(),
+        location: document.getElementById('rec-location').value.trim(),
+        activity: document.getElementById('rec-activity').value,
+        notes: document.getElementById('rec-notes').value.trim()
+      });
       closeAddRecord();
-      ['rec-name','rec-email','rec-phone','rec-location','rec-notes'].forEach(function(id){ document.getElementById(id).value=''; });
+      ['rec-name','rec-email','rec-phone','rec-location','rec-notes'].forEach(function (id) { document.getElementById(id).value = ''; });
+      renderCustomers();
       var toast = document.getElementById('rec-toast');
       toast.style.display = 'block';
-      setTimeout(function(){ toast.style.display = 'none'; }, 3000);
+      setTimeout(function () { toast.style.display = 'none'; }, 3000);
     }
-    document.addEventListener('keydown', function(e){ if (e.key === 'Escape') closeAddRecord(); });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeAddRecord(); });
 
     function exportCSV() {
-      var headers = ['Customer Name', 'Email', 'Phone', 'Last Activity', 'Location'];
-      var rows = [];
-      document.querySelectorAll('tbody tr').forEach(function(tr) {
-        var cells = tr.querySelectorAll('td');
-        if (cells.length < 6) return;
-        var name     = cells[1].querySelector('span.font-semibold') ? cells[1].querySelector('span.font-semibold').textContent.trim() : '';
-        var email    = cells[2].textContent.trim();
-        var phone    = cells[3].textContent.trim();
-        var activity = cells[4].textContent.trim();
-        var location = cells[5].textContent.trim();
-        rows.push([name, email, phone, activity, location].map(function(v) {
-          return '"' + v.replace(/"/g, '""') + '"';
-        }).join(','));
+      var all = D.getCustomers();
+      if (!all.length) { alert('There are no customers to export yet.'); return; }
+      var headers = ['Customer Name', 'Email', 'Phone', 'Last Activity', 'Location', 'Date Added'];
+      var rows = all.map(function (c) {
+        return [c.name, c.email, c.phone, c.activity, c.location, D.fmtDate(c.date)].map(function (v) {
+          return '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
+        }).join(',');
       });
       var csv = [headers.join(',')].concat(rows).join('\r\n');
       var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
       var url = URL.createObjectURL(blob);
       var a = document.createElement('a');
-      a.href = url;
-      a.download = 'jehan-customers.csv';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
+      a.href = url; a.download = 'jehan-customers.csv';
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
       URL.revokeObjectURL(url);
     }
+
+    renderCustomers();
   </script>
 </body>
 </html>

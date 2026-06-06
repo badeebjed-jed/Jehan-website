@@ -391,6 +391,10 @@
     applyDashLang(currentLang === 'en' ? 'ar' : 'en');
   };
 
+  // Re-apply the CURRENT language to the whole document. Call this
+  // after dynamically injecting new [data-i18n] nodes so they translate.
+  window.reapplyDashLang = function () { applyDashLang(currentLang); };
+
   // Auto-apply on page load
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', function () { applyDashLang(currentLang); });

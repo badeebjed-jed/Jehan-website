@@ -144,43 +144,7 @@
               <span style="font-family:'Barlow Condensed',Arial,sans-serif;font-size:1rem;font-weight:700;letter-spacing:0.03em;color:#1E1E1E;">NOTIFICATIONS</span>
               <button onclick="markAllRead()" style="background:none;border:none;font-size:0.75rem;font-weight:600;color:#3D5A34;cursor:pointer;padding:0;">Mark all read</button>
             </div>
-            <div id="notif-list" style="max-height:340px;overflow-y:auto;">
-              <div class="notif-item unread" data-id="1" style="display:flex;gap:12px;padding:14px 18px;border-bottom:1px solid #DCDBD7;background:#F8F7F4;cursor:pointer;" onclick="readNotif(1)">
-                <span class="material-symbols-outlined" style="color:#C49A1A;font-size:20px;flex-shrink:0;margin-top:2px;">list_alt</span>
-                <div style="flex:1;">
-                  <p style="font-size:0.8125rem;font-weight:600;color:#1E1E1E;margin:0 0 2px;">New booking request</p>
-                  <p style="font-size:0.75rem;color:#888;margin:0;">Al-Rashid Contractors submitted a new concrete order for 120 m³.</p>
-                  <p style="font-size:0.7rem;color:#aaa;margin:4px 0 0;">2 minutes ago</p>
-                </div>
-                <span style="width:8px;height:8px;border-radius:50%;background:#ba1a1a;flex-shrink:0;margin-top:6px;"></span>
-              </div>
-              <div class="notif-item unread" data-id="2" style="display:flex;gap:12px;padding:14px 18px;border-bottom:1px solid #DCDBD7;background:#F8F7F4;cursor:pointer;" onclick="readNotif(2)">
-                <span class="material-symbols-outlined" style="color:#3D5A34;font-size:20px;flex-shrink:0;margin-top:2px;">group</span>
-                <div style="flex:1;">
-                  <p style="font-size:0.8125rem;font-weight:600;color:#1E1E1E;margin:0 0 2px;">New customer registered</p>
-                  <p style="font-size:0.75rem;color:#888;margin:0;">Sarah Jenkins signed up via the calculator.</p>
-                  <p style="font-size:0.7rem;color:#aaa;margin:4px 0 0;">18 minutes ago</p>
-                </div>
-                <span style="width:8px;height:8px;border-radius:50%;background:#ba1a1a;flex-shrink:0;margin-top:6px;"></span>
-              </div>
-              <div class="notif-item unread" data-id="3" style="display:flex;gap:12px;padding:14px 18px;border-bottom:1px solid #DCDBD7;background:#F8F7F4;cursor:pointer;" onclick="readNotif(3)">
-                <span class="material-symbols-outlined" style="color:#C49A1A;font-size:20px;flex-shrink:0;margin-top:2px;">inbox</span>
-                <div style="flex:1;">
-                  <p style="font-size:0.8125rem;font-weight:600;color:#1E1E1E;margin:0 0 2px;">12 unread messages</p>
-                  <p style="font-size:0.75rem;color:#888;margin:0;">You have 12 messages waiting in your inbox.</p>
-                  <p style="font-size:0.7rem;color:#aaa;margin:4px 0 0;">1 hour ago</p>
-                </div>
-                <span style="width:8px;height:8px;border-radius:50%;background:#ba1a1a;flex-shrink:0;margin-top:6px;"></span>
-              </div>
-              <div class="notif-item" data-id="4" style="display:flex;gap:12px;padding:14px 18px;border-bottom:1px solid #DCDBD7;background:#fff;cursor:pointer;" onclick="readNotif(4)">
-                <span class="material-symbols-outlined" style="color:#888;font-size:20px;flex-shrink:0;margin-top:2px;">check_circle</span>
-                <div style="flex:1;">
-                  <p style="font-size:0.8125rem;font-weight:600;color:#1E1E1E;margin:0 0 2px;">Order #1038 approved</p>
-                  <p style="font-size:0.75rem;color:#888;margin:0;">Prime Real Estate Dev order has been confirmed.</p>
-                  <p style="font-size:0.7rem;color:#aaa;margin:4px 0 0;">Yesterday</p>
-                </div>
-              </div>
-            </div>
+            <div id="notif-list" style="max-height:340px;overflow-y:auto;"></div>
             <div style="padding:12px 18px;text-align:center;border-top:1px solid #DCDBD7;">
               <a href="inbox.html" style="font-size:0.8rem;font-weight:600;color:#3D5A34;text-decoration:none;">View all notifications →</a>
             </div>
@@ -192,56 +156,8 @@
     <!-- Scrollable Content -->
     <main class="flex-1 overflow-y-auto p-8 space-y-8">
 
-      <!-- KPI Cards -->
-      <div class="grid grid-cols-2 xl:grid-cols-4 gap-6">
-        <!-- Total Requests -->
-        <div class="bg-surface border border-border rounded shadow-[0_2px_12px_rgba(0,0,0,0.07)] p-6">
-          <div class="flex items-start justify-between mb-4">
-            <div class="w-10 h-10 bg-primary-lt/20 rounded flex items-center justify-center">
-              <span class="material-symbols-outlined text-primary text-xl">assignment</span>
-            </div>
-            <span class="text-xs font-semibold text-primary bg-primary-lt/20 px-2 py-0.5 rounded-full">↑ 12%</span>
-          </div>
-          <p class="text-xs font-semibold text-light uppercase tracking-wide mb-1" data-i18n="kpi_requests">Total Requests</p>
-          <p class="font-heading text-4xl font-bold text-dark">1,248</p>
-        </div>
-
-        <!-- New Leads -->
-        <div class="bg-surface border border-border rounded shadow-[0_2px_12px_rgba(0,0,0,0.07)] p-6">
-          <div class="flex items-start justify-between mb-4">
-            <div class="w-10 h-10 bg-gold-bg rounded flex items-center justify-center">
-              <span class="material-symbols-outlined text-gold text-xl">person_add</span>
-            </div>
-            <span class="text-xs font-semibold text-primary bg-primary-lt/20 px-2 py-0.5 rounded-full">↑ 8%</span>
-          </div>
-          <p class="text-xs font-semibold text-light uppercase tracking-wide mb-1" data-i18n="kpi_leads">New Leads</p>
-          <p class="font-heading text-4xl font-bold text-dark">342</p>
-        </div>
-
-        <!-- Est. Volume -->
-        <div class="bg-surface border border-border rounded shadow-[0_2px_12px_rgba(0,0,0,0.07)] p-6">
-          <div class="flex items-start justify-between mb-4">
-            <div class="w-10 h-10 bg-surface-high rounded flex items-center justify-center">
-              <span class="material-symbols-outlined text-mid text-xl">layers</span>
-            </div>
-            <span class="text-xs font-semibold text-light bg-surface-mid px-2 py-0.5 rounded-full">→ 0%</span>
-          </div>
-          <p class="text-xs font-semibold text-light uppercase tracking-wide mb-1" data-i18n="kpi_volume">Est. Volume (m³)</p>
-          <p class="font-heading text-4xl font-bold text-dark">45,900</p>
-        </div>
-
-        <!-- Active Quotes -->
-        <div class="bg-surface border border-border rounded shadow-[0_2px_12px_rgba(0,0,0,0.07)] p-6">
-          <div class="flex items-start justify-between mb-4">
-            <div class="w-10 h-10 bg-error-bg rounded flex items-center justify-center">
-              <span class="material-symbols-outlined text-error text-xl">request_quote</span>
-            </div>
-            <span class="text-xs font-semibold text-error bg-error-bg px-2 py-0.5 rounded-full">↓ 3%</span>
-          </div>
-          <p class="text-xs font-semibold text-light uppercase tracking-wide mb-1" data-i18n="kpi_quotes">Active Quotes</p>
-          <p class="font-heading text-4xl font-bold text-dark">89</p>
-        </div>
-      </div>
+      <!-- KPI Cards (rendered from data) -->
+      <div id="kpi-grid" class="grid grid-cols-2 xl:grid-cols-4 gap-6"></div>
 
       <!-- Recent Booking Requests -->
       <div class="bg-surface border border-border rounded shadow-[0_2px_12px_rgba(0,0,0,0.07)] overflow-hidden">
@@ -249,52 +165,7 @@
           <h2 class="font-heading text-xl font-bold text-dark" data-i18n="recent_title">Recent Booking Requests</h2>
           <a href="bookings.html" class="text-sm font-semibold text-primary hover:underline" data-i18n="recent_view_all">View All →</a>
         </div>
-        <div class="overflow-x-auto">
-          <table class="w-full">
-            <thead class="bg-surface-dim">
-              <tr>
-                <th class="text-left px-6 py-3 text-xs font-semibold text-light uppercase tracking-wide" data-i18n="th_client_name">Client Name</th>
-                <th class="text-left px-6 py-3 text-xs font-semibold text-light uppercase tracking-wide" data-i18n="th_date">Date Submitted</th>
-                <th class="text-left px-6 py-3 text-xs font-semibold text-light uppercase tracking-wide" data-i18n="th_qty_m3">Quantity (m³)</th>
-                <th class="text-left px-6 py-3 text-xs font-semibold text-light uppercase tracking-wide" data-i18n="th_status">Status</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-border">
-              <tr class="bg-surface hover:bg-surface-dim transition-colors">
-                <td class="px-6 py-4 text-sm text-dark">Al-Safa Construction</td>
-                <td class="px-6 py-4 text-sm text-light">Oct 24, 2023</td>
-                <td class="px-6 py-4 text-sm text-dark">1,200</td>
-                <td class="px-6 py-4">
-                  <span class="bg-gold-bg text-dark border border-gold text-xs font-semibold px-3 py-1 rounded-full" data-i18n="status_pending_r">Pending Review</span>
-                </td>
-              </tr>
-              <tr class="bg-surface hover:bg-surface-dim transition-colors">
-                <td class="px-6 py-4 text-sm text-dark">Modern Edifice Group</td>
-                <td class="px-6 py-4 text-sm text-light">Oct 23, 2023</td>
-                <td class="px-6 py-4 text-sm text-dark">450</td>
-                <td class="px-6 py-4">
-                  <span class="bg-surface-mid text-mid border border-border text-xs font-semibold px-3 py-1 rounded-full" data-i18n="status_quote_sent">Quote Sent</span>
-                </td>
-              </tr>
-              <tr class="bg-surface hover:bg-surface-dim transition-colors">
-                <td class="px-6 py-4 text-sm text-dark">United Builders LLC</td>
-                <td class="px-6 py-4 text-sm text-light">Oct 22, 2023</td>
-                <td class="px-6 py-4 text-sm text-dark">8,500</td>
-                <td class="px-6 py-4">
-                  <span class="bg-primary-lt/30 text-primary border border-primary-lt text-xs font-semibold px-3 py-1 rounded-full" data-i18n="status_approved">Approved</span>
-                </td>
-              </tr>
-              <tr class="bg-surface hover:bg-surface-dim transition-colors">
-                <td class="px-6 py-4 text-sm text-dark">Prime Real Estate Dev</td>
-                <td class="px-6 py-4 text-sm text-light">Oct 20, 2023</td>
-                <td class="px-6 py-4 text-sm text-dark">320</td>
-                <td class="px-6 py-4">
-                  <span class="bg-gold-bg text-dark border border-gold text-xs font-semibold px-3 py-1 rounded-full">Pending Review</span>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+        <div id="recent-wrap" class="overflow-x-auto"></div>
       </div>
 
     </main>
@@ -340,39 +211,166 @@
     })();
     updateProfileDateUI();
   </script>
+  <script src="js/dash-data.js"></script>
   <script>
+    var D = window.JehanData;
+
+    // ── KPI cards ──────────────────────────────────────────────
+    function renderKPIs() {
+      var k = D.kpis();
+      var cards = [
+        { label: 'Total Requests', value: k.totalRequests.toLocaleString(),
+          icon: 'assignment', iconBg: 'bg-primary-lt/20', iconColor: 'text-primary',
+          href: 'bookings.html', i18n: 'kpi_requests' },
+        { label: 'New Leads', value: k.newLeads.toLocaleString(),
+          icon: 'person_add', iconBg: 'bg-gold-bg', iconColor: 'text-gold',
+          href: 'bookings.html?status=Pending', i18n: 'kpi_leads',
+          hint: 'Pending requests' },
+        { label: 'Est. Volume (m³)', value: Math.round(k.estVolume).toLocaleString(),
+          icon: 'layers', iconBg: 'bg-surface-high', iconColor: 'text-mid',
+          href: 'bookings.html', i18n: 'kpi_volume' },
+        { label: 'Active Quotes', value: k.activeQuotes.toLocaleString(),
+          icon: 'request_quote', iconBg: 'bg-error-bg', iconColor: 'text-error',
+          href: 'bookings.html?status=Quote%20Sent', i18n: 'kpi_quotes',
+          hint: 'Awaiting client' }
+      ];
+      document.getElementById('kpi-grid').innerHTML = cards.map(function (c) {
+        return '<a href="' + c.href + '" class="group bg-surface border border-border rounded shadow-[0_2px_12px_rgba(0,0,0,0.07)] p-6 block hover:border-primary hover:shadow-[0_4px_18px_rgba(0,0,0,0.10)] transition-all">' +
+          '<div class="flex items-start justify-between mb-4">' +
+            '<div class="w-10 h-10 ' + c.iconBg + ' rounded flex items-center justify-center">' +
+              '<span class="material-symbols-outlined ' + c.iconColor + ' text-xl">' + c.icon + '</span>' +
+            '</div>' +
+            '<span class="material-symbols-outlined text-light text-[18px] opacity-0 group-hover:opacity-100 transition-opacity">arrow_forward</span>' +
+          '</div>' +
+          '<p class="text-xs font-semibold text-light uppercase tracking-wide mb-1" data-i18n="' + c.i18n + '">' + c.label + '</p>' +
+          '<p class="font-heading text-4xl font-bold text-dark">' + c.value + '</p>' +
+          (c.hint ? '<p class="text-[11px] text-light mt-1">' + c.hint + '</p>' : '') +
+        '</a>';
+      }).join('');
+    }
+
+    // ── Recent requests table ──────────────────────────────────
+    function renderRecent() {
+      var reqs = D.getRequests().slice(0, 6);
+      var wrap = document.getElementById('recent-wrap');
+      if (!reqs.length) {
+        wrap.innerHTML =
+          '<div class="flex flex-col items-center justify-center text-center py-16 px-6">' +
+            '<div class="w-14 h-14 rounded-full bg-surface-dim flex items-center justify-center mb-4">' +
+              '<span class="material-symbols-outlined text-light text-3xl">inbox</span>' +
+            '</div>' +
+            '<p class="font-heading text-lg font-bold text-dark mb-1">No requests yet</p>' +
+            '<p class="text-sm text-light max-w-sm">When a client submits a quote on the website it will appear here automatically.</p>' +
+          '</div>';
+        return;
+      }
+      var rows = reqs.map(function (r) {
+        var qty = (r.quantity === '' || r.quantity == null) ? '—' : Number(r.quantity).toLocaleString();
+        return '<tr class="bg-surface hover:bg-surface-dim transition-colors cursor-pointer" onclick="goRequest(' + r.id + ')">' +
+          '<td class="px-6 py-4">' +
+            '<p class="text-sm font-semibold text-dark">' + D.escapeHtml(r.client) + '</p>' +
+            '<p class="text-xs text-light">' + D.escapeHtml(r.ref) + ' · ' + D.escapeHtml(r.project) + '</p>' +
+          '</td>' +
+          '<td class="px-6 py-4 text-sm text-light">' + D.fmtDate(r.date) + '</td>' +
+          '<td class="px-6 py-4 text-sm text-dark">' + qty + '</td>' +
+          '<td class="px-6 py-4"><span class="' + D.statusPill(r.status) + ' text-xs font-semibold px-3 py-1 rounded-full">' + D.escapeHtml(r.status) + '</span></td>' +
+        '</tr>';
+      }).join('');
+      wrap.innerHTML =
+        '<table class="w-full">' +
+          '<thead class="bg-surface-dim"><tr>' +
+            '<th class="text-left px-6 py-3 text-xs font-semibold text-light uppercase tracking-wide" data-i18n="th_client_name">Client</th>' +
+            '<th class="text-left px-6 py-3 text-xs font-semibold text-light uppercase tracking-wide" data-i18n="th_date">Date Submitted</th>' +
+            '<th class="text-left px-6 py-3 text-xs font-semibold text-light uppercase tracking-wide" data-i18n="th_qty_m3">Quantity (m³)</th>' +
+            '<th class="text-left px-6 py-3 text-xs font-semibold text-light uppercase tracking-wide" data-i18n="th_status">Status</th>' +
+          '</tr></thead>' +
+          '<tbody class="divide-y divide-border">' + rows + '</tbody>' +
+        '</table>';
+    }
+
+    function goRequest(id) { window.location.href = 'bookings.html?focus=' + id; }
+
+    // ── Notifications (built from recent activity) ─────────────
+    function buildNotifications() {
+      var items = [];
+      D.getRequests().slice(0, 5).forEach(function (r) {
+        items.push({
+          icon: 'list_alt', color: '#C49A1A',
+          title: 'New booking request',
+          body: D.escapeHtml(r.client) + ' submitted ' + D.escapeHtml(r.ref) +
+                (r.quantity ? ' for ' + Number(r.quantity).toLocaleString() + ' m³.' : '.'),
+          time: D.fmtRelative(r.date), ts: new Date(r.date).getTime(),
+          href: 'bookings.html?focus=' + r.id
+        });
+      });
+      D.getMessages().filter(function (m) { return !m.read; }).slice(0, 5).forEach(function (m) {
+        items.push({
+          icon: 'inbox', color: '#3D5A34',
+          title: 'New message', body: D.escapeHtml(m.name) + ': ' + D.escapeHtml(m.subject),
+          time: D.fmtRelative(m.date), ts: new Date(m.date).getTime(),
+          href: 'inbox.html'
+        });
+      });
+      items.sort(function (a, b) { return b.ts - a.ts; });
+      return items;
+    }
+
+    function renderNotifications() {
+      var items = buildNotifications();
+      var list = document.getElementById('notif-list');
+      var dot = document.getElementById('notif-dot');
+      if (!items.length) {
+        list.innerHTML = '<div style="padding:32px 18px;text-align:center;color:#888;font-size:0.85rem;">You\'re all caught up.</div>';
+        dot.style.display = 'none';
+        return;
+      }
+      dot.style.display = 'block';
+      list.innerHTML = items.map(function (n) {
+        return '<a href="' + n.href + '" style="display:flex;gap:12px;padding:14px 18px;border-bottom:1px solid #DCDBD7;background:#F8F7F4;cursor:pointer;text-decoration:none;">' +
+          '<span class="material-symbols-outlined" style="color:' + n.color + ';font-size:20px;flex-shrink:0;margin-top:2px;">' + n.icon + '</span>' +
+          '<div style="flex:1;">' +
+            '<p style="font-size:0.8125rem;font-weight:600;color:#1E1E1E;margin:0 0 2px;">' + n.title + '</p>' +
+            '<p style="font-size:0.75rem;color:#888;margin:0;">' + n.body + '</p>' +
+            '<p style="font-size:0.7rem;color:#aaa;margin:4px 0 0;">' + n.time + '</p>' +
+          '</div></a>';
+      }).join('');
+    }
+
     function toggleNotif() {
       var panel = document.getElementById('notif-panel');
       panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
     }
-    function readNotif(id) {
-      var item = document.querySelector('.notif-item[data-id="' + id + '"]');
-      if (!item) return;
-      item.classList.remove('unread');
-      item.style.background = '#fff';
-      var dot = item.querySelector('span[style*="ba1a1a"]');
-      if (dot) dot.remove();
-      updateDot();
-    }
     function markAllRead() {
-      document.querySelectorAll('.notif-item.unread').forEach(function(item) {
-        item.classList.remove('unread');
-        item.style.background = '#fff';
-        var dot = item.querySelector('span[style*="ba1a1a"]');
-        if (dot) dot.remove();
-      });
-      updateDot();
+      D.getMessages().forEach(function (m) { if (!m.read) D.updateMessage(m.id, { read: true }); });
+      renderNotifications();
+      D.syncInboxBadge();
     }
-    function updateDot() {
-      var hasUnread = document.querySelectorAll('.notif-item.unread').length > 0;
-      document.getElementById('notif-dot').style.display = hasUnread ? 'block' : 'none';
-    }
-    document.addEventListener('click', function(e) {
+    document.addEventListener('click', function (e) {
       var wrapper = document.getElementById('notif-wrapper');
       if (wrapper && !wrapper.contains(e.target)) {
         document.getElementById('notif-panel').style.display = 'none';
       }
     });
+
+    // Header search → jump to bookings with query
+    (function () {
+      var input = document.querySelector('header input[type="text"]');
+      if (input) {
+        input.addEventListener('keydown', function (e) {
+          if (e.key === 'Enter' && input.value.trim()) {
+            window.location.href = 'bookings.html?q=' + encodeURIComponent(input.value.trim());
+          }
+        });
+      }
+    })();
+
+    // Initial render
+    renderKPIs();
+    renderRecent();
+    renderNotifications();
+    D.syncInboxBadge();
+    // Re-apply translations to freshly injected nodes
+    if (window.reapplyDashLang) { try { window.reapplyDashLang(); } catch (e) {} }
   </script>
 </body>
 </html>

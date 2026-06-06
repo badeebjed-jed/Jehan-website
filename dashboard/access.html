@@ -6,7 +6,7 @@
   <title>Access Management - Jehan Holding Group</title>
   <!-- Auth guard: redirects to login if no valid session -->
   <script src="js/auth.js"></script>
-  <script>if (!window.JehanAuth || !window.JehanAuth.requireAuth()) { /* halted by redirect */ }</script>
+  <script>if (!window.JehanAuth || !window.JehanAuth.enforceAdmin()) { /* halted by redirect */ }</script>
   <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600;700&family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet"/>
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
@@ -145,7 +145,7 @@
             <h2 class="font-heading text-xl font-bold text-dark flex-1" data-i18n="active_personnel">Active Personnel</h2>
             <div class="relative">
               <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-light text-[20px]">search</span>
-              <input type="text" data-i18n-ph="ph_search_pers" placeholder="Search personnel…" class="pl-10 pr-4 py-2 border border-border rounded bg-bg text-sm text-dark placeholder-light focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary w-56"/>
+              <input id="user-search" type="text" oninput="renderUsers()" data-i18n-ph="ph_search_pers" placeholder="Search personnel…" class="pl-10 pr-4 py-2 border border-border rounded bg-bg text-sm text-dark placeholder-light focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary w-56"/>
             </div>
           </div>
           <!-- Table -->
@@ -159,86 +159,12 @@
                   <th class="px-6 py-3 w-24"></th>
                 </tr>
               </thead>
-              <tbody class="divide-y divide-border">
-                <!-- Row 1: Tariq (Active) -->
-                <tr class="bg-surface-dim hover:bg-surface-mid transition-colors">
-                  <td class="px-6 py-4">
-                    <div class="flex items-center gap-3">
-                      <div class="w-9 h-9 rounded-full bg-primary-lt/30 text-primary flex items-center justify-center flex-shrink-0">
-                        <span class="text-xs font-bold">TM</span>
-                      </div>
-                      <span class="text-sm font-semibold text-dark">Tariq Al-Mansour</span>
-                    </div>
-                  </td>
-                  <td class="px-6 py-4 text-sm text-light">System Admin</td>
-                  <td class="px-6 py-4">
-                    <div class="flex items-center gap-2">
-                      <span class="w-2 h-2 rounded-full bg-primary inline-block"></span>
-                      <span class="text-sm font-semibold text-primary" data-i18n="status_active">Active</span>
-                    </div>
-                  </td>
-                  <td class="px-6 py-4 text-right">
-                    <a href="#" class="text-sm font-semibold text-primary hover:underline" data-i18n="action_manage">Manage</a>
-                  </td>
-                </tr>
-                <!-- Row 2: Noura (Active) -->
-                <tr class="bg-surface hover:bg-surface-dim transition-colors">
-                  <td class="px-6 py-4">
-                    <div class="flex items-center gap-3">
-                      <div class="w-9 h-9 rounded-full bg-gold-bg flex items-center justify-center flex-shrink-0">
-                        <span class="text-xs font-bold text-dark">NS</span>
-                      </div>
-                      <span class="text-sm font-semibold text-dark">Noura Saud</span>
-                    </div>
-                  </td>
-                  <td class="px-6 py-4 text-sm text-light">Operations Manager</td>
-                  <td class="px-6 py-4">
-                    <div class="flex items-center gap-2">
-                      <span class="w-2 h-2 rounded-full bg-primary inline-block"></span>
-                      <span class="text-sm font-semibold text-primary">Active</span>
-                    </div>
-                  </td>
-                  <td class="px-6 py-4 text-right">
-                    <a href="#" class="text-sm font-semibold text-primary hover:underline">Manage</a>
-                  </td>
-                </tr>
-                <!-- Row 3: Fahad (Inactive) -->
-                <tr class="bg-surface hover:bg-surface-dim transition-colors opacity-75">
-                  <td class="px-6 py-4">
-                    <div class="flex items-center gap-3">
-                      <div class="w-9 h-9 rounded-full bg-surface-high flex items-center justify-center flex-shrink-0">
-                        <span class="text-xs font-bold text-mid">FR</span>
-                      </div>
-                      <span class="text-sm font-semibold text-dark">Fahad Al-Rashid</span>
-                    </div>
-                  </td>
-                  <td class="px-6 py-4 text-sm text-light">Data Editor</td>
-                  <td class="px-6 py-4">
-                    <div class="flex items-center gap-2">
-                      <span class="w-2 h-2 rounded-full bg-surface-high inline-block border border-border"></span>
-                      <span class="text-sm font-semibold text-light" data-i18n="status_inactive">Inactive</span>
-                    </div>
-                  </td>
-                  <td class="px-6 py-4 text-right">
-                    <a href="#" class="text-sm font-semibold text-light hover:text-primary hover:underline">Manage</a>
-                  </td>
-                </tr>
-              </tbody>
+              <tbody id="user-tbody" class="divide-y divide-border"></tbody>
             </table>
           </div>
-          <!-- Pagination -->
+          <!-- Count -->
           <div class="px-6 py-4 border-t border-border flex items-center justify-between flex-shrink-0">
-            <p class="text-sm text-light" data-i18n="pagination_access">Showing 1 to 3 of 12 personnel</p>
-            <div class="flex items-center gap-1">
-              <button class="px-3 py-1.5 rounded text-sm font-semibold text-mid hover:bg-surface-mid transition-colors border border-border">
-                <span class="material-symbols-outlined text-lg">chevron_left</span>
-              </button>
-              <button class="px-3 py-1.5 rounded text-sm font-semibold bg-primary text-white border border-primary">1</button>
-              <button class="px-3 py-1.5 rounded text-sm font-semibold text-mid hover:bg-surface-mid transition-colors border border-border">2</button>
-              <button class="px-3 py-1.5 rounded text-sm font-semibold text-mid hover:bg-surface-mid transition-colors border border-border">
-                <span class="material-symbols-outlined text-lg">chevron_right</span>
-              </button>
-            </div>
+            <p id="user-count" class="text-sm text-light"></p>
           </div>
         </div>
 
@@ -247,78 +173,83 @@
           <!-- Gold accent strip -->
           <div class="h-1 bg-gold w-full flex-shrink-0"></div>
 
-          <!-- User Info -->
-          <div class="px-6 py-5 border-b border-border flex-shrink-0">
-            <div class="flex items-center gap-3 mb-1">
-              <div class="w-10 h-10 rounded-full bg-primary-lt/30 text-primary flex items-center justify-center flex-shrink-0">
-                <span class="text-sm font-bold">TM</span>
-              </div>
-              <div>
-                <p class="text-base font-bold text-dark font-heading uppercase tracking-wide">Tariq Al-Mansour</p>
-                <p class="text-sm text-light">System Admin Profile</p>
-              </div>
+          <!-- Empty state (no user selected) -->
+          <div id="cfg-empty" class="flex-1 flex flex-col items-center justify-center text-center px-6 py-10">
+            <div class="w-14 h-14 rounded-full bg-surface-dim flex items-center justify-center mb-3">
+              <span class="material-symbols-outlined text-light text-3xl">manage_accounts</span>
             </div>
+            <p class="font-heading text-lg font-bold text-dark mb-1">Manage access</p>
+            <p class="text-sm text-light max-w-[15rem]">Select a user from the list to view and edit their role and module permissions.</p>
           </div>
 
-          <!-- Module Access Control -->
-          <div class="flex-1 px-6 py-5 overflow-y-auto">
-            <p class="text-xs font-semibold text-light uppercase tracking-widest mb-4" data-i18n="module_access">Module Access Control</p>
-
-            <div class="space-y-4">
-              <!-- Toggle 1: Booking Requests (ON) -->
-              <div class="flex items-center justify-between">
-                <div>
-                  <p class="text-sm font-semibold text-dark" data-i18n="access_bookings">Booking Requests</p>
-                  <p class="text-xs text-light" data-i18n="access_bookings_d">View and manage bookings</p>
+          <!-- Config (shown when a user is selected) -->
+          <div id="cfg-body" class="hidden flex-1 flex flex-col overflow-hidden">
+            <!-- User Info -->
+            <div class="px-6 py-5 border-b border-border flex-shrink-0">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full bg-primary-lt/30 text-primary flex items-center justify-center flex-shrink-0">
+                  <span id="cfg-initials" class="text-sm font-bold">--</span>
                 </div>
-                <button onclick="toggleSwitch(this)" class="toggle-btn w-12 h-6 bg-primary rounded-full relative transition-colors flex-shrink-0" data-state="on" style="background-color:#3D5A34;">
-                  <span class="absolute top-0.5 right-0.5 w-5 h-5 bg-white rounded-full shadow transition-all toggle-thumb"></span>
-                </button>
+                <div class="min-w-0">
+                  <p id="cfg-name" class="text-base font-bold text-dark font-heading uppercase tracking-wide truncate">—</p>
+                  <p id="cfg-role" class="text-sm text-light truncate">—</p>
+                </div>
               </div>
+              <p id="cfg-primary-note" class="hidden mt-3 text-xs font-semibold text-primary bg-primary-lt/15 border border-primary-lt rounded px-3 py-2">
+                <span class="material-symbols-outlined text-[14px] align-middle">verified_user</span>
+                Primary administrator — full, permanent access.
+              </p>
+            </div>
 
-              <!-- Toggle 2: Financials (OFF) -->
-              <div class="flex items-center justify-between">
-                <div>
-                  <p class="text-sm font-semibold text-dark" data-i18n="access_financials">Financials</p>
-                  <p class="text-xs text-light" data-i18n="access_fin_d">Access financial reports</p>
-                </div>
-                <button onclick="toggleSwitch(this)" class="toggle-btn w-12 h-6 rounded-full relative transition-colors flex-shrink-0 border border-border" data-state="off" style="background-color:#E4E3DF;">
-                  <span class="absolute top-0.5 left-0.5 w-5 h-5 rounded-full shadow transition-all toggle-thumb" style="background-color:#DCDBD7;"></span>
-                </button>
-              </div>
+            <!-- Role selector -->
+            <div class="px-6 pt-5 flex-shrink-0">
+              <label class="block text-xs font-semibold text-light uppercase tracking-widest mb-2">Role</label>
+              <select id="cfg-role-select" class="w-full border border-border rounded px-3 py-2.5 text-sm text-dark bg-bg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors">
+                <option>Administrator</option>
+                <option>Operations Manager</option>
+                <option>Data Editor</option>
+                <option>Viewer</option>
+              </select>
+            </div>
 
-              <!-- Toggle 3: Customer Data (ON) -->
-              <div class="flex items-center justify-between">
-                <div>
-                  <p class="text-sm font-semibold text-dark" data-i18n="access_customers">Customer Data</p>
-                  <p class="text-xs text-light" data-i18n="access_cust_d">View customer database</p>
+            <!-- Module Access Control -->
+            <div class="flex-1 px-6 py-5 overflow-y-auto">
+              <p class="text-xs font-semibold text-light uppercase tracking-widest mb-4" data-i18n="module_access">Module Access Control</p>
+              <div class="space-y-4">
+                <div class="flex items-center justify-between">
+                  <div><p class="text-sm font-semibold text-dark">Quote Requests</p><p class="text-xs text-light">View and manage quote requests</p></div>
+                  <button onclick="toggleSwitch(this)" data-perm="bookings" class="toggle-btn w-12 h-6 rounded-full relative transition-colors flex-shrink-0" data-state="off"><span class="absolute top-0.5 w-5 h-5 rounded-full shadow transition-all toggle-thumb"></span></button>
                 </div>
-                <button onclick="toggleSwitch(this)" class="toggle-btn w-12 h-6 bg-primary rounded-full relative transition-colors flex-shrink-0" data-state="on" style="background-color:#3D5A34;">
-                  <span class="absolute top-0.5 right-0.5 w-5 h-5 bg-white rounded-full shadow transition-all toggle-thumb"></span>
-                </button>
-              </div>
-
-              <!-- Toggle 4: System Settings (ON) -->
-              <div class="flex items-center justify-between">
-                <div>
-                  <p class="text-sm font-semibold text-dark" data-i18n="access_settings">System Settings</p>
-                  <p class="text-xs text-light" data-i18n="access_sett_d">Modify system configuration</p>
+                <div class="flex items-center justify-between">
+                  <div><p class="text-sm font-semibold text-dark">Customer Data</p><p class="text-xs text-light">View customer database</p></div>
+                  <button onclick="toggleSwitch(this)" data-perm="customers" class="toggle-btn w-12 h-6 rounded-full relative transition-colors flex-shrink-0" data-state="off"><span class="absolute top-0.5 w-5 h-5 rounded-full shadow transition-all toggle-thumb"></span></button>
                 </div>
-                <button onclick="toggleSwitch(this)" class="toggle-btn w-12 h-6 bg-primary rounded-full relative transition-colors flex-shrink-0" data-state="on" style="background-color:#3D5A34;">
-                  <span class="absolute top-0.5 right-0.5 w-5 h-5 bg-white rounded-full shadow transition-all toggle-thumb"></span>
-                </button>
+                <div class="flex items-center justify-between">
+                  <div><p class="text-sm font-semibold text-dark">Financials</p><p class="text-xs text-light">Access financial reports</p></div>
+                  <button onclick="toggleSwitch(this)" data-perm="financials" class="toggle-btn w-12 h-6 rounded-full relative transition-colors flex-shrink-0" data-state="off"><span class="absolute top-0.5 w-5 h-5 rounded-full shadow transition-all toggle-thumb"></span></button>
+                </div>
+                <div class="flex items-center justify-between">
+                  <div><p class="text-sm font-semibold text-dark">System Settings</p><p class="text-xs text-light">Modify system configuration</p></div>
+                  <button onclick="toggleSwitch(this)" data-perm="settings" class="toggle-btn w-12 h-6 rounded-full relative transition-colors flex-shrink-0" data-state="off"><span class="absolute top-0.5 w-5 h-5 rounded-full shadow transition-all toggle-thumb"></span></button>
+                </div>
+                <div class="flex items-center justify-between">
+                  <div><p class="text-sm font-semibold text-dark">Company Profile</p><p class="text-xs text-light">View &amp; upload company profile</p></div>
+                  <button onclick="toggleSwitch(this)" data-perm="profile" class="toggle-btn w-12 h-6 rounded-full relative transition-colors flex-shrink-0" data-state="off"><span class="absolute top-0.5 w-5 h-5 rounded-full shadow transition-all toggle-thumb"></span></button>
+                </div>
               </div>
             </div>
-          </div>
 
-          <!-- Action Buttons -->
-          <div class="px-6 py-5 border-t border-border space-y-3 flex-shrink-0">
-            <button class="w-full border border-primary text-primary font-semibold tracking-wide py-2.5 px-4 rounded hover:bg-primary hover:text-white transition-colors text-sm">
-              <span data-i18n="btn_save_config">Save Configuration</span>
-            </button>
-            <button class="w-full border border-error text-error font-semibold tracking-wide py-2.5 px-4 rounded hover:bg-error-bg transition-colors text-sm">
-              <span data-i18n="btn_revoke">Revoke All Access</span>
-            </button>
+            <!-- Action Buttons -->
+            <div class="px-6 py-5 border-t border-border space-y-3 flex-shrink-0">
+              <button id="cfg-save" onclick="saveConfig()" class="w-full bg-primary text-white font-semibold tracking-wide py-2.5 px-4 rounded hover:bg-primary-mid transition-colors text-sm flex items-center justify-center gap-2">
+                <span class="material-symbols-outlined text-[18px]">check_circle</span>
+                <span data-i18n="btn_save_config">Save Configuration</span>
+              </button>
+              <div id="cfg-secondary" class="grid grid-cols-2 gap-3">
+                <button id="cfg-status-btn" onclick="toggleStatus()" class="border border-border text-mid font-semibold tracking-wide py-2.5 px-3 rounded hover:bg-surface-mid hover:text-dark transition-colors text-sm">Deactivate</button>
+                <button id="cfg-delete" onclick="deleteSelected()" class="border border-error text-error font-semibold tracking-wide py-2.5 px-3 rounded hover:bg-error-bg transition-colors text-sm">Delete User</button>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -337,30 +268,30 @@
         </button>
       </div>
       <div class="p-6 space-y-4">
+        <div id="au-error" class="hidden bg-error-bg border border-error/30 text-error text-sm font-semibold px-4 py-2.5 rounded"></div>
         <div class="grid grid-cols-2 gap-4">
           <div>
             <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5">Full Name</label>
-            <input type="text" placeholder="e.g. Sara Al-Ahmad" class="w-full border border-border rounded px-3 py-2.5 text-sm text-dark bg-bg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors"/>
+            <input id="au-name" type="text" placeholder="e.g. Sara Al-Ahmad" class="w-full border border-border rounded px-3 py-2.5 text-sm text-dark bg-bg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors"/>
           </div>
           <div>
             <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5">Email Address</label>
-            <input type="email" placeholder="name@company.com" class="w-full border border-border rounded px-3 py-2.5 text-sm text-dark bg-bg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors"/>
+            <input id="au-email" type="email" placeholder="name@company.com" class="w-full border border-border rounded px-3 py-2.5 text-sm text-dark bg-bg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors"/>
           </div>
         </div>
         <div class="grid grid-cols-2 gap-4">
           <div>
             <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5">Role</label>
-            <select class="w-full border border-border rounded px-3 py-2.5 text-sm text-dark bg-bg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors">
-              <option value="">Select a role…</option>
-              <option>System Admin</option>
+            <select id="au-role" onchange="applyRolePreset()" class="w-full border border-border rounded px-3 py-2.5 text-sm text-dark bg-bg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors">
+              <option>Administrator</option>
               <option>Operations Manager</option>
               <option>Data Editor</option>
-              <option>Viewer</option>
+              <option selected>Viewer</option>
             </select>
           </div>
           <div>
             <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5">Initial Status</label>
-            <select class="w-full border border-border rounded px-3 py-2.5 text-sm text-dark bg-bg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors">
+            <select id="au-status" class="w-full border border-border rounded px-3 py-2.5 text-sm text-dark bg-bg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors">
               <option>Active</option>
               <option>Inactive</option>
             </select>
@@ -368,15 +299,16 @@
         </div>
         <div>
           <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5">Temporary Password</label>
-          <input type="password" placeholder="Minimum 8 characters" class="w-full border border-border rounded px-3 py-2.5 text-sm text-dark bg-bg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors"/>
+          <input id="au-password" type="password" placeholder="Minimum 8 characters" class="w-full border border-border rounded px-3 py-2.5 text-sm text-dark bg-bg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors"/>
         </div>
         <div>
           <p class="text-xs font-semibold text-light uppercase tracking-widest mb-3">Module Access</p>
           <div class="grid grid-cols-2 gap-2">
-            <label class="flex items-center gap-2 text-sm text-dark cursor-pointer"><input type="checkbox" class="accent-primary" checked/> Quote Requests</label>
-            <label class="flex items-center gap-2 text-sm text-dark cursor-pointer"><input type="checkbox" class="accent-primary"/> Financials</label>
-            <label class="flex items-center gap-2 text-sm text-dark cursor-pointer"><input type="checkbox" class="accent-primary" checked/> Customer Data</label>
-            <label class="flex items-center gap-2 text-sm text-dark cursor-pointer"><input type="checkbox" class="accent-primary"/> System Settings</label>
+            <label class="flex items-center gap-2 text-sm text-dark cursor-pointer"><input id="au-perm-bookings" type="checkbox" class="accent-primary" checked/> Quote Requests</label>
+            <label class="flex items-center gap-2 text-sm text-dark cursor-pointer"><input id="au-perm-financials" type="checkbox" class="accent-primary"/> Financials</label>
+            <label class="flex items-center gap-2 text-sm text-dark cursor-pointer"><input id="au-perm-customers" type="checkbox" class="accent-primary" checked/> Customer Data</label>
+            <label class="flex items-center gap-2 text-sm text-dark cursor-pointer"><input id="au-perm-settings" type="checkbox" class="accent-primary"/> System Settings</label>
+            <label class="flex items-center gap-2 text-sm text-dark cursor-pointer"><input id="au-perm-profile" type="checkbox" class="accent-primary"/> Company Profile</label>
           </div>
         </div>
       </div>
@@ -390,46 +322,223 @@
     </div>
   </div>
 
-  <!-- Add User toast -->
+  <!-- Toast -->
   <div id="add-user-toast" class="hidden fixed bottom-6 right-6 z-50 bg-primary text-white text-sm font-semibold px-5 py-3 rounded shadow-lg flex items-center gap-2">
     <span class="material-symbols-outlined text-[18px]">check_circle</span>
-    User created successfully!
+    <span id="add-user-toast-msg">User created successfully!</span>
   </div>
 
+  <script src="js/dash-data.js"></script>
   <script>
-    function openAddUser() { document.getElementById('add-user-modal').classList.remove('hidden'); }
-    function closeAddUser() { document.getElementById('add-user-modal').classList.add('hidden'); }
-    function saveNewUser() {
-      closeAddUser();
-      const toast = document.getElementById('add-user-toast');
-      toast.classList.remove('hidden');
-      setTimeout(() => toast.classList.add('hidden'), 3000);
-    }
-    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeAddUser(); });
+    var A = window.JehanAuth;
+    var selectedUserId = null;
 
-    function toggleSwitch(btn) {
-      const state = btn.getAttribute('data-state');
-      const thumb = btn.querySelector('.toggle-thumb');
-      if (state === 'on') {
-        btn.setAttribute('data-state', 'off');
-        btn.style.backgroundColor = '#E4E3DF';
-        btn.style.borderColor = '#DCDBD7';
-        btn.style.borderWidth = '1px';
-        btn.style.borderStyle = 'solid';
-        thumb.style.right = '';
-        thumb.style.left = '2px';
-        thumb.style.backgroundColor = '#DCDBD7';
+    function escapeHtml(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+    function initials(name){return (name||'?').split(/\s+/).map(function(w){return w[0]||'';}).slice(0,2).join('').toUpperCase()||'?';}
+
+    function genericToast(msg) {
+      var t = document.getElementById('add-user-toast');
+      document.getElementById('add-user-toast-msg').textContent = msg;
+      t.classList.remove('hidden');
+      setTimeout(function(){ t.classList.add('hidden'); }, 3000);
+    }
+
+    // ── Render the personnel list ──────────────────────────────
+    function renderUsers() {
+      var users = A.listUsers();
+      var q = (document.getElementById('user-search').value || '').trim().toLowerCase();
+      var rows = users.filter(function (u) {
+        if (!q) return true;
+        return [u.name, u.email, u.role].join(' ').toLowerCase().indexOf(q) !== -1;
+      });
+      var tbody = document.getElementById('user-tbody');
+      var count = document.getElementById('user-count');
+
+      if (!rows.length) {
+        tbody.innerHTML = '<tr><td colspan="4" class="px-6 py-16 text-center text-sm text-light">No personnel match your search.</td></tr>';
       } else {
+        tbody.innerHTML = rows.map(function (u) {
+          var active = u.status === 'Active';
+          var sel = u.id === selectedUserId;
+          return '<tr onclick="selectUser(' + u.id + ')" class="cursor-pointer transition-colors ' +
+              (sel ? 'bg-primary-lt/10' : 'bg-surface hover:bg-surface-dim') + (active ? '' : ' opacity-70') + '">' +
+            '<td class="px-6 py-4"><div class="flex items-center gap-3">' +
+              '<div class="w-9 h-9 rounded-full bg-primary-lt/30 text-primary flex items-center justify-center flex-shrink-0"><span class="text-xs font-bold">' + initials(u.name) + '</span></div>' +
+              '<div><span class="text-sm font-semibold text-dark">' + escapeHtml(u.name) + '</span>' +
+              (u.primary ? '<span class="ml-2 align-middle bg-gold-bg text-dark border border-gold text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide">Primary</span>' : '') +
+              '<p class="text-xs text-light">' + escapeHtml(u.email) + '</p></div>' +
+            '</div></td>' +
+            '<td class="px-6 py-4 text-sm text-light">' + escapeHtml(u.role) + '</td>' +
+            '<td class="px-6 py-4"><div class="flex items-center gap-2">' +
+              '<span class="w-2 h-2 rounded-full inline-block ' + (active ? 'bg-primary' : 'bg-surface-high border border-border') + '"></span>' +
+              '<span class="text-sm font-semibold ' + (active ? 'text-primary' : 'text-light') + '">' + (active ? 'Active' : 'Inactive') + '</span>' +
+            '</div></td>' +
+            '<td class="px-6 py-4 text-right"><span class="text-sm font-semibold text-primary hover:underline">Manage</span></td>' +
+          '</tr>';
+        }).join('');
+      }
+      count.innerHTML = '<span class="font-semibold text-dark">' + users.length + '</span> user' + (users.length === 1 ? '' : 's') + ' total';
+      if (window.reapplyDashLang) { try { window.reapplyDashLang(); } catch (e) {} }
+    }
+
+    // ── Toggle switch visual ───────────────────────────────────
+    function setSwitch(btn, on) {
+      var thumb = btn.querySelector('.toggle-thumb');
+      if (on) {
         btn.setAttribute('data-state', 'on');
         btn.style.backgroundColor = '#3D5A34';
-        btn.style.borderColor = '';
-        btn.style.borderWidth = '';
-        btn.style.borderStyle = '';
-        thumb.style.left = '';
-        thumb.style.right = '2px';
-        thumb.style.backgroundColor = '#ffffff';
+        btn.style.border = '';
+        thumb.style.left = ''; thumb.style.right = '2px'; thumb.style.backgroundColor = '#ffffff';
+      } else {
+        btn.setAttribute('data-state', 'off');
+        btn.style.backgroundColor = '#E4E3DF';
+        btn.style.border = '1px solid #DCDBD7';
+        thumb.style.right = ''; thumb.style.left = '2px'; thumb.style.backgroundColor = '#DCDBD7';
       }
     }
+    function toggleSwitch(btn) {
+      if (btn.disabled) return;
+      setSwitch(btn, btn.getAttribute('data-state') !== 'on');
+    }
+
+    // ── Select a user into the config panel ────────────────────
+    function selectUser(id) {
+      var u = A.getUser(id);
+      if (!u) return;
+      selectedUserId = id;
+      document.getElementById('cfg-empty').classList.add('hidden');
+      document.getElementById('cfg-body').classList.remove('hidden');
+      document.getElementById('cfg-body').classList.add('flex');
+      document.getElementById('cfg-initials').textContent = initials(u.name);
+      document.getElementById('cfg-name').textContent = u.name;
+      document.getElementById('cfg-role').textContent = u.primary ? 'Primary Administrator' : (u.role + ' · ' + u.email);
+      document.getElementById('cfg-role-select').value = u.role;
+
+      // permission toggles
+      document.querySelectorAll('#cfg-body .toggle-btn[data-perm]').forEach(function (btn) {
+        var perm = btn.getAttribute('data-perm');
+        setSwitch(btn, u.primary ? true : !!(u.permissions && u.permissions[perm]));
+        btn.disabled = !!u.primary;
+        btn.style.opacity = u.primary ? '0.6' : '1';
+        btn.style.cursor = u.primary ? 'not-allowed' : 'pointer';
+      });
+
+      var note = document.getElementById('cfg-primary-note');
+      var roleSel = document.getElementById('cfg-role-select');
+      var statusBtn = document.getElementById('cfg-status-btn');
+      var delBtn = document.getElementById('cfg-delete');
+      var saveBtn = document.getElementById('cfg-save');
+      var secondary = document.getElementById('cfg-secondary');
+
+      if (u.primary) {
+        note.classList.remove('hidden');
+        roleSel.disabled = true; roleSel.style.opacity = '0.6';
+        secondary.style.display = 'none';
+        saveBtn.style.display = 'none';
+      } else {
+        note.classList.add('hidden');
+        roleSel.disabled = false; roleSel.style.opacity = '1';
+        secondary.style.display = '';
+        saveBtn.style.display = '';
+        statusBtn.textContent = u.status === 'Active' ? 'Deactivate' : 'Activate';
+      }
+      renderUsers();
+    }
+
+    // ── Save the selected user's configuration ─────────────────
+    function saveConfig() {
+      if (selectedUserId == null) return;
+      var perms = {};
+      document.querySelectorAll('#cfg-body .toggle-btn[data-perm]').forEach(function (btn) {
+        perms[btn.getAttribute('data-perm')] = btn.getAttribute('data-state') === 'on';
+      });
+      A.updateUser(selectedUserId, {
+        role: document.getElementById('cfg-role-select').value,
+        permissions: perms
+      }).then(function () {
+        genericToast('Configuration saved');
+        renderUsers();
+      });
+    }
+
+    function toggleStatus() {
+      var u = A.getUser(selectedUserId);
+      if (!u || u.primary) return;
+      A.updateUser(selectedUserId, { status: u.status === 'Active' ? 'Inactive' : 'Active' }).then(function () {
+        selectUser(selectedUserId);
+        genericToast(u.status === 'Active' ? 'User deactivated' : 'User activated');
+      });
+    }
+
+    function deleteSelected() {
+      var u = A.getUser(selectedUserId);
+      if (!u || u.primary) return;
+      if (!confirm('Delete ' + u.name + '? This permanently removes their access.')) return;
+      A.deleteUser(selectedUserId);
+      selectedUserId = null;
+      document.getElementById('cfg-body').classList.add('hidden');
+      document.getElementById('cfg-body').classList.remove('flex');
+      document.getElementById('cfg-empty').classList.remove('hidden');
+      renderUsers();
+      genericToast('User deleted');
+    }
+
+    // ── Add User modal ─────────────────────────────────────────
+    function openAddUser() {
+      document.getElementById('au-error').classList.add('hidden');
+      document.getElementById('add-user-modal').classList.remove('hidden');
+      document.getElementById('au-name').focus();
+    }
+    function closeAddUser() { document.getElementById('add-user-modal').classList.add('hidden'); }
+    function auError(msg) {
+      var e = document.getElementById('au-error');
+      e.textContent = msg; e.classList.remove('hidden');
+    }
+    function applyRolePreset() {
+      // Convenience: presets pre-tick sensible module access.
+      var role = document.getElementById('au-role').value;
+      var presets = {
+        'Administrator':      { bookings:true, customers:true, financials:true, settings:true, profile:true },
+        'Operations Manager': { bookings:true, customers:true, financials:false, settings:false, profile:false },
+        'Data Editor':        { bookings:true, customers:true, financials:false, settings:false, profile:false },
+        'Viewer':             { bookings:true, customers:false, financials:false, settings:false, profile:false }
+      };
+      var p = presets[role] || presets['Viewer'];
+      document.getElementById('au-perm-bookings').checked = p.bookings;
+      document.getElementById('au-perm-customers').checked = p.customers;
+      document.getElementById('au-perm-financials').checked = p.financials;
+      document.getElementById('au-perm-settings').checked = p.settings;
+      document.getElementById('au-perm-profile').checked = p.profile;
+    }
+    function saveNewUser() {
+      document.getElementById('au-error').classList.add('hidden');
+      var perms = {
+        bookings:   document.getElementById('au-perm-bookings').checked,
+        customers:  document.getElementById('au-perm-customers').checked,
+        financials: document.getElementById('au-perm-financials').checked,
+        settings:   document.getElementById('au-perm-settings').checked,
+        profile:    document.getElementById('au-perm-profile').checked
+      };
+      A.addUser({
+        name: document.getElementById('au-name').value,
+        email: document.getElementById('au-email').value,
+        role: document.getElementById('au-role').value,
+        status: document.getElementById('au-status').value,
+        password: document.getElementById('au-password').value,
+        permissions: perms
+      }).then(function (res) {
+        if (!res.success) { auError(res.error); return; }
+        closeAddUser();
+        ['au-name','au-email','au-password'].forEach(function (id) { document.getElementById(id).value = ''; });
+        renderUsers();
+        selectUser(res.user.id);
+        genericToast('User created — they can now sign in');
+      });
+    }
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeAddUser(); });
+
+    // initial render
+    renderUsers();
   </script>
   <script src="js/dash-lang.js"></script>
   <script>
