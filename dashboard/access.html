@@ -136,20 +136,20 @@
 
     <!-- Content -->
     <main class="flex-1 overflow-y-auto p-8">
-      <div class="grid grid-cols-12 gap-6 h-full">
+      <div class="grid grid-cols-1 xl:grid-cols-12 gap-6 xl:h-full">
 
-        <!-- Left: Active Personnel (col-span-8) -->
-        <div class="col-span-8 bg-surface border border-border rounded shadow-[0_2px_12px_rgba(0,0,0,0.07)] flex flex-col overflow-hidden">
+        <!-- Left: Active Personnel -->
+        <div class="xl:col-span-8 bg-surface border border-border rounded shadow-[0_2px_12px_rgba(0,0,0,0.07)] flex flex-col overflow-hidden">
           <!-- Table Header -->
-          <div class="px-6 py-4 border-b border-border flex items-center gap-4 flex-shrink-0">
-            <h2 class="font-heading text-xl font-bold text-dark flex-1" data-i18n="active_personnel">Active Personnel</h2>
-            <div class="relative">
+          <div class="px-6 py-4 border-b border-border flex flex-wrap items-center gap-3 flex-shrink-0">
+            <h2 class="font-heading text-xl font-bold text-dark whitespace-nowrap mr-auto" data-i18n="active_personnel">Active Personnel</h2>
+            <div class="relative flex-1 min-w-[10rem] max-w-xs">
               <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-light text-[20px]">search</span>
-              <input id="user-search" type="text" oninput="renderUsers()" data-i18n-ph="ph_search_pers" placeholder="Search personnel…" class="pl-10 pr-4 py-2 border border-border rounded bg-bg text-sm text-dark placeholder-light focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary w-56"/>
+              <input id="user-search" type="text" autocomplete="off" oninput="renderUsers()" data-i18n-ph="ph_search_pers" placeholder="Search personnel…" class="w-full pl-10 pr-4 py-2 border border-border rounded bg-bg text-sm text-dark placeholder-light focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"/>
             </div>
           </div>
           <!-- Table -->
-          <div class="flex-1 overflow-y-auto">
+          <div class="flex-1 overflow-auto">
             <table class="w-full">
               <thead class="bg-surface-dim border-b border-border">
                 <tr>
@@ -168,8 +168,8 @@
           </div>
         </div>
 
-        <!-- Right: User Config Panel (col-span-4) -->
-        <div class="col-span-4 border-2 border-primary rounded shadow-[0_2px_12px_rgba(0,0,0,0.07)] overflow-hidden flex flex-col bg-surface">
+        <!-- Right: User Config Panel -->
+        <div class="xl:col-span-4 border-2 border-primary rounded shadow-[0_2px_12px_rgba(0,0,0,0.07)] overflow-hidden flex flex-col bg-surface min-h-[22rem] xl:min-h-0">
           <!-- Gold accent strip -->
           <div class="h-1 bg-gold w-full flex-shrink-0"></div>
 
