@@ -153,10 +153,10 @@
             <table class="w-full">
               <thead class="bg-surface-dim border-b border-border">
                 <tr>
-                  <th class="text-left px-6 py-3 text-xs font-semibold text-light uppercase tracking-wide" data-i18n="th_name">Name</th>
-                  <th class="text-left px-6 py-3 text-xs font-semibold text-light uppercase tracking-wide" data-i18n="th_role_a">Role</th>
-                  <th class="text-left px-6 py-3 text-xs font-semibold text-light uppercase tracking-wide" data-i18n="th_status_a">Status</th>
-                  <th class="px-6 py-3 w-24"></th>
+                  <th class="text-left px-4 py-3 text-xs font-semibold text-light uppercase tracking-wide" data-i18n="th_name">Name</th>
+                  <th class="text-left px-4 py-3 text-xs font-semibold text-light uppercase tracking-wide" data-i18n="th_role_a">Role</th>
+                  <th class="text-left px-4 py-3 text-xs font-semibold text-light uppercase tracking-wide" data-i18n="th_status_a">Status</th>
+                  <th class="px-4 py-3 w-20"></th>
                 </tr>
               </thead>
               <tbody id="user-tbody" class="divide-y divide-border"></tbody>
@@ -362,18 +362,18 @@
           var sel = u.id === selectedUserId;
           return '<tr onclick="selectUser(' + u.id + ')" class="cursor-pointer transition-colors ' +
               (sel ? 'bg-primary-lt/10' : 'bg-surface hover:bg-surface-dim') + (active ? '' : ' opacity-70') + '">' +
-            '<td class="px-6 py-4"><div class="flex items-center gap-3">' +
+            '<td class="px-4 py-4"><div class="flex items-center gap-3">' +
               '<div class="w-9 h-9 rounded-full bg-primary-lt/30 text-primary flex items-center justify-center flex-shrink-0"><span class="text-xs font-bold">' + initials(u.name) + '</span></div>' +
-              '<div><span class="text-sm font-semibold text-dark">' + escapeHtml(u.name) + '</span>' +
+              '<div class="min-w-0"><span class="text-sm font-semibold text-dark whitespace-nowrap">' + escapeHtml(u.name) + '</span>' +
               (u.primary ? '<span class="ml-2 align-middle bg-gold-bg text-dark border border-gold text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide">Primary</span>' : '') +
-              '<p class="text-xs text-light">' + escapeHtml(u.email) + '</p></div>' +
+              '<p class="text-xs text-light truncate">' + escapeHtml(u.email) + '</p></div>' +
             '</div></td>' +
-            '<td class="px-6 py-4 text-sm text-light">' + escapeHtml(u.role) + '</td>' +
-            '<td class="px-6 py-4"><div class="flex items-center gap-2">' +
+            '<td class="px-4 py-4 text-sm text-light whitespace-nowrap">' + escapeHtml(u.role) + '</td>' +
+            '<td class="px-4 py-4"><div class="flex items-center gap-2 whitespace-nowrap">' +
               '<span class="w-2 h-2 rounded-full inline-block ' + (active ? 'bg-primary' : 'bg-surface-high border border-border') + '"></span>' +
               '<span class="text-sm font-semibold ' + (active ? 'text-primary' : 'text-light') + '">' + (active ? 'Active' : 'Inactive') + '</span>' +
             '</div></td>' +
-            '<td class="px-6 py-4 text-right"><span class="text-sm font-semibold text-primary hover:underline">Manage</span></td>' +
+            '<td class="px-4 py-4 text-right"><span class="text-sm font-semibold text-primary hover:underline whitespace-nowrap">Manage →</span></td>' +
           '</tr>';
         }).join('');
       }
