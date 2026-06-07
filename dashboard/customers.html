@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Customer Database - Jehan Holding Group</title>
   <!-- Auth guard: redirects to login if no valid session -->
-  <script src="js/auth.js"></script>
+  <script src="js/auth.js?v=3"></script>
   <script>if (!window.JehanAuth || !window.JehanAuth.enforce('customers')) { /* halted by redirect */ }</script>
   <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600;700&family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet"/>
@@ -236,7 +236,7 @@
   </div>
   <div id="rec-toast" style="display:none;position:fixed;bottom:32px;left:50%;transform:translateX(-50%);background:#3D5A34;color:#fff;font-weight:600;font-size:0.875rem;padding:12px 24px;border-radius:6px;z-index:60;box-shadow:0 4px 16px rgba(0,0,0,0.18);">Customer record added successfully!</div>
 
-  <script src="js/dash-lang.js"></script>
+  <script src="js/dash-lang.js?v=3"></script>
   <script>
     // ── Company Profile Upload ────────────────────────────────────
     function uploadProfile(input) {
@@ -276,7 +276,7 @@
     })();
     updateProfileDateUI();
   </script>
-  <script src="js/dash-data.js"></script>
+  <script src="js/dash-data.js?v=3"></script>
   <script>
     var D = window.JehanData;
 

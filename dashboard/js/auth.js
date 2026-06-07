@@ -24,7 +24,7 @@
   // staff exist on every device after deployment. Bump SEED_VERSION
   // to introduce new seed members. Deleting a seeded user in the UI
   // is permanent — they are NOT resurrected on the next load.
-  var SEED_VERSION = '1';
+  var SEED_VERSION = '2';
   var SEED_USERS = [
     {
       name: 'Fayez Jamal',
@@ -316,15 +316,24 @@
   function updateSidebarUser() {
     try {
       var s = getSession(); if (!s) return;
+      // Enrich from the user store in case the session was created by an
+      // older build that didn't carry name/role/primary.
+      if (!s.name || s.primary === undefined) {
+        var u = readUsers().filter(function (x) {
+          return (x.email || '').trim().toLowerCase() === (s.email || '').trim().toLowerCase();
+        })[0];
+        if (u) { s.name = s.name || u.name; s.role = s.role || u.role; if (s.primary === undefined) s.primary = !!u.primary; }
+      }
       var aside = document.querySelector('aside'); if (!aside) return;
       var footer = aside.querySelector('div.border-t'); if (!footer) return;
       var avatar = footer.querySelector('.rounded-full span');
       var ps = footer.querySelectorAll('p');
+      var name = s.name || 'User';
       if (avatar) {
-        avatar.textContent = (s.name || '?').split(/\s+/).map(function (w) { return w[0] || ''; })
+        avatar.textContent = name.split(/\s+/).map(function (w) { return w[0] || ''; })
           .slice(0, 2).join('').toUpperCase();
       }
-      if (ps[0]) ps[0].textContent = s.name || 'User';
+      if (ps[0]) { ps[0].textContent = name; ps[0].removeAttribute('data-i18n'); }
       if (ps[1]) { ps[1].textContent = s.primary ? 'Primary Administrator' : (s.role || 'User'); ps[1].removeAttribute('data-i18n'); }
     } catch (e) {}
   }
