@@ -145,7 +145,7 @@
             <h2 class="font-heading text-xl font-bold text-dark whitespace-nowrap mr-auto" data-i18n="active_personnel">Active Personnel</h2>
             <div class="relative flex-1 min-w-[10rem] max-w-xs">
               <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-light text-[20px]">search</span>
-              <input id="user-search" type="text" autocomplete="off" oninput="renderUsers()" data-i18n-ph="ph_search_pers" placeholder="Search personnel…" class="w-full pl-10 pr-4 py-2 border border-border rounded bg-bg text-sm text-dark placeholder-light focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"/>
+              <input id="user-search" type="search" name="jhg-personnel-search" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" data-lpignore="true" data-1p-ignore data-form-type="other" oninput="renderUsers()" data-i18n-ph="ph_search_pers" placeholder="Search personnel…" class="w-full pl-10 pr-4 py-2 border border-border rounded bg-bg text-sm text-dark placeholder-light focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"/>
             </div>
           </div>
           <!-- Table -->
@@ -539,6 +539,22 @@
 
     // initial render
     renderUsers();
+
+    // Defend against browser autofill dropping the login email into the
+    // personnel search box (which would silently filter the list).
+    (function () {
+      var s = document.getElementById('user-search');
+      if (!s) return;
+      function clearIfAutofilled() {
+        if (s.value && s.value !== s.dataset.userTyped) { s.value = ''; renderUsers(); }
+      }
+      s.addEventListener('input', function () { s.dataset.userTyped = s.value; });
+      window.addEventListener('load', function () {
+        clearIfAutofilled();
+        setTimeout(clearIfAutofilled, 250);
+        setTimeout(clearIfAutofilled, 800);
+      });
+    })();
   </script>
   <script src="js/dash-lang.js"></script>
   <script>
