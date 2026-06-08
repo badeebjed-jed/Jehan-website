@@ -24,9 +24,35 @@ header('Cache-Control: no-store');
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') { http_response_code(204); exit; }
 
 // ── Storage setup ────────────────────────────────────────────
-$DIR = __DIR__ . '/storage';
-if (!is_dir($DIR)) { @mkdir($DIR, 0775, true); }
-// Block direct browser access to the raw JSON files.
+// IMPORTANT: data must live OUTSIDE public_html, otherwise a Git
+// auto-deploy (which does a clean checkout of public_html) deletes it.
+// We pick the first usable directory from this ordered list and keep
+// all collections there. The preferred location is one level above the
+// web root, which survives every deployment.
+$OLD = __DIR__ . '/storage';                       // legacy location (inside web root)
+$CANDIDATES = array(
+  dirname(__DIR__) . '/jehan_data',                // ../jehan_data  → persists across deploys (preferred)
+  $OLD,                                            // fallback: inside web root
+  sys_get_temp_dir() . '/jehan_data',             // last resort
+);
+$DIR = null;
+foreach ($CANDIDATES as $cand) {
+  if (is_dir($cand) || @mkdir($cand, 0775, true)) { $DIR = $cand; break; }
+}
+if ($DIR === null) { $DIR = $OLD; @mkdir($DIR, 0775, true); }
+
+// One-time migration: if we're using the persistent dir but old JSON
+// files still exist in the legacy web-root location, move them over.
+if ($DIR !== $OLD && is_dir($OLD)) {
+  foreach (array('requests', 'messages', 'customers') as $c) {
+    $src = $OLD . '/' . $c . '.json';
+    $dst = $DIR . '/' . $c . '.json';
+    if (file_exists($src) && !file_exists($dst)) { @copy($src, $dst); }
+  }
+}
+
+// Block direct browser access to the raw JSON files (matters only if the
+// chosen dir happens to be web-accessible; the preferred dir is not).
 $ht = $DIR . '/.htaccess';
 if (!file_exists($ht)) { @file_put_contents($ht, "Require all denied\nDeny from all\n"); }
 
