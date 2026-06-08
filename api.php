@@ -118,8 +118,33 @@ if (isset($_GET['action']) && $_GET['action'] === 'sendquote') {
   $headers .= "From: Jehan Holding Group <Info@Jehanreadymix.com>\r\n";
   $headers .= "Reply-To: Info@Jehanreadymix.com\r\n";
 
-  $sent = @mail($to, $subject, $html, $headers);
+  // The 5th arg sets the envelope sender (-f), which Hostinger requires
+  // for mail() to be accepted and to pass SPF alignment.
+  $sent = @mail($to, $subject, $html, $headers, '-fInfo@Jehanreadymix.com');
   echo json_encode(array('ok' => (bool)$sent, 'sent' => (bool)$sent, 'to' => $to));
+  exit;
+}
+
+// ── Mail diagnostic: GET api.php?action=mailtest&to=you@example.com ──
+// Sends a tiny test email and reports exactly what the server did.
+if (isset($_GET['action']) && $_GET['action'] === 'mailtest') {
+  $to = isset($_GET['to']) ? trim($_GET['to']) : '';
+  if (!filter_var($to, FILTER_VALIDATE_EMAIL)) {
+    echo json_encode(array('ok' => false, 'error' => 'add ?to=you@example.com to the URL'));
+    exit;
+  }
+  $headers  = "MIME-Version: 1.0\r\n";
+  $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
+  $headers .= "From: Jehan Holding Group <Info@Jehanreadymix.com>\r\n";
+  $headers .= "Reply-To: Info@Jehanreadymix.com\r\n";
+  $ok = @mail($to, 'Jehan test email', '<p>This is a test email from your website server. If you received this, mail() works.</p>', $headers, '-fInfo@Jehanreadymix.com');
+  echo json_encode(array(
+    'mail_function_exists' => function_exists('mail'),
+    'mail_returned'        => (bool)$ok,
+    'last_php_error'       => error_get_last(),
+    'to'                   => $to,
+    'sent_from'            => 'Info@Jehanreadymix.com',
+  ), JSON_PRETTY_PRINT);
   exit;
 }
 
