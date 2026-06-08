@@ -351,10 +351,33 @@
     <span id="generic-toast-msg">Done</span>
   </div>
 
+  <!-- Delete confirmation modal (Primary Administrator only) -->
+  <div id="delete-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div class="absolute inset-0 bg-black/40" onclick="closeDeleteModal()"></div>
+    <div class="relative bg-surface rounded-lg shadow-xl w-full max-w-md">
+      <div class="p-6">
+        <div class="flex items-center gap-3 mb-3">
+          <span class="material-symbols-outlined text-error text-[28px]">warning</span>
+          <h3 class="text-lg font-bold text-dark">Delete Quote Request</h3>
+        </div>
+        <p class="text-sm text-mid leading-relaxed">This permanently removes <strong id="delete-ref" class="text-dark"></strong> from <strong id="delete-client" class="text-dark"></strong>. This action cannot be undone.</p>
+      </div>
+      <div class="px-6 py-4 border-t border-border flex gap-3 justify-end">
+        <button onclick="closeDeleteModal()" class="px-5 py-2 border border-border rounded text-sm font-semibold text-mid hover:bg-surface-mid transition-colors">Cancel</button>
+        <button onclick="confirmDelete()" class="flex items-center gap-2 bg-error hover:opacity-90 text-white text-sm font-semibold px-5 py-2 rounded transition-colors">
+          <span class="material-symbols-outlined text-[18px]">delete</span>Delete
+        </button>
+      </div>
+    </div>
+  </div>
+
   <script src="js/dash-data.js?v=4"></script>
   <script>
     var D = window.JehanData;
+    // Only the Primary Administrator may delete quote requests.
+    var isPrimaryAdmin = !!(window.JehanAuth && window.JehanAuth.currentUser() && window.JehanAuth.currentUser().primary);
     var currentReqId = null;
+    var deleteId = null;
     var currentView = localStorage.getItem('jehan_req_view') || 'cards';
     var focusId = null;
 
@@ -455,6 +478,9 @@
           (inCust
             ? '<button disabled title="Already in customers" class="p-2 rounded text-light cursor-default"><span class="material-symbols-outlined text-[20px]">how_to_reg</span></button>'
             : '<button onclick="addToCustomers(' + r.id + ')" title="Add to Customer Database" class="p-2 rounded text-mid hover:bg-surface-mid transition-colors"><span class="material-symbols-outlined text-[20px]">person_add</span></button>') +
+          (isPrimaryAdmin
+            ? '<button onclick="openDeleteModal(' + r.id + ')" title="Delete request" class="p-2 rounded text-error hover:bg-error-bg transition-colors"><span class="material-symbols-outlined text-[20px]">delete</span></button>'
+            : '') +
         '</div>';
       }
       return '<button onclick="openQuoteModal(' + r.id + ')" class="w-full bg-gold text-white font-semibold tracking-wide py-2.5 px-4 rounded hover:bg-gold-hover transition-colors text-sm flex items-center justify-center gap-2">' +
@@ -465,7 +491,10 @@
         '</button>' +
         (inCust
           ? '<button disabled class="w-full border border-border text-light font-semibold tracking-wide py-2.5 px-4 rounded text-sm flex items-center justify-center gap-2 cursor-default"><span class="material-symbols-outlined text-[18px]">how_to_reg</span>In Customer DB</button>'
-          : '<button onclick="addToCustomers(' + r.id + ')" class="w-full border border-border text-mid font-semibold tracking-wide py-2.5 px-4 rounded hover:bg-surface-mid hover:text-dark transition-colors text-sm flex items-center justify-center gap-2"><span class="material-symbols-outlined text-[18px]">person_add</span>Add to Customers</button>');
+          : '<button onclick="addToCustomers(' + r.id + ')" class="w-full border border-border text-mid font-semibold tracking-wide py-2.5 px-4 rounded hover:bg-surface-mid hover:text-dark transition-colors text-sm flex items-center justify-center gap-2"><span class="material-symbols-outlined text-[18px]">person_add</span>Add to Customers</button>') +
+        (isPrimaryAdmin
+          ? '<button onclick="openDeleteModal(' + r.id + ')" class="w-full border border-error/40 text-error font-semibold tracking-wide py-2.5 px-4 rounded hover:bg-error hover:text-white transition-colors text-sm flex items-center justify-center gap-2"><span class="material-symbols-outlined text-[18px]">delete</span>Delete Request</button>'
+          : '');
     }
 
     function renderCard(r) {
@@ -726,6 +755,28 @@
       D.updateRequest(id, { addedToCustomers: true });
       genericToast('Added ' + r.client + ' to the customer database');
       renderRequests();
+    }
+
+    // ── Delete request (Primary Administrator only) ─────────────
+    function openDeleteModal(id) {
+      if (!isPrimaryAdmin) return;            // safety: only primary admin
+      var r = D.getRequest(id);
+      if (!r) return;
+      deleteId = id;
+      document.getElementById('delete-ref').textContent = r.ref || 'this request';
+      document.getElementById('delete-client').textContent = r.client || 'this client';
+      document.getElementById('delete-modal').classList.remove('hidden');
+    }
+    function closeDeleteModal() {
+      document.getElementById('delete-modal').classList.add('hidden');
+      deleteId = null;
+    }
+    function confirmDelete() {
+      if (!isPrimaryAdmin || !deleteId) { closeDeleteModal(); return; }
+      D.deleteRequest(deleteId);
+      closeDeleteModal();
+      renderRequests();
+      genericToast('Quote request deleted');
     }
 
     // ── Filter dropdown ────────────────────────────────────────
