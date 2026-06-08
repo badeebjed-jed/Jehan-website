@@ -141,42 +141,41 @@
       if (e.target.id === 'confirmationModal') closeConfirmationModal();
     });
 
-    // Persist a quote request into the shared dashboard store (localStorage).
-    function saveQuoteRequest(form) {
+    // Build the quote-request object from the form.
+    function buildQuoteRequest(form) {
+      var g = function (n) { var el = form.querySelector('[name="' + n + '"]'); return el ? el.value.trim() : ''; };
+      var rawQty = g('quantity');
+      var numQty = parseFloat((rawQty.match(/[\d.]+/) || [''])[0]);
+      var id = Date.now() * 1000 + Math.floor(Math.random() * 1000);
+      return {
+        id: id, ref: 'REQ-' + String(id).slice(-6),
+        project: g('location') ? ('Concrete Booking · ' + g('location')) : 'Concrete Booking',
+        client: g('name') || 'Website Visitor',
+        email: g('email'), phone: g('phone'),
+        quantity: isNaN(numQty) ? rawQty : numQty,
+        mix: '', location: g('location'),
+        message: g('details'), deliveryDate: g('delivery_date'),
+        status: 'Pending', date: new Date().toISOString(),
+        quote: null, addedToCustomers: false
+      };
+    }
+
+    // Send the request to the shared server store so it reaches the dashboard
+    // on ANY device. Falls back silently if the network call fails.
+    function sendQuoteRequest(form) {
+      var req = buildQuoteRequest(form);
       try {
-        var VERSION = '2';
-        if (localStorage.getItem('jehan_data_version') !== VERSION) {
-          // Initialise the store without clobbering anything that may exist.
-          if (localStorage.getItem('jehan_requests') == null) localStorage.setItem('jehan_requests', '[]');
-          if (localStorage.getItem('jehan_customers') == null) localStorage.setItem('jehan_customers', '[]');
-          if (localStorage.getItem('jehan_messages') == null) localStorage.setItem('jehan_messages', '[]');
-          localStorage.setItem('jehan_data_version', VERSION);
-        }
-        var g = function (n) { var el = form.querySelector('[name="' + n + '"]'); return el ? el.value.trim() : ''; };
-        var rawQty = g('quantity');
-        var numQty = parseFloat((rawQty.match(/[\d.]+/) || [''])[0]);
-        var id = (parseInt(localStorage.getItem('jehan_seq') || '1000', 10) + 1);
-        localStorage.setItem('jehan_seq', String(id));
-        var req = {
-          id: id, ref: 'REQ-' + id,
-          project: g('location') ? ('Concrete Booking · ' + g('location')) : 'Concrete Booking',
-          client: g('name') || 'Website Visitor',
-          email: g('email'), phone: g('phone'),
-          quantity: isNaN(numQty) ? rawQty : numQty,
-          mix: '', location: g('location'),
-          message: g('details'), deliveryDate: g('delivery_date'),
-          status: 'Pending', date: new Date().toISOString(),
-          quote: null, addedToCustomers: false
-        };
-        var list = JSON.parse(localStorage.getItem('jehan_requests') || '[]');
-        list.push(req);
-        localStorage.setItem('jehan_requests', JSON.stringify(list));
-      } catch (err) { /* storage unavailable — fail silently, still show confirmation */ }
+        fetch('api.php?collection=requests', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(req)
+        }).catch(function () {});
+      } catch (e) {}
     }
 
     function handleSubmit(e) {
       e.preventDefault();
-      saveQuoteRequest(e.target);
+      sendQuoteRequest(e.target);
       openConfirmationModal();
       e.target.reset();
     }

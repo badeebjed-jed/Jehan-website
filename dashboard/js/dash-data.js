@@ -1,23 +1,23 @@
 /* ============================================================
    Jehan Holding Group — Dashboard Shared Data Layer
    ============================================================
-   A localStorage-backed store shared across the whole origin.
-   Both the dashboard AND the public website forms read/write
-   these same keys, so a quote submitted on the site shows up
-   live in the dashboard.
+   Server-backed store (via api.php) with a localStorage cache.
 
-   Starts COMPLETELY EMPTY — no demo/sample/placeholder data.
+   • The synchronous API (getRequests, addRequest, …) reads/writes a
+     localStorage cache for instant UI.
+   • On load AND on a short poll, it PULLS the authoritative data from
+     the server so every device / account sees the same requests,
+     messages and customers.
+   • Every write is mirrored to the server so other devices pick it up.
+
+   Pages call JehanData.subscribe(renderFn) so they re-render when
+   fresh server data arrives.
 
    Schema
    ──────
-   request = {
-     id, ref, project, client, email, phone,
-     quantity, mix, location, message, deliveryDate,
-     status,            // Pending | Contacted | Quote Sent | Approved | Rejected
-     date,              // ISO timestamp
-     quote,             // { rate, total, delivery, notes, sentAt } | null
-     addedToCustomers   // bool
-   }
+   request  = { id, ref, project, client, email, phone, quantity, mix,
+                location, message, deliveryDate, status, date, quote,
+                addedToCustomers }
    customer = { id, name, email, phone, location, activity, notes, date }
    message  = { id, name, email, subject, body, source, date, read, flagged }
    ============================================================ */
@@ -28,13 +28,20 @@
   var K_REQ  = 'jehan_requests';
   var K_CUST = 'jehan_customers';
   var K_MSG  = 'jehan_messages';
-  var K_SEQ  = 'jehan_seq';            // global id counter
-  var K_VER  = 'jehan_data_version';   // schema/version guard
-  var VERSION = '2';                   // bump to wipe old demo data
+  var K_VER  = 'jehan_data_version';
+  var VERSION = '3';
 
-  // ── One-time clean slate ─────────────────────────────────────
-  // If the stored version is older (or the old hardcoded demo era),
-  // wipe the operational collections so the dashboard starts clean.
+  // Map cache key → server collection name.
+  var COLLECTION = {};
+  COLLECTION[K_REQ]  = 'requests';
+  COLLECTION[K_CUST] = 'customers';
+  COLLECTION[K_MSG]  = 'messages';
+
+  // api.php lives at the site root. Dashboard pages are one level deeper.
+  var API = (location.pathname.indexOf('/dashboard/') !== -1) ? '../api.php' : 'api.php';
+  var IS_DASHBOARD = location.pathname.indexOf('/dashboard/') !== -1;
+
+  // ── One-time cache reset on version bump ─────────────────────
   try {
     if (localStorage.getItem(K_VER) !== VERSION) {
       localStorage.setItem(K_REQ, '[]');
@@ -42,9 +49,9 @@
       localStorage.setItem(K_MSG, '[]');
       localStorage.setItem(K_VER, VERSION);
     }
-  } catch (e) { /* storage unavailable — degrade gracefully */ }
+  } catch (e) {}
 
-  // ── Low-level helpers ────────────────────────────────────────
+  // ── localStorage cache helpers ───────────────────────────────
   function read(key) {
     try { return JSON.parse(localStorage.getItem(key) || '[]'); }
     catch (e) { return []; }
@@ -52,45 +59,79 @@
   function write(key, arr) {
     try { localStorage.setItem(key, JSON.stringify(arr)); } catch (e) {}
   }
-  function nextId() {
-    var n = parseInt(localStorage.getItem(K_SEQ) || '1000', 10) + 1;
-    localStorage.setItem(K_SEQ, String(n));
-    return n;
-  }
+  // Globally-unique id (works across devices, unlike a per-browser counter).
+  function uid() { return Date.now() * 1000 + Math.floor(Math.random() * 1000); }
+  function shortRef(id) { return 'REQ-' + String(id).slice(-6); }
   function nowISO() { return new Date().toISOString(); }
+
+  // ── Server transport ─────────────────────────────────────────
+  function serverGet(collection) {
+    return fetch(API + '?collection=' + collection + '&_=' + Date.now(), { cache: 'no-store' })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .catch(function () { return null; });
+  }
+  function serverPost(collection, op, obj) {
+    var url = API + '?collection=' + collection + (op ? '&op=' + op : '');
+    return fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(obj)
+    }).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; });
+  }
+  function push(key, op, obj) {
+    var c = COLLECTION[key]; if (!c) return;
+    serverPost(c, op, obj);
+  }
+
+  // ── Subscribers (pages re-render when server data lands) ─────
+  var subscribers = [];
+  function subscribe(fn) {
+    if (typeof fn === 'function' && subscribers.indexOf(fn) === -1) subscribers.push(fn);
+    pull(); // fetch fresh data for the newly-subscribed view
+  }
+  function notify() {
+    subscribers.forEach(function (fn) { try { fn(); } catch (e) {} });
+    try { syncInboxBadge(); } catch (e) {}
+  }
+
+  var pulling = false;
+  function pull() {
+    if (pulling) return;
+    pulling = true;
+    Promise.all([serverGet('requests'), serverGet('customers'), serverGet('messages')])
+      .then(function (res) {
+        var changed = false;
+        if (res[0] && res[0].constructor === Array) { write(K_REQ, res[0]); changed = true; }
+        if (res[1] && res[1].constructor === Array) { write(K_CUST, res[1]); changed = true; }
+        if (res[2] && res[2].constructor === Array) { write(K_MSG, res[2]); changed = true; }
+        pulling = false;
+        if (changed) notify();
+      })
+      .catch(function () { pulling = false; });
+  }
 
   // ── Requests ─────────────────────────────────────────────────
   function getRequests() {
-    // newest first
-    return read(K_REQ).slice().sort(function (a, b) {
-      return new Date(b.date) - new Date(a.date);
-    });
+    return read(K_REQ).slice().sort(function (a, b) { return new Date(b.date) - new Date(a.date); });
   }
   function getRequest(id) {
     return read(K_REQ).filter(function (r) { return r.id === id; })[0] || null;
   }
   function addRequest(data) {
     var list = read(K_REQ);
-    var id = nextId();
+    var id = uid();
     var req = {
-      id: id,
-      ref: 'REQ-' + id,
+      id: id, ref: shortRef(id),
       project: data.project || 'Concrete Request',
       client: data.client || 'Unknown',
-      email: data.email || '',
-      phone: data.phone || '',
+      email: data.email || '', phone: data.phone || '',
       quantity: data.quantity != null ? data.quantity : '',
-      mix: data.mix || '',
-      location: data.location || '',
-      message: data.message || '',
-      deliveryDate: data.deliveryDate || '',
-      status: 'Pending',
-      date: nowISO(),
-      quote: null,
-      addedToCustomers: false
+      mix: data.mix || '', location: data.location || '',
+      message: data.message || '', deliveryDate: data.deliveryDate || '',
+      status: 'Pending', date: nowISO(), quote: null, addedToCustomers: false
     };
-    list.push(req);
-    write(K_REQ, list);
+    list.push(req); write(K_REQ, list);
+    push(K_REQ, 'create', req);
     return req;
   }
   function updateRequest(id, patch) {
@@ -99,6 +140,7 @@
       if (list[i].id === id) {
         for (var k in patch) { if (patch.hasOwnProperty(k)) list[i][k] = patch[k]; }
         write(K_REQ, list);
+        push(K_REQ, 'update', list[i]);
         return list[i];
       }
     }
@@ -106,67 +148,48 @@
   }
   function deleteRequest(id) {
     write(K_REQ, read(K_REQ).filter(function (r) { return r.id !== id; }));
+    push(K_REQ, 'delete', { id: id });
   }
 
   // ── Customers ────────────────────────────────────────────────
   function getCustomers() {
-    return read(K_CUST).slice().sort(function (a, b) {
-      return new Date(b.date) - new Date(a.date);
-    });
+    return read(K_CUST).slice().sort(function (a, b) { return new Date(b.date) - new Date(a.date); });
   }
   function addCustomer(data) {
     var list = read(K_CUST);
-    // de-dupe by email (case-insensitive)
     var email = (data.email || '').trim().toLowerCase();
     if (email) {
-      var existing = list.filter(function (c) {
-        return (c.email || '').trim().toLowerCase() === email;
-      })[0];
+      var existing = list.filter(function (c) { return (c.email || '').trim().toLowerCase() === email; })[0];
       if (existing) return existing;
     }
     var cust = {
-      id: nextId(),
-      name: data.name || 'Unknown',
-      email: data.email || '',
-      phone: data.phone || '',
-      location: data.location || '',
-      activity: data.activity || 'Enquiry',
-      notes: data.notes || '',
-      date: nowISO()
+      id: uid(), name: data.name || 'Unknown', email: data.email || '',
+      phone: data.phone || '', location: data.location || '',
+      activity: data.activity || 'Enquiry', notes: data.notes || '', date: nowISO()
     };
-    list.push(cust);
-    write(K_CUST, list);
+    list.push(cust); write(K_CUST, list);
+    push(K_CUST, 'create', cust);
     return cust;
   }
   function customerExists(email) {
     email = (email || '').trim().toLowerCase();
     if (!email) return false;
-    return read(K_CUST).some(function (c) {
-      return (c.email || '').trim().toLowerCase() === email;
-    });
+    return read(K_CUST).some(function (c) { return (c.email || '').trim().toLowerCase() === email; });
   }
 
   // ── Messages ─────────────────────────────────────────────────
   function getMessages() {
-    return read(K_MSG).slice().sort(function (a, b) {
-      return new Date(b.date) - new Date(a.date);
-    });
+    return read(K_MSG).slice().sort(function (a, b) { return new Date(b.date) - new Date(a.date); });
   }
   function addMessage(data) {
     var list = read(K_MSG);
     var msg = {
-      id: nextId(),
-      name: data.name || 'Unknown',
-      email: data.email || '',
-      subject: data.subject || '(No subject)',
-      body: data.body || '',
-      source: data.source || 'Contact Us Form',
-      date: nowISO(),
-      read: false,
-      flagged: false
+      id: uid(), name: data.name || 'Unknown', email: data.email || '',
+      subject: data.subject || '(No subject)', body: data.body || '',
+      source: data.source || 'Contact Us Form', date: nowISO(), read: false, flagged: false
     };
-    list.push(msg);
-    write(K_MSG, list);
+    list.push(msg); write(K_MSG, list);
+    push(K_MSG, 'create', msg);
     return msg;
   }
   function updateMessage(id, patch) {
@@ -175,6 +198,7 @@
       if (list[i].id === id) {
         for (var k in patch) { if (patch.hasOwnProperty(k)) list[i][k] = patch[k]; }
         write(K_MSG, list);
+        push(K_MSG, 'update', list[i]);
         return list[i];
       }
     }
@@ -184,21 +208,14 @@
     return read(K_MSG).filter(function (m) { return !m.read; }).length;
   }
 
-  // ── KPI / aggregate helpers ──────────────────────────────────
+  // ── KPIs ─────────────────────────────────────────────────────
   function kpis() {
     var reqs = read(K_REQ);
-    var totalRequests = reqs.length;
-    var newLeads = reqs.filter(function (r) { return r.status === 'Pending'; }).length;
-    var activeQuotes = reqs.filter(function (r) { return r.status === 'Quote Sent'; }).length;
-    var estVolume = reqs.reduce(function (sum, r) {
-      var q = parseFloat(r.quantity);
-      return sum + (isNaN(q) ? 0 : q);
-    }, 0);
     return {
-      totalRequests: totalRequests,
-      newLeads: newLeads,
-      activeQuotes: activeQuotes,
-      estVolume: estVolume,
+      totalRequests: reqs.length,
+      newLeads: reqs.filter(function (r) { return r.status === 'Pending'; }).length,
+      activeQuotes: reqs.filter(function (r) { return r.status === 'Quote Sent'; }).length,
+      estVolume: reqs.reduce(function (s, r) { var q = parseFloat(r.quantity); return s + (isNaN(q) ? 0 : q); }, 0),
       customers: read(K_CUST).length,
       unreadMessages: unreadMessageCount()
     };
@@ -207,15 +224,12 @@
   // ── Formatting helpers ───────────────────────────────────────
   function fmtDate(iso) {
     if (!iso) return '—';
-    var d = new Date(iso);
-    if (isNaN(d)) return '—';
+    var d = new Date(iso); if (isNaN(d)) return '—';
     return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
   }
   function fmtRelative(iso) {
-    var d = new Date(iso);
-    if (isNaN(d)) return '';
-    var diff = Date.now() - d.getTime();
-    var mins = Math.floor(diff / 60000);
+    var d = new Date(iso); if (isNaN(d)) return '';
+    var mins = Math.floor((Date.now() - d.getTime()) / 60000);
     if (mins < 1) return 'Just now';
     if (mins < 60) return mins + ' min ago';
     var hrs = Math.floor(mins / 60);
@@ -234,8 +248,6 @@
       .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
   }
-
-  // Status → pill CSS classes (Tailwind utility strings used in the app)
   function statusPill(status) {
     switch (status) {
       case 'Pending':    return 'bg-gold-bg text-dark border border-gold';
@@ -247,7 +259,7 @@
     }
   }
 
-  // ── Sidebar inbox badge sync (runs on every dashboard page) ───
+  // ── Sidebar inbox badge ──────────────────────────────────────
   function syncInboxBadge() {
     try {
       var link = document.querySelector('nav a[href="inbox.html"]');
@@ -265,36 +277,32 @@
       else { badge.style.display = 'none'; }
     } catch (e) {}
   }
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', syncInboxBadge);
-  } else {
+
+  // ── Boot: pull from server + keep the dashboard fresh ────────
+  function boot() {
     syncInboxBadge();
+    pull();
+    if (IS_DASHBOARD) {
+      setInterval(pull, 20000);                 // poll every 20s
+      window.addEventListener('focus', pull);   // and when the tab regains focus
+    }
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', boot);
+  } else {
+    boot();
   }
 
   // ── Public API ───────────────────────────────────────────────
   window.JehanData = {
-    // requests
-    getRequests: getRequests,
-    getRequest: getRequest,
-    addRequest: addRequest,
-    updateRequest: updateRequest,
-    deleteRequest: deleteRequest,
-    // customers
-    getCustomers: getCustomers,
-    addCustomer: addCustomer,
-    customerExists: customerExists,
-    // messages
-    getMessages: getMessages,
-    addMessage: addMessage,
-    updateMessage: updateMessage,
+    getRequests: getRequests, getRequest: getRequest, addRequest: addRequest,
+    updateRequest: updateRequest, deleteRequest: deleteRequest,
+    getCustomers: getCustomers, addCustomer: addCustomer, customerExists: customerExists,
+    getMessages: getMessages, addMessage: addMessage, updateMessage: updateMessage,
     unreadMessageCount: unreadMessageCount,
-    // aggregates + helpers
-    kpis: kpis,
-    fmtDate: fmtDate,
-    fmtRelative: fmtRelative,
-    initials: initials,
-    escapeHtml: escapeHtml,
-    statusPill: statusPill,
-    syncInboxBadge: syncInboxBadge
+    kpis: kpis, fmtDate: fmtDate, fmtRelative: fmtRelative, initials: initials,
+    escapeHtml: escapeHtml, statusPill: statusPill, syncInboxBadge: syncInboxBadge,
+    // server sync
+    subscribe: subscribe, refresh: pull, pull: pull
   };
 })();

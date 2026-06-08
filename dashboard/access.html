@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Access Management - Jehan Holding Group</title>
   <!-- Auth guard: redirects to login if no valid session -->
-  <script src="js/auth.js?v=3"></script>
+  <script src="js/auth.js?v=4"></script>
   <script>if (!window.JehanAuth || !window.JehanAuth.enforceAdmin()) { /* halted by redirect */ }</script>
   <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600;700&family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet"/>
@@ -328,7 +328,7 @@
     <span id="add-user-toast-msg">User created successfully!</span>
   </div>
 
-  <script src="js/dash-data.js?v=3"></script>
+  <script src="js/dash-data.js?v=4"></script>
   <script>
     var A = window.JehanAuth;
     var selectedUserId = null;
@@ -555,7 +555,7 @@
       });
     })();
   </script>
-  <script src="js/dash-lang.js?v=3"></script>
+  <script src="js/dash-lang.js?v=4"></script>
   <script>
     // ── Company Profile Upload ────────────────────────────────────
     function uploadProfile(input) {

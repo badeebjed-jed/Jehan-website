@@ -221,38 +221,33 @@
       if (e.target.id === 'confirmationModal') closeConfirmationModal();
     });
 
-    // Persist a contact message into the shared dashboard store (localStorage).
-    function saveContactMessage(form) {
+    // Send a contact message to the shared server store so it reaches the
+    // dashboard inbox on ANY device.
+    function sendContactMessage(form) {
+      var g = function (n) { var el = form.querySelector('[name="' + n + '"]'); return el ? el.value.trim() : ''; };
+      var id = Date.now() * 1000 + Math.floor(Math.random() * 1000);
+      var msg = {
+        id: id,
+        name: g('name') || 'Website Visitor',
+        email: g('email'),
+        subject: g('subject') || 'Website enquiry',
+        body: g('message'),
+        source: 'Contact Us Form',
+        date: new Date().toISOString(),
+        read: false, flagged: false
+      };
       try {
-        var VERSION = '2';
-        if (localStorage.getItem('jehan_data_version') !== VERSION) {
-          if (localStorage.getItem('jehan_requests') == null) localStorage.setItem('jehan_requests', '[]');
-          if (localStorage.getItem('jehan_customers') == null) localStorage.setItem('jehan_customers', '[]');
-          if (localStorage.getItem('jehan_messages') == null) localStorage.setItem('jehan_messages', '[]');
-          localStorage.setItem('jehan_data_version', VERSION);
-        }
-        var g = function (n) { var el = form.querySelector('[name="' + n + '"]'); return el ? el.value.trim() : ''; };
-        var id = (parseInt(localStorage.getItem('jehan_seq') || '1000', 10) + 1);
-        localStorage.setItem('jehan_seq', String(id));
-        var msg = {
-          id: id,
-          name: g('name') || 'Website Visitor',
-          email: g('email'),
-          subject: g('subject') || 'Website enquiry',
-          body: g('message'),
-          source: 'Contact Us Form',
-          date: new Date().toISOString(),
-          read: false, flagged: false
-        };
-        var list = JSON.parse(localStorage.getItem('jehan_messages') || '[]');
-        list.push(msg);
-        localStorage.setItem('jehan_messages', JSON.stringify(list));
-      } catch (err) { /* storage unavailable — fail silently */ }
+        fetch('api.php?collection=messages', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(msg)
+        }).catch(function () {});
+      } catch (e) {}
     }
 
     function handleSubmit(e) {
       e.preventDefault();
-      saveContactMessage(e.target);
+      sendContactMessage(e.target);
       openConfirmationModal();
       e.target.reset();
     }
