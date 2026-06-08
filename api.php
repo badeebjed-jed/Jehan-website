@@ -190,30 +190,6 @@ if (isset($_GET['action']) && $_GET['action'] === 'sendquote') {
   exit;
 }
 
-// ── Diagnostics ──────────────────────────────────────────────
-// GET api.php?action=mailtest&to=you@example.com   → tries SMTP (or mail())
-if (isset($_GET['action']) && $_GET['action'] === 'mailtest') {
-  $to = isset($_GET['to']) ? trim($_GET['to']) : '';
-  if (!filter_var($to, FILTER_VALIDATE_EMAIL)) {
-    echo json_encode(array('ok' => false, 'error' => 'add ?to=you@example.com to the URL')); exit;
-  }
-  $subject = 'Jehan test email';
-  $html = '<p>This is a test email from your website. If you received it, sending works.</p>';
-  $cfg = jehan_mail_config();
-  if ($cfg) {
-    $log = '';
-    $sent = jehan_smtp_send($cfg, $to, $subject, $html, $log);
-    echo json_encode(array('method' => 'smtp', 'smtp_configured' => true, 'sent' => $sent, 'detail' => $log,
-      'host' => isset($cfg['host']) ? $cfg['host'] : 'smtp.hostinger.com', 'user' => isset($cfg['user']) ? $cfg['user'] : '', 'to' => $to), JSON_PRETTY_PRINT);
-    exit;
-  }
-  $headers = "MIME-Version: 1.0\r\nContent-Type: text/html; charset=UTF-8\r\nFrom: Jehan Holding Group <Info@Jehanreadymix.com>\r\nReply-To: Info@Jehanreadymix.com\r\n";
-  $ok = @mail($to, $subject, $html, $headers, '-fInfo@Jehanreadymix.com');
-  echo json_encode(array('method' => 'mail', 'smtp_configured' => false, 'mail_function_exists' => function_exists('mail'),
-    'mail_returned' => (bool)$ok, 'last_php_error' => error_get_last(), 'to' => $to,
-    'hint' => 'mail() is disabled on Hostinger — create mail_config.php to enable SMTP'), JSON_PRETTY_PRINT);
-  exit;
-}
 
 $ALLOWED = array('requests', 'messages', 'customers');
 $col = isset($_GET['collection']) ? preg_replace('/[^a-z]/', '', $_GET['collection']) : '';
