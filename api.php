@@ -56,6 +56,34 @@ if ($DIR !== $OLD && is_dir($OLD)) {
 $ht = $DIR . '/.htaccess';
 if (!file_exists($ht)) { @file_put_contents($ht, "Require all denied\nDeny from all\n"); }
 
+// ── Diagnostic endpoint (safe; reveals no customer data) ─────
+// Open api.php?diag=1 in a browser to see where data is stored and
+// whether the server can actually write there.
+if (isset($_GET['diag'])) {
+  $test = $DIR . '/.write_test';
+  $wrote = @file_put_contents($test, 'ok');
+  $readback = ($wrote !== false) ? @file_get_contents($test) : null;
+  @unlink($test);
+  echo json_encode(array(
+    'php_version'      => PHP_VERSION,
+    'chosen_dir'       => $DIR,
+    'dir_exists'       => is_dir($DIR),
+    'dir_writable'     => is_writable($DIR),
+    'write_test_ok'    => ($wrote !== false && $readback === 'ok'),
+    'web_root'         => __DIR__,
+    'parent_of_root'   => dirname(__DIR__),
+    'open_basedir'     => ini_get('open_basedir'),
+    'preferred_dir'    => dirname(__DIR__) . '/jehan_data',
+    'preferred_isdir'  => is_dir(dirname(__DIR__) . '/jehan_data'),
+    'legacy_dir'       => __DIR__ . '/storage',
+    'legacy_isdir'     => is_dir(__DIR__ . '/storage'),
+    'requests_file'    => $DIR . '/requests.json',
+    'requests_exists'  => file_exists($DIR . '/requests.json'),
+    'requests_count'   => file_exists($DIR . '/requests.json') ? count(json_decode(file_get_contents($DIR . '/requests.json'), true) ?: array()) : 0,
+  ), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+  exit;
+}
+
 $ALLOWED = array('requests', 'messages', 'customers');
 $col = isset($_GET['collection']) ? preg_replace('/[^a-z]/', '', $_GET['collection']) : '';
 if (!in_array($col, $ALLOWED, true)) {
