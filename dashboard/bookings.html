@@ -327,9 +327,13 @@
         <button onclick="closeModal()" class="px-5 py-2 border border-border rounded text-sm font-semibold text-mid hover:bg-surface-mid transition-colors">
           Cancel
         </button>
+        <button onclick="openQuoteMailto()" class="flex items-center gap-2 border border-primary text-primary hover:bg-surface-mid text-sm font-semibold px-5 py-2 rounded transition-colors">
+          <span class="material-symbols-outlined text-[18px]">mail</span>
+          <span>Open in Email App</span>
+        </button>
         <button onclick="sendQuote()" class="flex items-center gap-2 bg-gold hover:bg-gold-hover text-white text-sm font-semibold px-5 py-2 rounded transition-colors">
           <span class="material-symbols-outlined text-[18px]">send</span>
-          <span data-i18n="modal_send_quote">Send Quote</span>
+          <span data-i18n="modal_send_quote">Send &amp; Email Quote</span>
         </button>
       </div>
     </div>
@@ -338,7 +342,7 @@
   <!-- Success toast -->
   <div id="quote-toast" class="hidden fixed bottom-6 right-6 z-50 bg-primary text-white text-sm font-semibold px-5 py-3 rounded shadow-lg flex items-center gap-2">
     <span class="material-symbols-outlined text-[18px]">check_circle</span>
-    Quote sent successfully!
+    <span id="quote-toast-msg">Quote sent successfully!</span>
   </div>
 
   <!-- Generic toast -->
@@ -571,33 +575,119 @@
       var qty  = r ? (parseFloat(r.quantity) || 0) : 0;
       document.getElementById('modal-total').value = rate && qty ? (rate * qty).toLocaleString() + ' SAR' : '';
     }
+    // Collect the quote values currently in the modal for a request.
+    function gatherQuote(r) {
+      var rate = parseFloat(document.getElementById('modal-rate').value) || 0;
+      var qty  = parseFloat(r.quantity) || 0;
+      return {
+        rate: rate,
+        total: qty ? rate * qty : rate,
+        delivery: document.getElementById('modal-delivery').value || '',
+        notes: document.getElementById('modal-notes').value || '',
+        quantity: r.quantity,
+        ref: r.ref,
+        client: r.client,
+        project: r.project,
+        to: r.email || ''
+      };
+    }
+
+    // Build a plain-text version of the quote (used for the mailto draft).
+    function quotePlainText(q) {
+      var L = [];
+      L.push('Dear ' + (q.client || 'Valued Customer') + ',');
+      L.push('');
+      L.push('Thank you for your request. Please find your concrete quotation below:');
+      L.push('');
+      if (q.ref)      L.push('Reference:     ' + q.ref);
+      if (q.project)  L.push('Project:       ' + q.project);
+      if (q.quantity !== '' && q.quantity != null) L.push('Quantity:      ' + q.quantity + ' m³');
+      if (q.rate)     L.push('Price per m³: ' + q.rate + ' SAR');
+      if (q.total)    L.push('Total:         ' + q.total + ' SAR');
+      if (q.delivery) L.push('Delivery Date: ' + q.delivery);
+      if (q.notes)    { L.push(''); L.push('Notes: ' + q.notes); }
+      L.push('');
+      L.push('To proceed or ask any questions, simply reply to this email or call +966 59 393 9882.');
+      L.push('');
+      L.push('Kind regards,');
+      L.push('Jehan Holding Group');
+      return L.join('\n');
+    }
+
+    // "Open in Email App" — opens a pre-filled draft in the user's mail client.
+    function openQuoteMailto() {
+      var r = D.getRequest(currentReqId);
+      if (!r) return;
+      if (!r.email) {
+        genericToast('No client email on file — add one to this request first.');
+        return;
+      }
+      var rate = parseFloat(document.getElementById('modal-rate').value) || 0;
+      if (!rate) { flagRate(); return; }
+      var q = gatherQuote(r);
+      var subject = 'Your Quote from Jehan Holding Group' + (q.ref ? ' - ' + q.ref : '');
+      var href = 'mailto:' + encodeURIComponent(r.email) +
+        '?subject=' + encodeURIComponent(subject) +
+        '&body=' + encodeURIComponent(quotePlainText(q));
+      window.location.href = href;
+    }
+
+    function flagRate() {
+      var el = document.getElementById('modal-rate');
+      el.classList.add('border-error', 'ring-1', 'ring-error');
+      el.focus();
+      setTimeout(function () { el.classList.remove('border-error', 'ring-1', 'ring-error'); }, 1500);
+    }
+
+    function showQuoteToast(msg) {
+      var toast = document.getElementById('quote-toast');
+      document.getElementById('quote-toast-msg').textContent = msg;
+      toast.classList.remove('hidden');
+      setTimeout(function () { toast.classList.add('hidden'); }, 4000);
+    }
+
     function sendQuote() {
       var r = D.getRequest(currentReqId);
       if (!r) { closeModal(); return; }
       var rate = parseFloat(document.getElementById('modal-rate').value) || 0;
-      if (!rate) {
-        var el = document.getElementById('modal-rate');
-        el.classList.add('border-error', 'ring-1', 'ring-error');
-        el.focus();
-        setTimeout(function () { el.classList.remove('border-error', 'ring-1', 'ring-error'); }, 1500);
-        return;
-      }
-      var qty = parseFloat(r.quantity) || 0;
+      if (!rate) { flagRate(); return; }
+
+      var q = gatherQuote(r);
+      // Save the quote to the shared store first (this always succeeds).
       D.updateRequest(currentReqId, {
         status: 'Quote Sent',
         quote: {
-          rate: rate,
-          total: qty ? rate * qty : rate,
-          delivery: document.getElementById('modal-delivery').value || '',
-          notes: document.getElementById('modal-notes').value || '',
-          sentAt: new Date().toISOString()
+          rate: q.rate, total: q.total, delivery: q.delivery,
+          notes: q.notes, sentAt: new Date().toISOString()
         }
       });
       closeModal();
-      var toast = document.getElementById('quote-toast');
-      toast.classList.remove('hidden');
-      setTimeout(function () { toast.classList.add('hidden'); }, 3000);
       renderRequests();
+
+      // No email on file → can't auto-send; tell the admin.
+      if (!r.email) {
+        showQuoteToast('Quote saved. No client email on file — use "Open in Email App" after adding one, or contact by phone.');
+        return;
+      }
+
+      // Try to auto-email the client from the server.
+      showQuoteToast('Quote saved. Emailing ' + r.email + '…');
+      var api = (location.pathname.indexOf('/dashboard/') !== -1) ? '../api.php' : 'api.php';
+      fetch(api + '?action=sendquote', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(q)
+      }).then(function (res) { return res.json(); })
+        .then(function (data) {
+          if (data && data.ok) {
+            showQuoteToast('✓ Quote emailed to ' + r.email);
+          } else {
+            showQuoteToast('Quote saved, but auto-email failed. Use "Open in Email App" to send it.');
+          }
+        })
+        .catch(function () {
+          showQuoteToast('Quote saved, but auto-email failed. Use "Open in Email App" to send it.');
+        });
     }
 
     // ── Update Status modal ────────────────────────────────────
