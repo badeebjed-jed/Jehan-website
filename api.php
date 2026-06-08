@@ -56,51 +56,98 @@ if ($DIR !== $OLD && is_dir($OLD)) {
 $ht = $DIR . '/.htaccess';
 if (!file_exists($ht)) { @file_put_contents($ht, "Require all denied\nDeny from all\n"); }
 
-// ── Send a generated quote to the client by email ────────────
-// POST api.php?action=sendquote  body = { to, client, ref, quantity,
-// rate, total, delivery, notes, project }
-// Sends a branded HTML quote from the company mailbox.
-if (isset($_GET['action']) && $_GET['action'] === 'sendquote') {
-  if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    http_response_code(405); echo json_encode(array('ok' => false, 'error' => 'POST required')); exit;
+// ── Email config + SMTP sender ───────────────────────────────
+// Credentials live in a file OUTSIDE public_html that the owner fills
+// in by hand (never in this repo). Searched in order:
+function jehan_mail_config() {
+  $paths = array(
+    dirname(__DIR__) . '/jehan_data/mail_config.php',  // alongside the data store (preferred)
+    dirname(__DIR__) . '/mail_config.php',             // domain root
+  );
+  foreach ($paths as $p) {
+    if (is_file($p)) { $c = include $p; if (is_array($c)) return $c; }
   }
-  $b = json_decode(file_get_contents('php://input'), true);
-  if (!is_array($b) || empty($b['to']) || !filter_var($b['to'], FILTER_VALIDATE_EMAIL)) {
-    http_response_code(400);
-    echo json_encode(array('ok' => false, 'error' => 'missing or invalid recipient email'));
-    exit;
-  }
-  $e = function ($s) { return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); };
-  $to       = $b['to'];
-  $client   = isset($b['client'])   ? $b['client']   : 'Valued Customer';
-  $ref      = isset($b['ref'])      ? $b['ref']      : '';
-  $qty      = isset($b['quantity']) ? $b['quantity'] : '';
-  $rate     = isset($b['rate'])     ? $b['rate']     : '';
-  $total    = isset($b['total'])    ? $b['total']    : '';
-  $delivery = isset($b['delivery']) ? $b['delivery'] : '';
-  $notes    = isset($b['notes'])    ? $b['notes']    : '';
-  $project  = isset($b['project'])  ? $b['project']  : '';
+  return null;
+}
 
+// Minimal SMTP client (no external libraries). Returns true on success;
+// writes a human-readable trace into $log.
+function jehan_smtp_send($cfg, $to, $subject, $html, &$log) {
+  $host   = isset($cfg['host']) ? $cfg['host'] : 'smtp.hostinger.com';
+  $port   = isset($cfg['port']) ? (int)$cfg['port'] : 465;
+  $secure = isset($cfg['secure']) ? $cfg['secure'] : ($port === 465 ? 'ssl' : 'tls');
+  $user   = isset($cfg['user']) ? $cfg['user'] : '';
+  $pass   = isset($cfg['pass']) ? $cfg['pass'] : '';
+  $fromE  = isset($cfg['from_email']) ? $cfg['from_email'] : $user;
+  $fromN  = isset($cfg['from_name'])  ? $cfg['from_name']  : 'Jehan Holding Group';
+
+  $errno = 0; $errstr = '';
+  $remote = ($secure === 'ssl' ? 'ssl://' : '') . $host . ':' . $port;
+  $fp = @stream_socket_client($remote, $errno, $errstr, 20);
+  if (!$fp) { $log = 'connect failed: ' . $errstr . ' (' . $errno . ')'; return false; }
+  stream_set_timeout($fp, 20);
+
+  $get = function () use ($fp) {
+    $data = '';
+    while (($line = fgets($fp, 515)) !== false) {
+      $data .= $line;
+      if (isset($line[3]) && $line[3] === ' ') break;
+    }
+    return $data;
+  };
+  $say = function ($c) use ($fp, $get) { fwrite($fp, $c . "\r\n"); return $get(); };
+  $code = function ($r) { return (int)substr($r, 0, 3); };
+
+  $r = $get();                       if ($code($r) !== 220) { $log = 'greeting: ' . $r; fclose($fp); return false; }
+  $r = $say('EHLO jehanreadymix.com'); if ($code($r) !== 250) { $log = 'EHLO: ' . $r; fclose($fp); return false; }
+  if ($secure === 'tls') {
+    $r = $say('STARTTLS');           if ($code($r) !== 220) { $log = 'STARTTLS: ' . $r; fclose($fp); return false; }
+    if (!@stream_socket_enable_crypto($fp, true, STREAM_CRYPTO_METHOD_TLS_CLIENT | STREAM_CRYPTO_METHOD_TLSv1_2_CLIENT)) { $log = 'TLS handshake failed'; fclose($fp); return false; }
+    $r = $say('EHLO jehanreadymix.com'); if ($code($r) !== 250) { $log = 'EHLO2: ' . $r; fclose($fp); return false; }
+  }
+  $r = $say('AUTH LOGIN');           if ($code($r) !== 334) { $log = 'AUTH: ' . $r; fclose($fp); return false; }
+  $r = $say(base64_encode($user));   if ($code($r) !== 334) { $log = 'username stage: ' . $r; fclose($fp); return false; }
+  $r = $say(base64_encode($pass));   if ($code($r) !== 235) { $log = 'login failed (check mailbox password): ' . $r; fclose($fp); return false; }
+  $r = $say('MAIL FROM:<' . $fromE . '>'); if ($code($r) !== 250) { $log = 'MAIL FROM: ' . $r; fclose($fp); return false; }
+  $r = $say('RCPT TO:<' . $to . '>');      if ($code($r) !== 250 && $code($r) !== 251) { $log = 'RCPT TO: ' . $r; fclose($fp); return false; }
+  $r = $say('DATA');                 if ($code($r) !== 354) { $log = 'DATA: ' . $r; fclose($fp); return false; }
+
+  $headers  = 'From: "' . $fromN . '" <' . $fromE . ">\r\n";
+  $headers .= 'To: <' . $to . ">\r\n";
+  $headers .= 'Subject: ' . $subject . "\r\n";
+  $headers .= 'Date: ' . date('r') . "\r\n";
+  $headers .= "MIME-Version: 1.0\r\n";
+  $headers .= 'Reply-To: <' . $fromE . ">\r\n";
+  $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
+  $body = preg_replace('/^\./m', '..', $html);          // dot-stuffing
+  $r = $say($headers . "\r\n" . $body . "\r\n.");
+  if ($code($r) !== 250) { $log = 'message rejected: ' . $r; fclose($fp); return false; }
+  $say('QUIT'); fclose($fp);
+  $log = 'sent';
+  return true;
+}
+
+// Build the branded HTML quote email from a payload array.
+function jehan_quote_html($b) {
+  $e = function ($s) { return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); };
   $rows = '';
   $row = function ($label, $val) use (&$rows, $e) {
     if ($val === '' || $val === null) return;
     $rows .= '<tr><td style="padding:10px 14px;color:#888;font-size:13px;border-bottom:1px solid #eee;">' . $e($label)
            . '</td><td style="padding:10px 14px;color:#1E1E1E;font-size:14px;font-weight:600;border-bottom:1px solid #eee;">' . $e($val) . '</td></tr>';
   };
-  $row('Reference', $ref);
-  $row('Project', $project);
-  $row('Quantity', $qty !== '' ? ($qty . ' m³') : '');
-  $row('Price per m³', $rate !== '' ? ($rate . ' SAR') : '');
-  $row('Total', $total !== '' ? ($total . ' SAR') : '');
-  $row('Delivery Date', $delivery);
-
+  $g = function ($k) use ($b) { return isset($b[$k]) ? $b[$k] : ''; };
+  $row('Reference', $g('ref'));
+  $row('Project', $g('project'));
+  $row('Quantity', $g('quantity') !== '' ? ($g('quantity') . ' m³') : '');
+  $row('Price per m³', $g('rate') !== '' ? ($g('rate') . ' SAR') : '');
+  $row('Total', $g('total') !== '' ? ($g('total') . ' SAR') : '');
+  $row('Delivery Date', $g('delivery'));
+  $notes = $g('notes');
   $notesHtml = $notes !== '' ? '<p style="margin:18px 0 0;color:#444;font-size:14px;line-height:1.6;"><strong>Notes:</strong><br>' . nl2br($e($notes)) . '</p>' : '';
-
-  $html =
-    '<div style="font-family:Arial,Helvetica,sans-serif;max-width:560px;margin:0 auto;background:#ffffff;border:1px solid #e4e3df;border-radius:6px;overflow:hidden;">'
-    . '<div style="background:#3D5A34;padding:22px 24px;text-align:center;">'
-    .   '<img src="https://jehanreadymix.com/assets/images/logo.png" alt="Jehan Holding Group" style="height:44px;">'
-    . '</div>'
+  $client = $g('client') !== '' ? $g('client') : 'Valued Customer';
+  return '<div style="font-family:Arial,Helvetica,sans-serif;max-width:560px;margin:0 auto;background:#ffffff;border:1px solid #e4e3df;border-radius:6px;overflow:hidden;">'
+    . '<div style="background:#3D5A34;padding:22px 24px;text-align:center;"><img src="https://jehanreadymix.com/assets/images/logo.png" alt="Jehan Holding Group" style="height:44px;"></div>'
     . '<div style="padding:26px 24px;">'
     .   '<h2 style="margin:0 0 6px;color:#3D5A34;font-size:20px;">Your Concrete Quotation</h2>'
     .   '<p style="margin:0 0 18px;color:#444;font-size:14px;line-height:1.6;">Dear ' . $e($client) . ',<br>Thank you for your request. Please find your quotation details below.</p>'
@@ -111,40 +158,60 @@ if (isset($_GET['action']) && $_GET['action'] === 'sendquote') {
     . '</div>'
     . '<div style="background:#F2F1EE;padding:14px 24px;text-align:center;color:#888;font-size:12px;">Jehan Holding Group · Info@Jehanreadymix.com · +966 59 393 9882</div>'
     . '</div>';
+}
 
+// ── Send a generated quote to the client by email ────────────
+if (isset($_GET['action']) && $_GET['action'] === 'sendquote') {
+  if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    http_response_code(405); echo json_encode(array('ok' => false, 'error' => 'POST required')); exit;
+  }
+  $b = json_decode(file_get_contents('php://input'), true);
+  if (!is_array($b) || empty($b['to']) || !filter_var($b['to'], FILTER_VALIDATE_EMAIL)) {
+    http_response_code(400);
+    echo json_encode(array('ok' => false, 'error' => 'missing or invalid recipient email'));
+    exit;
+  }
+  $to      = $b['to'];
+  $ref     = isset($b['ref']) ? $b['ref'] : '';
   $subject = 'Your Quote from Jehan Holding Group' . ($ref ? ' - ' . $ref : '');
-  $headers  = "MIME-Version: 1.0\r\n";
-  $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
-  $headers .= "From: Jehan Holding Group <Info@Jehanreadymix.com>\r\n";
-  $headers .= "Reply-To: Info@Jehanreadymix.com\r\n";
+  $html    = jehan_quote_html($b);
 
-  // The 5th arg sets the envelope sender (-f), which Hostinger requires
-  // for mail() to be accepted and to pass SPF alignment.
+  $cfg = jehan_mail_config();
+  if ($cfg) {
+    $log = '';
+    $sent = jehan_smtp_send($cfg, $to, $subject, $html, $log);
+    echo json_encode(array('ok' => $sent, 'sent' => $sent, 'method' => 'smtp', 'detail' => $sent ? '' : $log, 'to' => $to));
+    exit;
+  }
+  // No SMTP config yet → try mail() (usually disabled on Hostinger).
+  $headers = "MIME-Version: 1.0\r\nContent-Type: text/html; charset=UTF-8\r\nFrom: Jehan Holding Group <Info@Jehanreadymix.com>\r\nReply-To: Info@Jehanreadymix.com\r\n";
   $sent = @mail($to, $subject, $html, $headers, '-fInfo@Jehanreadymix.com');
-  echo json_encode(array('ok' => (bool)$sent, 'sent' => (bool)$sent, 'to' => $to));
+  echo json_encode(array('ok' => (bool)$sent, 'sent' => (bool)$sent, 'method' => 'mail', 'detail' => $sent ? '' : 'SMTP not configured and mail() is disabled', 'to' => $to));
   exit;
 }
 
-// ── Mail diagnostic: GET api.php?action=mailtest&to=you@example.com ──
-// Sends a tiny test email and reports exactly what the server did.
+// ── Diagnostics ──────────────────────────────────────────────
+// GET api.php?action=mailtest&to=you@example.com   → tries SMTP (or mail())
 if (isset($_GET['action']) && $_GET['action'] === 'mailtest') {
   $to = isset($_GET['to']) ? trim($_GET['to']) : '';
   if (!filter_var($to, FILTER_VALIDATE_EMAIL)) {
-    echo json_encode(array('ok' => false, 'error' => 'add ?to=you@example.com to the URL'));
+    echo json_encode(array('ok' => false, 'error' => 'add ?to=you@example.com to the URL')); exit;
+  }
+  $subject = 'Jehan test email';
+  $html = '<p>This is a test email from your website. If you received it, sending works.</p>';
+  $cfg = jehan_mail_config();
+  if ($cfg) {
+    $log = '';
+    $sent = jehan_smtp_send($cfg, $to, $subject, $html, $log);
+    echo json_encode(array('method' => 'smtp', 'smtp_configured' => true, 'sent' => $sent, 'detail' => $log,
+      'host' => isset($cfg['host']) ? $cfg['host'] : 'smtp.hostinger.com', 'user' => isset($cfg['user']) ? $cfg['user'] : '', 'to' => $to), JSON_PRETTY_PRINT);
     exit;
   }
-  $headers  = "MIME-Version: 1.0\r\n";
-  $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
-  $headers .= "From: Jehan Holding Group <Info@Jehanreadymix.com>\r\n";
-  $headers .= "Reply-To: Info@Jehanreadymix.com\r\n";
-  $ok = @mail($to, 'Jehan test email', '<p>This is a test email from your website server. If you received this, mail() works.</p>', $headers, '-fInfo@Jehanreadymix.com');
-  echo json_encode(array(
-    'mail_function_exists' => function_exists('mail'),
-    'mail_returned'        => (bool)$ok,
-    'last_php_error'       => error_get_last(),
-    'to'                   => $to,
-    'sent_from'            => 'Info@Jehanreadymix.com',
-  ), JSON_PRETTY_PRINT);
+  $headers = "MIME-Version: 1.0\r\nContent-Type: text/html; charset=UTF-8\r\nFrom: Jehan Holding Group <Info@Jehanreadymix.com>\r\nReply-To: Info@Jehanreadymix.com\r\n";
+  $ok = @mail($to, $subject, $html, $headers, '-fInfo@Jehanreadymix.com');
+  echo json_encode(array('method' => 'mail', 'smtp_configured' => false, 'mail_function_exists' => function_exists('mail'),
+    'mail_returned' => (bool)$ok, 'last_php_error' => error_get_last(), 'to' => $to,
+    'hint' => 'mail() is disabled on Hostinger — create mail_config.php to enable SMTP'), JSON_PRETTY_PRINT);
   exit;
 }
 
