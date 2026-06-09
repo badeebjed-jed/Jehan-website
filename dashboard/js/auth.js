@@ -344,15 +344,17 @@
       document.querySelectorAll('nav a[href]').forEach(function (a) {
         var href = a.getAttribute('href');
         if (map[href] && !can(map[href])) { a.style.display = 'none'; }
-        if (href === 'access.html' && !isAdmin()) { a.style.display = 'none'; }
       });
-      // Company Profile upload widget in the sidebar (gated by 'profile').
-      if (!can('profile')) {
-        var pd = document.getElementById('profile-date');
-        if (pd) {
-          var widget = pd.closest('div.px-3.py-1') || (pd.parentElement && pd.parentElement.parentElement);
-          if (widget) widget.style.display = 'none';
-        }
+      // Settings → Workspace cards: hide individually based on permission,
+      // and hide the whole section if neither card is visible.
+      var cardAccess  = document.getElementById('card-access');
+      var cardProfile = document.getElementById('card-profile');
+      if (cardAccess  && !isAdmin())     cardAccess.style.display  = 'none';
+      if (cardProfile && !can('profile'))cardProfile.style.display = 'none';
+      var ws = document.getElementById('workspace-section');
+      if (ws && (!cardAccess || cardAccess.style.display === 'none') &&
+                (!cardProfile || cardProfile.style.display === 'none')) {
+        ws.style.display = 'none';
       }
     } catch (e) {}
   }
