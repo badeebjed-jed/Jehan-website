@@ -751,11 +751,11 @@
         date: new Date().toISOString(), by: me
       });
 
-      // Approval evaluation (large volume / high discount / same-day)
+      // Approval evaluation (large volume / high discount / same-day).
+      // EVERY qualifying quote goes through the approval queue — including
+      // ones created by administrators — so the audit trail stays complete.
       var reasons = D.approvalReasons(r, { discount: q.discount });
-      var isAdmin = false;
-      try { isAdmin = window.JehanAuth.isAdmin(); } catch (e) {}
-      var needsApproval = reasons.length > 0 && !isAdmin;
+      var needsApproval = reasons.length > 0;
 
       var quoteObj = {
         rate: q.rate, discount: q.discount, total: q.total, delivery: q.delivery,
@@ -770,9 +770,6 @@
         patch.approval = { required: true, reasons: reasons, status: 'pending', by: '', date: '', note: '' };
       } else {
         patch.status = 'Quote Sent';
-        if (reasons.length && isAdmin) {
-          patch.approval = { required: true, reasons: reasons, status: 'approved', by: me, date: new Date().toISOString(), note: 'Auto-approved by administrator' };
-        }
       }
       D.updateRequest(currentReqId, patch);
       D.logAudit(isRevision ? 'quote_revised' : 'quote_sent',
