@@ -240,6 +240,8 @@
       rpt_load7:          '7-Day Booking Load (m³)',
       rpt_fu_compliance:  'Follow-Up Compliance',
       rpt_total:          'Total',
+      rpt_export_csv:     'Export CSV',
+      rpt_print:          'Print / PDF',
       // Approvals & Audit page
       page_approvals:     'Approval & Audit System',
       apr_queue:          'Pending Approvals',
@@ -677,6 +679,8 @@
       rpt_load7:          'حمل الحجوزات لـ7 أيام (م³)',
       rpt_fu_compliance:  'الالتزام بالمتابعة',
       rpt_total:          'الإجمالي',
+      rpt_export_csv:     'تصدير CSV',
+      rpt_print:          'طباعة / PDF',
       // Approvals & Audit page
       page_approvals:     'نظام الموافقات والتدقيق',
       apr_queue:          'الموافقات المعلقة',

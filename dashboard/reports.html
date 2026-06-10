@@ -45,6 +45,14 @@
     body { font-family: 'Barlow', Arial, sans-serif; }
     h1,h2,h3,h4,h5 { font-family: 'Barlow Condensed', Arial, sans-serif; font-weight: 700; letter-spacing: 0.02em; }
     .material-symbols-outlined { font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24; }
+    /* Print: hide chrome, expand content so the full report fits the page */
+    @media print {
+      aside, .print-hide { display: none !important; }
+      body { height: auto !important; overflow: visible !important; display: block !important; background: #fff !important; }
+      body > div.flex-1 { overflow: visible !important; height: auto !important; }
+      body > div.flex-1 > div.flex-1 { overflow: visible !important; padding: 0 !important; }
+      .bg-surface { box-shadow: none !important; break-inside: avoid; }
+    }
   </style>
 </head>
 <body class="bg-bg text-dark h-screen flex overflow-hidden">
@@ -54,8 +62,18 @@
 
   <div class="flex-1 flex flex-col overflow-hidden">
 
-    <header class="bg-surface border-b border-border h-16 flex items-center px-8 flex-shrink-0">
+    <header class="bg-surface border-b border-border h-16 flex items-center justify-between px-8 flex-shrink-0 gap-4 print-hide">
       <h1 class="font-heading font-bold text-2xl uppercase tracking-wide text-dark" data-i18n="page_reports">Sales Reports & Analytics</h1>
+      <div class="flex items-center gap-2 flex-shrink-0">
+        <button onclick="exportReportCsv()" class="flex items-center gap-2 px-4 py-2 border border-primary text-primary rounded text-sm font-semibold hover:bg-primary hover:text-white transition-colors">
+          <span class="material-symbols-outlined text-[18px]">download</span>
+          <span data-i18n="rpt_export_csv">Export CSV</span>
+        </button>
+        <button onclick="window.print()" class="flex items-center gap-2 px-4 py-2 bg-gold hover:bg-gold-hover text-white rounded text-sm font-semibold transition-colors">
+          <span class="material-symbols-outlined text-[18px]">print</span>
+          <span data-i18n="rpt_print">Print / PDF</span>
+        </button>
+      </div>
     </header>
 
     <div class="flex-1 overflow-y-auto p-8">
@@ -325,6 +343,111 @@
     }
     renderAll();
     D.subscribe(renderAll);
+
+    // ── Export: the full report as one structured CSV ──────────
+    function T(key, fallback) { return window.dashT ? window.dashT(key, fallback) : fallback; }
+    function csvEsc(v) {
+      var s = String(v == null ? '' : v);
+      return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+    }
+    function exportReportCsv() {
+      var reqs = D.getRequests();
+      var leads = D.getLeads();
+      var custs = D.getCustomers();
+      var tk = new Date().toISOString().slice(0, 10);
+      var rows = [];
+      function section(titleKey, fallback) { rows.push([]); rows.push(['=== ' + T(titleKey, fallback) + ' ===']); }
+
+      rows.push([T('page_reports', 'Sales Reports & Analytics'), tk]);
+
+      // 1) Operational trends
+      section('rpt_ops', 'Operational Trends');
+      var horizon = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10);
+      var load = 0;
+      for (var d = new Date(); ; d.setDate(d.getDate() + 1)) {
+        var k = d.toISOString().slice(0, 10);
+        if (k > horizon) break;
+        load += D.dayConcreteVolume(k);
+      }
+      var openT = D.getTasks().filter(function (t) { return t.status !== 'Done' && t.due; });
+      var leadsF = leads.filter(function (l) { return l.followUp && ['Won','Lost'].indexOf(l.stage) === -1; });
+      var totalF = openT.length + leadsF.length;
+      var overdue = D.overdueTasks().length + leadsF.filter(function (l) { return l.followUp < tk; }).length;
+      rows.push([T('rpt_delayed', 'Delayed Jobs'), reqs.filter(function (r) { return r.status === 'Delayed'; }).length]);
+      rows.push([T('rpt_expired', 'Expired Quotes'), reqs.filter(function (r) { return r.status === 'Expired'; }).length]);
+      rows.push([T('rpt_load7', '7-Day Booking Load (m³)'), load]);
+      rows.push([T('rpt_fu_compliance', 'Follow-Up Compliance'), (totalF ? Math.round((totalF - overdue) / totalF * 100) : 100) + '%']);
+
+      // 2) Category performance
+      section('rpt_category', 'Category Performance');
+      rows.push([T('lbl_product_type', 'Product Type'), T('rpt_requests', 'Requests'), T('rpt_quoted_value', 'Quoted Value (SAR)'), T('rpt_booked', 'Booked / Paid'), T('rpt_volume', 'Volume')]);
+      [['concrete', T('product_concrete', 'Concrete')], ['precast', T('product_precast', 'Precast')], ['block', T('product_block', 'Construction Block')]].forEach(function (c) {
+        var list = reqs.filter(function (r) { return (r.productType || 'concrete') === c[0]; });
+        rows.push([c[1], list.length,
+          Math.round(list.reduce(function (s, r) { return s + latestQuoteTotal(r); }, 0)),
+          list.filter(isConfirmed).length,
+          Math.round(list.reduce(function (s, r) { var q = parseFloat(r.quantity); return s + (isNaN(q) ? 0 : q); }, 0))]);
+      });
+
+      // 3) Pipeline conversion
+      section('rpt_funnel', 'Pipeline Conversion');
+      var quoted = reqs.filter(function (r) { return r.quote; }).length;
+      var confirmed = reqs.filter(isConfirmed).length;
+      rows.push([T('rpt_f_inquiries', 'Inquiries'), reqs.length + leads.length]);
+      rows.push([T('rpt_f_quoted', 'Quoted'), quoted]);
+      rows.push([T('rpt_f_confirmed', 'Confirmed (Booked / Paid)'), confirmed]);
+      rows.push([T('rpt_f_closed', 'Closed / Delivered'), reqs.filter(isClosed).length]);
+      rows.push([T('rpt_conv_rate', 'Quote Conversion Rate'), (quoted ? Math.round(confirmed / quoted * 100) : 0) + '%']);
+
+      // 4) Representative performance
+      section('rpt_reps', 'Representative Performance');
+      rows.push([T('lbl_rep', 'Representative'), T('rpt_rep_leads', 'Leads'), T('rpt_rep_requests', 'Requests'), T('rpt_rep_won', 'Won / Booked'), T('rpt_rep_conv', 'Conversion'), T('rpt_volume', 'Volume')]);
+      var map = {};
+      leads.forEach(function (l) {
+        if (!l.representative) return;
+        var b = map[l.representative] = map[l.representative] || { leads: 0, requests: 0, won: 0, volume: 0 };
+        b.leads++;
+        if (l.stage === 'Won' || l.convertedRequestId != null) b.won++;
+      });
+      reqs.forEach(function (r) {
+        if (!r.representative) return;
+        var b = map[r.representative] = map[r.representative] || { leads: 0, requests: 0, won: 0, volume: 0 };
+        b.requests++;
+        if (isConfirmed(r)) b.won++;
+        var q = parseFloat(r.quantity); if (!isNaN(q)) b.volume += q;
+      });
+      Object.keys(map).forEach(function (n) {
+        var b = map[n];
+        var basis = b.leads + b.requests;
+        rows.push([n, b.leads, b.requests, b.won, (basis ? Math.round(b.won / basis * 100) : 0) + '%', Math.round(b.volume)]);
+      });
+
+      // 5) Customer insights
+      section('rpt_customers', 'Customer Insights');
+      rows.push([T('th_cust_name', 'Customer Name'), T('rpt_requests', 'Requests'), T('rpt_quoted_value', 'Quoted Value (SAR)'), T('rpt_volume', 'Volume'), T('cust_key', 'Key Account'), T('lbl_segment', 'Segment')]);
+      custs.forEach(function (c) {
+        var em = (c.email || '').trim().toLowerCase();
+        var ph = String(c.phone || '').replace(/\D/g, '');
+        var matched = reqs.filter(function (r) {
+          var rEm = (r.email || '').trim().toLowerCase();
+          var rPh = String(r.phone || '').replace(/\D/g, '');
+          return (em && rEm === em) || (ph && rPh === ph);
+        });
+        if (!matched.length) return;
+        rows.push([c.name, matched.length,
+          Math.round(matched.reduce(function (s, r) { return s + latestQuoteTotal(r); }, 0)),
+          Math.round(matched.reduce(function (s, r) { var q = parseFloat(r.quantity); return s + (isNaN(q) ? 0 : q); }, 0)),
+          c.keyAccount ? 'yes' : '', c.segment || '']);
+      });
+
+      var csv = rows.map(function (r) { return r.map(csvEsc).join(','); }).join('\r\n');
+      var blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url; a.download = 'jehan-sales-report-' + tk + '.csv';
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
   </script>
   <script src="js/dash-lang.js?v=7"></script>
 </body>
