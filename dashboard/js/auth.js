@@ -230,6 +230,38 @@
   function canApprove() {
     return isAdmin() || can('approvals');
   }
+
+  // ── Self-service account (every logged-in user) ──────────────
+  function findSelf() {
+    var s = getSession(); if (!s) return null;
+    return readUsers().filter(function (u) {
+      return (u.email || '').trim().toLowerCase() === (s.email || '').trim().toLowerCase();
+    })[0] || null;
+  }
+  // Change the logged-in user's display name (store + live session).
+  function changeOwnName(name) {
+    var u = findSelf();
+    if (!u || !name) return Promise.resolve({ success: false, error: 'invalid' });
+    return updateUser(u.id, { name: name }).then(function (res) {
+      if (res.success) {
+        try {
+          var s = getSession();
+          if (s) { s.name = name; sessionStorage.setItem(SESSION_KEY, JSON.stringify(s)); }
+          updateSidebarUser();
+        } catch (e) {}
+      }
+      return res;
+    });
+  }
+  // Change the logged-in user's password after verifying the current one.
+  function changeOwnPassword(currentPw, newPw) {
+    var u = findSelf();
+    if (!u) return Promise.resolve({ success: false, error: 'no_user' });
+    return sha256Hex(String(currentPw)).then(function (hash) {
+      if (hash !== u.passwordHash) return { success: false, error: 'wrong_current' };
+      return updateUser(u.id, { password: newPw });
+    });
+  }
   function enforceApprover() {
     if (!requireAuth()) return false;
     if (!canApprove()) { window.location.replace('overview.html'); return false; }
@@ -350,8 +382,10 @@
 
   function applyNavPermissions() {
     try {
+      // Settings is visible to everyone (My Account lives there); the
+      // administrative sections inside it are gated per-section instead.
       var map = {
-        'bookings.html': 'bookings', 'customers.html': 'customers', 'settings.html': 'settings',
+        'bookings.html': 'bookings', 'customers.html': 'customers',
         // sales modules ride on the bookings permission; reports on financials
         'leads.html': 'bookings', 'sales-forms.html': 'bookings',
         'calendar.html': 'bookings', 'tasks.html': 'bookings',
@@ -397,6 +431,8 @@
     isAdmin: isAdmin,
     can: can,
     canApprove: canApprove,
+    changeOwnName: changeOwnName,
+    changeOwnPassword: changeOwnPassword,
     // user management
     listUsers: listUsers,
     getUser: getUser,

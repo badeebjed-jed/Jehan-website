@@ -5,8 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Settings - Jehan Holding Group</title>
   <!-- Auth guard: redirects to login if no valid session -->
-  <script src="js/auth.js?v=7"></script>
-  <script>if (!window.JehanAuth || !window.JehanAuth.enforce('settings')) { /* halted by redirect */ }</script>
+  <script src="js/auth.js?v=8"></script>
+  <!-- Settings is open to every logged-in user; admin sections inside are gated per-section -->
+  <script>if (!window.JehanAuth || !window.JehanAuth.requireAuth()) { /* halted by redirect */ }</script>
   <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600;700&family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet"/>
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
@@ -69,7 +70,7 @@
     <!-- Header -->
     <header class="bg-surface border-b border-border h-16 flex items-center justify-between px-8 flex-shrink-0">
       <h1 class="text-2xl font-800 uppercase tracking-wide text-dark" data-i18n="page_settings">Settings</h1>
-      <button onclick="document.getElementById('save-toast').classList.remove('hidden')" class="flex items-center gap-2 bg-gold hover:bg-gold-hover text-white text-sm font-semibold tracking-wide px-5 py-2 rounded transition-colors">
+      <button id="btn-save-all" onclick="document.getElementById('save-toast').classList.remove('hidden')" class="flex items-center gap-2 bg-gold hover:bg-gold-hover text-white text-sm font-semibold tracking-wide px-5 py-2 rounded transition-colors">
         <span class="material-symbols-outlined text-[18px]">save</span>
         <span data-i18n="btn_save_changes">Save Changes</span>
       </button>
@@ -121,8 +122,8 @@
           </div>
         </section>
 
-        <!-- Company Information -->
-        <section class="bg-surface border border-border rounded shadow-[0_2px_12px_rgba(0,0,0,0.07)]">
+        <!-- Company Information (requires the 'settings' permission) -->
+        <section id="sect-company" class="bg-surface border border-border rounded shadow-[0_2px_12px_rgba(0,0,0,0.07)]">
           <div class="px-6 py-4 border-b border-border flex items-center gap-3">
             <span class="material-symbols-outlined text-primary text-[20px]">business</span>
             <h2 class="text-lg uppercase tracking-wide" data-i18n="sect_company">Company Information</h2>
@@ -151,34 +152,48 @@
           </div>
         </section>
 
-        <!-- Account & Password -->
-        <section class="bg-surface border border-border rounded shadow-[0_2px_12px_rgba(0,0,0,0.07)]">
+        <!-- My Account (every user) -->
+        <section id="sect-account" class="bg-surface border border-border rounded shadow-[0_2px_12px_rgba(0,0,0,0.07)]">
           <div class="px-6 py-4 border-b border-border flex items-center gap-3">
             <span class="material-symbols-outlined text-primary text-[20px]">lock</span>
-            <h2 class="text-lg uppercase tracking-wide" data-i18n="sect_account">Account & Password</h2>
+            <h2 class="text-lg uppercase tracking-wide" data-i18n="sect_account">My Account</h2>
           </div>
-          <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-5">
-            <div>
-              <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5" data-i18n="lbl_username">Admin Username</label>
-              <input type="text" value="admin" class="w-full border border-border rounded px-3 py-2.5 text-sm text-dark bg-bg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors"/>
+          <div class="p-6 space-y-4">
+            <div id="acct-msg" class="hidden text-sm font-semibold px-4 py-3 rounded"></div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div>
+                <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5" data-i18n="lbl_display_name">Your Name</label>
+                <input id="acct-name" type="text" class="w-full border border-border rounded px-3 py-2.5 text-sm text-dark bg-bg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors"/>
+              </div>
+              <div>
+                <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5" data-i18n="lbl_your_email">Login Email</label>
+                <input id="acct-email" type="email" readonly class="w-full border border-border rounded px-3 py-2.5 text-sm text-light bg-surface-dim cursor-not-allowed"/>
+              </div>
+              <div>
+                <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5" data-i18n="lbl_cur_pass">Current Password</label>
+                <input id="acct-current" type="password" placeholder="••••••••" autocomplete="current-password" class="w-full border border-border rounded px-3 py-2.5 text-sm text-dark bg-bg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors"/>
+              </div>
+              <div></div>
+              <div>
+                <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5" data-i18n="lbl_new_pass">New Password</label>
+                <input id="acct-new" type="password" placeholder="••••••••" autocomplete="new-password" class="w-full border border-border rounded px-3 py-2.5 text-sm text-dark bg-bg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors"/>
+              </div>
+              <div>
+                <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5" data-i18n="lbl_confirm_pass">Confirm New Password</label>
+                <input id="acct-confirm" type="password" placeholder="••••••••" autocomplete="new-password" class="w-full border border-border rounded px-3 py-2.5 text-sm text-dark bg-bg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors"/>
+              </div>
             </div>
-            <div>
-              <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5" data-i18n="lbl_cur_pass">Current Password</label>
-              <input type="password" placeholder="••••••••" class="w-full border border-border rounded px-3 py-2.5 text-sm text-dark bg-bg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors"/>
-            </div>
-            <div>
-              <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5" data-i18n="lbl_new_pass">New Password</label>
-              <input type="password" placeholder="••••••••" class="w-full border border-border rounded px-3 py-2.5 text-sm text-dark bg-bg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors"/>
-            </div>
-            <div>
-              <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5" data-i18n="lbl_confirm_pass">Confirm New Password</label>
-              <input type="password" placeholder="••••••••" class="w-full border border-border rounded px-3 py-2.5 text-sm text-dark bg-bg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors"/>
+            <div class="flex justify-end">
+              <button onclick="updateAccount()" class="flex items-center gap-2 bg-primary hover:bg-primary-mid text-white text-sm font-semibold px-5 py-2.5 rounded transition-colors">
+                <span class="material-symbols-outlined text-[18px]">save</span>
+                <span data-i18n="btn_update_account">Update Account</span>
+              </button>
             </div>
           </div>
         </section>
 
-        <!-- Notifications -->
-        <section class="bg-surface border border-border rounded shadow-[0_2px_12px_rgba(0,0,0,0.07)]">
+        <!-- Notifications (requires the 'settings' permission) -->
+        <section id="sect-notif" class="bg-surface border border-border rounded shadow-[0_2px_12px_rgba(0,0,0,0.07)]">
           <div class="px-6 py-4 border-b border-border flex items-center gap-3">
             <span class="material-symbols-outlined text-primary text-[20px]">notifications</span>
             <h2 class="text-lg uppercase tracking-wide" data-i18n="sect_notif">Notification Preferences</h2>
@@ -215,8 +230,8 @@
           </div>
         </section>
 
-        <!-- System -->
-        <section class="bg-surface border border-border rounded shadow-[0_2px_12px_rgba(0,0,0,0.07)]">
+        <!-- System (requires the 'settings' permission) -->
+        <section id="sect-system" class="bg-surface border border-border rounded shadow-[0_2px_12px_rgba(0,0,0,0.07)]">
           <div class="px-6 py-4 border-b border-border flex items-center gap-3">
             <span class="material-symbols-outlined text-primary text-[20px]">tune</span>
             <h2 class="text-lg uppercase tracking-wide" data-i18n="sect_system">System Preferences</h2>
@@ -255,8 +270,8 @@
           </div>
         </section>
 
-        <!-- Danger Zone -->
-        <section class="bg-surface border border-error/30 rounded shadow-[0_2px_12px_rgba(0,0,0,0.07)]">
+        <!-- Danger Zone (primary administrator only) -->
+        <section id="sect-danger" class="bg-surface border border-error/30 rounded shadow-[0_2px_12px_rgba(0,0,0,0.07)]">
           <div class="px-6 py-4 border-b border-error/20 flex items-center gap-3">
             <span class="material-symbols-outlined text-error text-[20px]">warning</span>
             <h2 class="text-lg uppercase tracking-wide text-error" data-i18n="sect_danger">Danger Zone</h2>
@@ -277,7 +292,7 @@
   </div>
 
   <script src="js/dash-data.js?v=6"></script>
-  <script src="js/dash-lang.js?v=6"></script>
+  <script src="js/dash-lang.js?v=7"></script>
   <script>
     // ── Company Profile Upload ────────────────────────────────────
     function uploadProfile(input) {
@@ -316,6 +331,80 @@
       if (_orig) { window.toggleDashLang = function() { _orig(); setTimeout(updateProfileDateUI, 60); }; }
     })();
     updateProfileDateUI();
+  </script>
+  <script>
+    // ── Per-section gating ───────────────────────────────────────
+    // Settings is open to everyone; what you see inside depends on
+    // your permissions:
+    //   My Account                         → every user
+    //   Workspace cards                    → 'profile' perm / admin (handled by auth.js)
+    //   Company Info / Notifications /
+    //   System Preferences + Save Changes  → 'settings' perm
+    //   Danger Zone                        → primary administrator only
+    (function () {
+      var A = window.JehanAuth;
+      var s = A.currentUser();
+      var hasSettings = A.can('settings');
+      var isPrimary = !!(s && s.primary);
+      ['sect-company', 'sect-notif', 'sect-system'].forEach(function (id) {
+        var el = document.getElementById(id);
+        if (el && !hasSettings) el.style.display = 'none';
+      });
+      var saveAll = document.getElementById('btn-save-all');
+      if (saveAll && !hasSettings) saveAll.style.display = 'none';
+      var danger = document.getElementById('sect-danger');
+      if (danger && !isPrimary) danger.style.display = 'none';
+    })();
+
+    // ── My Account: change own name + password ──────────────────
+    (function () {
+      var s = window.JehanAuth.currentUser();
+      if (s) {
+        document.getElementById('acct-name').value = s.name || '';
+        document.getElementById('acct-email').value = s.email || '';
+      }
+    })();
+    function acctMsg(key, fallback, ok) {
+      var el = document.getElementById('acct-msg');
+      el.className = 'text-sm font-semibold px-4 py-3 rounded ' +
+        (ok ? 'bg-primary-lt/15 border border-primary-lt text-primary'
+            : 'bg-error-bg border border-error/30 text-error');
+      el.innerHTML = '<span data-i18n="' + key + '">' + fallback + '</span>';
+      el.classList.remove('hidden');
+      if (window.reapplyDashLang) window.reapplyDashLang();
+    }
+    function updateAccount() {
+      var A = window.JehanAuth;
+      var name = document.getElementById('acct-name').value.trim();
+      var cur = document.getElementById('acct-current').value;
+      var nw = document.getElementById('acct-new').value;
+      var cf = document.getElementById('acct-confirm').value;
+
+      var wantsPwChange = cur || nw || cf;
+      if (wantsPwChange) {
+        if (!cur) { acctMsg('acct_need_current', 'Enter your current password to change it.', false); return; }
+        if (nw.length < 8) { acctMsg('acct_pw_short', 'New password must be at least 8 characters.', false); return; }
+        if (nw !== cf) { acctMsg('acct_pw_mismatch', 'New passwords do not match.', false); return; }
+      }
+
+      var nameChange = (name && (!A.currentUser() || name !== A.currentUser().name))
+        ? A.changeOwnName(name) : Promise.resolve({ success: true });
+
+      nameChange.then(function (r1) {
+        if (!r1.success) { acctMsg('acct_failed', 'Could not update the account.', false); return; }
+        if (!wantsPwChange) { acctMsg('acct_updated', 'Account updated successfully.', true); return; }
+        A.changeOwnPassword(cur, nw).then(function (r2) {
+          if (r2.success) {
+            ['acct-current', 'acct-new', 'acct-confirm'].forEach(function (id) { document.getElementById(id).value = ''; });
+            acctMsg('acct_updated', 'Account updated successfully.', true);
+          } else if (r2.error === 'wrong_current') {
+            acctMsg('acct_wrong_current', 'Current password is incorrect.', false);
+          } else {
+            acctMsg('acct_failed', 'Could not update the account.', false);
+          }
+        });
+      });
+    }
   </script>
 </body>
 </html>
