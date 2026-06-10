@@ -117,7 +117,13 @@
     </header>
 
     <!-- Result summary -->
-    <div class="px-8 pt-5 flex-shrink-0">
+    <div class="px-8 pt-5 flex-shrink-0 flex items-center justify-between gap-4 flex-wrap">
+      <div class="flex gap-2" id="product-filter">
+        <button onclick="setProductFilter('')" data-pf="" class="px-3 py-1.5 rounded-full border text-xs font-bold transition-colors bg-primary text-white border-primary"><span data-i18n="flt_all_products">All Products</span></button>
+        <button onclick="setProductFilter('concrete')" data-pf="concrete" class="px-3 py-1.5 rounded-full border text-xs font-bold transition-colors bg-surface text-mid border-border hover:border-primary hover:text-primary"><span data-i18n="product_concrete">Concrete</span></button>
+        <button onclick="setProductFilter('precast')" data-pf="precast" class="px-3 py-1.5 rounded-full border text-xs font-bold transition-colors bg-surface text-mid border-border hover:border-primary hover:text-primary"><span data-i18n="product_precast">Precast</span></button>
+        <button onclick="setProductFilter('block')" data-pf="block" class="px-3 py-1.5 rounded-full border text-xs font-bold transition-colors bg-surface text-mid border-border hover:border-primary hover:text-primary"><span data-i18n="product_block">Construction Block</span></button>
+      </div>
       <p id="req-summary" class="text-sm text-light"></p>
     </div>
 
@@ -147,33 +153,7 @@
         </div>
         <div>
           <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-2" data-i18n="modal_new_status">New Status</label>
-          <div class="space-y-2" id="status-options">
-            <label class="flex items-center gap-3 p-3 border border-border rounded cursor-pointer hover:bg-surface-dim transition-colors">
-              <input type="radio" name="new-status" value="Pending" class="accent-gold"/>
-              <span class="text-sm font-semibold text-dark">Pending</span>
-              <span class="ml-auto bg-gold-bg text-dark border border-gold text-xs font-semibold px-2 py-0.5 rounded-full">Pending</span>
-            </label>
-            <label class="flex items-center gap-3 p-3 border border-border rounded cursor-pointer hover:bg-surface-dim transition-colors">
-              <input type="radio" name="new-status" value="Contacted" class="accent-primary" checked/>
-              <span class="text-sm font-semibold text-dark">Contacted</span>
-              <span class="ml-auto bg-surface-mid text-mid border border-border text-xs font-semibold px-2 py-0.5 rounded-full">Contacted</span>
-            </label>
-            <label class="flex items-center gap-3 p-3 border border-border rounded cursor-pointer hover:bg-surface-dim transition-colors">
-              <input type="radio" name="new-status" value="Quote Sent" class="accent-primary"/>
-              <span class="text-sm font-semibold text-dark">Quote Sent</span>
-              <span class="ml-auto bg-surface-mid text-mid border border-border text-xs font-semibold px-2 py-0.5 rounded-full">Quote Sent</span>
-            </label>
-            <label class="flex items-center gap-3 p-3 border border-border rounded cursor-pointer hover:bg-surface-dim transition-colors">
-              <input type="radio" name="new-status" value="Approved" class="accent-primary"/>
-              <span class="text-sm font-semibold text-dark">Approved</span>
-              <span class="ml-auto bg-primary-lt/30 text-primary border border-primary-lt text-xs font-semibold px-2 py-0.5 rounded-full">Approved</span>
-            </label>
-            <label class="flex items-center gap-3 p-3 border border-border rounded cursor-pointer hover:bg-surface-dim transition-colors">
-              <input type="radio" name="new-status" value="Rejected" class="accent-error"/>
-              <span class="text-sm font-semibold text-dark">Rejected</span>
-              <span class="ml-auto bg-error-bg text-error border border-error/30 text-xs font-semibold px-2 py-0.5 rounded-full">Rejected</span>
-            </label>
-          </div>
+          <div class="grid grid-cols-2 gap-2 max-h-72 overflow-y-auto pr-1" id="status-options"></div>
         </div>
         <div>
           <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5" data-i18n="modal_int_note">Internal Note (optional)</label>
@@ -240,15 +220,38 @@
               class="w-full border border-border rounded px-3 py-2.5 text-sm text-dark bg-bg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors"/>
           </div>
           <div>
+            <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5" data-i18n="modal_discount">Discount (%)</label>
+            <input id="modal-discount" type="number" min="0" max="100" placeholder="0" oninput="calcTotal()"
+              class="w-full border border-border rounded px-3 py-2.5 text-sm text-dark bg-bg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors"/>
+          </div>
+          <div>
             <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5" data-i18n="modal_total">Total (SAR)</label>
             <input id="modal-total" type="text" placeholder="Auto-calculated" readonly
               class="w-full border border-border rounded px-3 py-2.5 text-sm font-semibold text-primary bg-surface-dim cursor-not-allowed"/>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5" data-i18n="modal_expiry">Quote Expiry</label>
+            <input id="modal-expiry" type="date"
+              class="w-full border border-border rounded px-3 py-2.5 text-sm text-dark bg-bg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors"/>
           </div>
         </div>
         <div>
           <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5" data-i18n="modal_delivery">Delivery Date</label>
           <input id="modal-delivery" type="date"
             class="w-full border border-border rounded px-3 py-2.5 text-sm text-dark bg-bg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors"/>
+        </div>
+        <!-- Revision reason (only when a quote already exists) -->
+        <div id="modal-reason-wrap" class="hidden">
+          <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5"><span data-i18n="modal_reason">Reason for Change</span> <span class="text-error">*</span></label>
+          <input id="modal-reason" type="text" data-i18n-ph="ph_reason" placeholder="Why is this quote being revised?"
+            class="w-full border border-border rounded px-3 py-2.5 text-sm text-dark bg-bg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors"/>
+        </div>
+        <!-- Version history -->
+        <div id="modal-versions" class="hidden bg-surface-dim rounded p-3 text-xs text-mid max-h-28 overflow-y-auto"></div>
+        <!-- Approval warning -->
+        <div id="modal-approval" class="hidden bg-gold-bg border border-gold rounded p-3 text-xs text-dark">
+          <p class="font-bold flex items-center gap-1 mb-1"><span class="material-symbols-outlined text-[16px]">gavel</span><span data-i18n="sf_approval_note">This request will require approval:</span></p>
+          <ul id="modal-approval-list" class="list-disc ms-5"></ul>
         </div>
         <div>
           <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5" data-i18n="modal_notes">Notes to Client</label>
@@ -321,12 +324,27 @@
       t.classList.remove('hidden');
       setTimeout(function () { t.classList.add('hidden'); }, 3000);
     }
+    function translate(key, fallback) {
+      return window.dashT ? window.dashT(key, fallback) : fallback;
+    }
 
     // ── Active status filters ──────────────────────────────────
     function activeStatuses() {
       var boxes = document.querySelectorAll('#filter-dropdown input[type=checkbox]');
       return [].slice.call(boxes).filter(function (cb) { return cb.checked && cb.value !== 'all'; })
         .map(function (cb) { return cb.value; });
+    }
+
+    // ── Product type filter ────────────────────────────────────
+    var productFilter = '';
+    function setProductFilter(p) {
+      productFilter = p;
+      document.querySelectorAll('#product-filter button').forEach(function (b) {
+        var active = b.getAttribute('data-pf') === p;
+        b.className = 'px-3 py-1.5 rounded-full border text-xs font-bold transition-colors ' +
+          (active ? 'bg-primary text-white border-primary' : 'bg-surface text-mid border-border hover:border-primary hover:text-primary');
+      });
+      renderRequests();
     }
 
     // ── Main render ────────────────────────────────────────────
@@ -336,6 +354,7 @@
       var statuses = activeStatuses();
 
       var rows = all.filter(function (r) {
+        if (productFilter && (r.productType || 'concrete') !== productFilter) return false;
         if (statuses.length && statuses.indexOf(r.status) === -1) return false;
         if (q) {
           var hay = [r.ref, r.client, r.project, r.location, r.mix, r.email].join(' ').toLowerCase();
@@ -431,17 +450,68 @@
           : '');
     }
 
+    var PRODUCT_I18N = { concrete: 'product_concrete', precast: 'product_precast', block: 'product_block' };
+    function productBadge(r) {
+      var p = r.productType || 'concrete';
+      var icon = p === 'precast' ? 'view_in_ar' : p === 'block' ? 'grid_view' : 'local_shipping';
+      return '<span class="inline-flex items-center gap-1 bg-surface-mid text-mid border border-border text-[11px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide">' +
+        '<span class="material-symbols-outlined text-[13px]">' + icon + '</span>' +
+        '<span data-i18n="' + PRODUCT_I18N[p] + '">' + p + '</span></span>';
+    }
+    function stageControl(r) {
+      var p = r.productType || 'concrete';
+      var stages = D.WORKFLOW_STAGES[p] || D.WORKFLOW_STAGES.concrete;
+      var cur = r.stage || 'Inquiry';
+      var idx = Math.max(0, stages.indexOf(cur));
+      var dots = stages.map(function (s, i) {
+        return '<span title="' + s + '" class="h-1.5 flex-1 rounded-full ' + (i <= idx ? 'bg-primary' : 'bg-surface-high') + '"></span>';
+      }).join('');
+      var opts = stages.map(function (s) {
+        return '<option value="' + s + '"' + (s === cur ? ' selected' : '') + '>' + s + '</option>';
+      }).join('');
+      return '<div class="mt-3"><div class="flex gap-1 mb-1.5">' + dots + '</div>' +
+        '<select onchange="changeReqStage(' + r.id + ', this.value)" class="w-full text-xs font-semibold border border-border rounded px-2 py-1.5 bg-bg text-dark focus:outline-none focus:border-primary">' +
+        opts + '</select></div>';
+    }
+    function expiryBadge(r) {
+      if (!r.expiry || !r.quote || ['Booked','Paid','Cancelled','Rejected','Closed'].indexOf(r.status) !== -1) return '';
+      var today = new Date().toISOString().slice(0, 10);
+      if (r.status === 'Expired' || r.expiry < today) {
+        return '<p class="text-xs font-bold text-error mt-1"><span data-i18n="status_expired">Expired</span> · ' + D.fmtDate(r.expiry) + '</p>';
+      }
+      var days = Math.round((new Date(r.expiry) - new Date(today)) / 86400000);
+      var cls = days <= 3 ? 'text-gold-hover font-bold' : 'text-light';
+      return '<p class="text-xs ' + cls + ' mt-1"><span data-i18n="exp_expires">Expires</span> ' + D.fmtDate(r.expiry) + ' (' + days + 'd)</p>';
+    }
+    function approvalBanner(r) {
+      if (!r.approval || !r.approval.required) return '';
+      if (r.approval.status === 'pending') {
+        return '<div class="mt-4 bg-gold-bg border border-gold rounded p-3 flex items-center gap-2 text-sm text-dark">' +
+          '<span class="material-symbols-outlined text-[18px]">gavel</span>' +
+          '<span class="font-semibold" data-i18n="apr_pending_banner">Awaiting approval — client email is on hold.</span></div>';
+      }
+      if (r.approval.status === 'rejected') {
+        return '<div class="mt-4 bg-error-bg border border-error/30 rounded p-3 flex items-center gap-2 text-sm text-error">' +
+          '<span class="material-symbols-outlined text-[18px]">block</span>' +
+          '<span class="font-semibold" data-i18n="apr_rejected_banner">Approval rejected.</span>' +
+          (r.approval.note ? '<span>' + D.escapeHtml(r.approval.note) + '</span>' : '') + '</div>';
+      }
+      return '';
+    }
     function renderCard(r) {
       var quoteBanner = r.quote
         ? '<div class="mt-4 bg-primary-lt/15 border border-primary-lt rounded p-3 flex items-center gap-2 text-sm text-primary">' +
             '<span class="material-symbols-outlined text-[18px]">check_circle</span>' +
-            '<span>Quote sent: <strong>' + Number(r.quote.total).toLocaleString() + ' SAR</strong>' +
+            '<span>' +
+            (r.versions && r.versions.length > 1 ? '<strong>V' + r.versions.length + '</strong> · ' : '') +
+            'Quote: <strong>' + Number(r.quote.total).toLocaleString() + ' SAR</strong>' +
+            (r.quote.discount ? ' (−' + r.quote.discount + '%)' : '') +
             (r.quote.delivery ? ' · delivery ' + D.escapeHtml(r.quote.delivery) : '') + '</span></div>'
         : '';
       return '<div id="req-' + r.id + '" data-status="' + D.escapeHtml(r.status) + '" class="bg-surface border border-border rounded shadow-[0_2px_12px_rgba(0,0,0,0.07)] overflow-hidden transition-shadow">' +
         '<div class="flex flex-col lg:flex-row">' +
           '<div class="flex-1 p-6">' +
-            '<p class="text-xs font-semibold text-light uppercase tracking-widest mb-2">' + D.escapeHtml(r.ref) + '</p>' +
+            '<div class="flex items-center gap-2 mb-2"><p class="text-xs font-semibold text-light uppercase tracking-widest">' + D.escapeHtml(r.ref) + '</p>' + productBadge(r) + '</div>' +
             '<h2 class="font-heading text-2xl font-bold text-dark mb-5">' + D.escapeHtml(r.project) + '</h2>' +
             '<div class="grid grid-cols-3 gap-4 mb-5">' +
               '<div><p class="text-xs font-semibold text-light uppercase tracking-wide mb-1" data-i18n="label_quantity">Quantity</p><p class="text-sm font-semibold text-dark">' + val(r.quantity, r.quantity !== '' && r.quantity != null ? ' m³' : '') + '</p></div>' +
@@ -452,6 +522,7 @@
               ? '<div class="bg-surface-dim rounded p-4"><p class="text-xs font-semibold text-light uppercase tracking-wide mb-2" data-i18n="label_client_msg">Client Message</p><p class="text-sm text-dark">' + D.escapeHtml(r.message) + '</p></div>'
               : '') +
             quoteBanner +
+            approvalBanner(r) +
           '</div>' +
           '<div class="lg:w-60 border-t lg:border-t-0 lg:border-l border-border p-6 flex flex-col justify-between flex-shrink-0">' +
             '<div>' +
@@ -459,8 +530,12 @@
               '<p class="text-sm font-semibold text-dark mb-0.5">' + D.escapeHtml(r.client) + '</p>' +
               (r.email ? '<p class="text-xs text-light mb-0.5 break-all">' + D.escapeHtml(r.email) + '</p>' : '') +
               (r.phone ? '<p class="text-xs text-light mb-2">' + D.escapeHtml(r.phone) + '</p>' : '') +
-              '<p class="text-xs text-light mb-3">' + D.fmtDate(r.date) + '</p>' +
-              '<span class="' + D.statusPill(r.status) + ' text-xs font-semibold px-3 py-1 rounded-full">' + D.escapeHtml(r.status) + '</span>' +
+              '<p class="text-xs text-light mb-3">' + D.fmtDate(r.date) +
+                (r.dispatchWindow && r.dispatchWindow !== 'flexible' ? ' · ' + D.escapeHtml(r.dispatchWindow) : '') + '</p>' +
+              '<span class="' + D.statusPill(r.status) + ' text-xs font-semibold px-3 py-1 rounded-full"' +
+                (STATUS_I18N[r.status] ? ' data-i18n="' + STATUS_I18N[r.status] + '"' : '') + '>' + D.escapeHtml(r.status) + '</span>' +
+              expiryBadge(r) +
+              stageControl(r) +
             '</div>' +
             '<div class="mt-6 space-y-2">' + actionButtons(r, false) + '</div>' +
           '</div>' +
@@ -472,7 +547,7 @@
       var body = rows.map(function (r) {
         var qty = (r.quantity === '' || r.quantity == null) ? '—' : Number(r.quantity).toLocaleString();
         return '<tr id="req-' + r.id + '" class="bg-surface hover:bg-surface-dim transition-colors">' +
-          '<td class="px-4 py-3 text-xs font-semibold text-light">' + D.escapeHtml(r.ref) + '</td>' +
+          '<td class="px-4 py-3 text-xs font-semibold text-light">' + D.escapeHtml(r.ref) + '<div class="mt-1">' + productBadge(r) + '</div></td>' +
           '<td class="px-4 py-3"><p class="text-sm font-semibold text-dark">' + D.escapeHtml(r.client) + '</p>' +
             (r.email ? '<p class="text-xs text-light">' + D.escapeHtml(r.email) + '</p>' : '') + '</td>' +
           '<td class="px-4 py-3 text-sm text-dark">' + D.escapeHtml(r.project) + '</td>' +
@@ -525,27 +600,66 @@
       document.getElementById('modal-qty').textContent    = (r.quantity === '' || r.quantity == null) ? '—' : r.quantity + ' m³';
       document.getElementById('modal-mix').textContent    = r.mix || '—';
       document.getElementById('modal-rate').value     = r.quote ? r.quote.rate : '';
+      document.getElementById('modal-discount').value = r.quote && r.quote.discount ? r.quote.discount : '';
       document.getElementById('modal-total').value    = '';
       document.getElementById('modal-delivery').value = r.quote ? (r.quote.delivery || '') : '';
       document.getElementById('modal-notes').value    = r.quote ? (r.quote.notes || '') : '';
+      // Quote expiry: default 14 days out for new quotes
+      var def = new Date(Date.now() + 14 * 86400000).toISOString().slice(0, 10);
+      document.getElementById('modal-expiry').value = r.expiry || def;
+      // Revision reason only required when re-quoting
+      var isRevision = !!(r.versions && r.versions.length);
+      document.getElementById('modal-reason-wrap').classList.toggle('hidden', !isRevision);
+      document.getElementById('modal-reason').value = '';
+      // Version history list
+      var vbox = document.getElementById('modal-versions');
+      if (isRevision) {
+        vbox.innerHTML = r.versions.slice().reverse().map(function (v) {
+          return '<p><strong>V' + v.v + '</strong> · ' + Number(v.total).toLocaleString() + ' SAR' +
+            (v.discount ? ' · −' + v.discount + '%' : '') +
+            ' · ' + D.fmtDate(v.date) + (v.by ? ' · ' + D.escapeHtml(v.by) : '') +
+            (v.reason ? '<span class="text-light"> — ' + D.escapeHtml(v.reason) + '</span>' : '') + '</p>';
+        }).join('');
+        vbox.classList.remove('hidden');
+      } else { vbox.classList.add('hidden'); }
       calcTotal();
       document.getElementById('quote-modal').classList.remove('hidden');
+      if (window.reapplyDashLang) window.reapplyDashLang();
     }
     function closeModal() { document.getElementById('quote-modal').classList.add('hidden'); }
     function calcTotal() {
       var r = D.getRequest(currentReqId);
       var rate = parseFloat(document.getElementById('modal-rate').value) || 0;
+      var disc = parseFloat(document.getElementById('modal-discount').value) || 0;
       var qty  = r ? (parseFloat(r.quantity) || 0) : 0;
-      document.getElementById('modal-total').value = rate && qty ? (rate * qty).toLocaleString() + ' SAR' : '';
+      var total = (qty ? rate * qty : rate) * (1 - disc / 100);
+      document.getElementById('modal-total').value = rate ? Math.round(total).toLocaleString() + ' SAR' : '';
+      // Live approval preview
+      if (r) {
+        var reasons = D.approvalReasons(r, { discount: disc });
+        var box = document.getElementById('modal-approval');
+        if (reasons.length) {
+          var KEY = { large_volume: 'apr_large_volume', high_discount: 'apr_high_discount', same_day_dispatch: 'apr_same_day' };
+          document.getElementById('modal-approval-list').innerHTML = reasons.map(function (x) {
+            return '<li><span data-i18n="' + KEY[x] + '"></span></li>';
+          }).join('');
+          box.classList.remove('hidden');
+          if (window.reapplyDashLang) window.reapplyDashLang();
+        } else { box.classList.add('hidden'); }
+      }
     }
     // Collect the quote values currently in the modal for a request.
     function gatherQuote(r) {
       var rate = parseFloat(document.getElementById('modal-rate').value) || 0;
+      var disc = parseFloat(document.getElementById('modal-discount').value) || 0;
       var qty  = parseFloat(r.quantity) || 0;
       return {
         rate: rate,
-        total: qty ? rate * qty : rate,
+        discount: disc,
+        total: Math.round((qty ? rate * qty : rate) * (1 - disc / 100)),
         delivery: document.getElementById('modal-delivery').value || '',
+        expiry: document.getElementById('modal-expiry').value || '',
+        reason: document.getElementById('modal-reason').value.trim(),
         notes: document.getElementById('modal-notes').value || '',
         quantity: r.quantity,
         ref: r.ref,
@@ -616,16 +730,64 @@
       if (!rate) { flagRate(); return; }
 
       var q = gatherQuote(r);
-      // Save the quote to the shared store first (this always succeeds).
-      D.updateRequest(currentReqId, {
-        status: 'Quote Sent',
-        quote: {
-          rate: q.rate, total: q.total, delivery: q.delivery,
-          notes: q.notes, sentAt: new Date().toISOString()
-        }
+
+      // Revisions require a reason (version control)
+      var isRevision = !!(r.versions && r.versions.length);
+      if (isRevision && !q.reason) {
+        var el = document.getElementById('modal-reason');
+        el.classList.add('border-error', 'ring-1', 'ring-error');
+        el.focus();
+        setTimeout(function () { el.classList.remove('border-error', 'ring-1', 'ring-error'); }, 1500);
+        return;
+      }
+
+      // Version history entry
+      var me = '';
+      try { var u = window.JehanAuth.currentUser(); me = u ? (u.name || u.email) : ''; } catch (e) {}
+      var versions = (r.versions || []).slice();
+      versions.push({
+        v: versions.length + 1, rate: q.rate, discount: q.discount, total: q.total,
+        delivery: q.delivery, reason: isRevision ? q.reason : 'Initial quote',
+        date: new Date().toISOString(), by: me
       });
+
+      // Approval evaluation (large volume / high discount / same-day)
+      var reasons = D.approvalReasons(r, { discount: q.discount });
+      var isAdmin = false;
+      try { isAdmin = window.JehanAuth.isAdmin(); } catch (e) {}
+      var needsApproval = reasons.length > 0 && !isAdmin;
+
+      var quoteObj = {
+        rate: q.rate, discount: q.discount, total: q.total, delivery: q.delivery,
+        notes: q.notes, sentAt: new Date().toISOString()
+      };
+      var patch = {
+        quote: quoteObj, versions: versions, expiry: q.expiry, discount: q.discount,
+        stage: 'Quote'
+      };
+      if (needsApproval) {
+        patch.status = 'Pending Confirmation';
+        patch.approval = { required: true, reasons: reasons, status: 'pending', by: '', date: '', note: '' };
+      } else {
+        patch.status = 'Quote Sent';
+        if (reasons.length && isAdmin) {
+          patch.approval = { required: true, reasons: reasons, status: 'approved', by: me, date: new Date().toISOString(), note: 'Auto-approved by administrator' };
+        }
+      }
+      D.updateRequest(currentReqId, patch);
+      D.logAudit(isRevision ? 'quote_revised' : 'quote_sent',
+        'V' + versions.length + ' · ' + Number(q.total).toLocaleString() + ' SAR' +
+        (q.discount ? ' (−' + q.discount + '%)' : '') +
+        (isRevision ? ' — ' + q.reason : '') +
+        (needsApproval ? ' — awaiting approval' : ''), r.id, r.ref);
       closeModal();
       renderRequests();
+
+      // Approval pending → hold the client email until approved.
+      if (needsApproval) {
+        showQuoteToast(translate('apr_submitted', 'Quote saved and submitted for approval. The client email will be sent after approval.'));
+        return;
+      }
 
       // No email on file → can't auto-send; tell the admin.
       if (!r.email) {
@@ -654,26 +816,57 @@
     }
 
     // ── Update Status modal ────────────────────────────────────
+    var STATUS_I18N = {
+      'Pending': 'status_pending', 'Pending Confirmation': 'status_pending_conf',
+      'Contacted': 'status_contacted', 'Quote Sent': 'status_quote_sent',
+      'Booked': 'status_booked', 'Paid': 'status_paid', 'Delayed': 'status_delayed',
+      'Approved': 'status_approved', 'Cancelled': 'status_cancelled',
+      'Rejected': 'status_rejected', 'Expired': 'status_expired'
+    };
+    var STATUS_CHOICES = ['Pending', 'Contacted', 'Quote Sent', 'Pending Confirmation',
+      'Booked', 'Paid', 'Delayed', 'Approved', 'Cancelled', 'Rejected'];
+
     function openStatusModal(id) {
       var r = D.getRequest(id);
       if (!r) return;
       currentReqId = id;
       document.getElementById('status-modal-req').textContent    = r.ref;
       document.getElementById('status-modal-client').textContent = r.client;
-      document.querySelectorAll('#status-options input[type=radio]').forEach(function (rd) {
-        rd.checked = rd.value === r.status;
-      });
+      document.getElementById('status-options').innerHTML = STATUS_CHOICES.map(function (s) {
+        return '<label class="flex items-center gap-2 p-2.5 border border-border rounded cursor-pointer hover:bg-surface-dim transition-colors">' +
+          '<input type="radio" name="new-status" value="' + s + '" class="accent-primary"' + (r.status === s ? ' checked' : '') + '/>' +
+          '<span class="' + D.statusPill(s) + ' text-[11px] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap" data-i18n="' + STATUS_I18N[s] + '">' + s + '</span>' +
+        '</label>';
+      }).join('');
       var note = document.getElementById('status-note'); if (note) note.value = '';
       document.getElementById('status-modal').classList.remove('hidden');
+      if (window.reapplyDashLang) window.reapplyDashLang();
     }
     function closeStatusModal() { document.getElementById('status-modal').classList.add('hidden'); }
     function saveStatus() {
       var sel = document.querySelector('#status-options input[type=radio]:checked');
-      if (currentReqId && sel) { D.updateRequest(currentReqId, { status: sel.value }); }
+      if (currentReqId && sel) {
+        var r = D.getRequest(currentReqId);
+        var old = r ? r.status : '';
+        var note = (document.getElementById('status-note') || {}).value || '';
+        D.updateRequest(currentReqId, { status: sel.value });
+        if (r && old !== sel.value) {
+          D.logAudit('status_changed', old + ' → ' + sel.value + (note ? ' — ' + note.trim() : ''), r.id, r.ref);
+        }
+      }
       closeStatusModal();
       var toast = document.getElementById('status-toast');
       toast.classList.remove('hidden');
       setTimeout(function () { toast.classList.add('hidden'); }, 3000);
+      renderRequests();
+    }
+
+    // ── Workflow stage (per product type) ─────────────────────
+    function changeReqStage(id, stage) {
+      var r = D.getRequest(id); if (!r) return;
+      var old = r.stage || 'Inquiry';
+      D.updateRequest(id, { stage: stage });
+      if (old !== stage) D.logAudit('stage_changed', old + ' → ' + stage, r.id, r.ref);
       renderRequests();
     }
 

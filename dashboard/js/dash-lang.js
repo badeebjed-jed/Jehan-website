@@ -179,6 +179,15 @@
       modal_cancel:       'Cancel',
       modal_send_quote:   'Send Quote',
       toast_quote_sent:   'Quote sent successfully!',
+      modal_discount:     'Discount (%)',
+      modal_expiry:       'Quote Expiry',
+      modal_reason:       'Reason for Change',
+      ph_reason:          'Why is this quote being revised?',
+      apr_submitted:      'Quote saved and submitted for approval. The client email will be sent after approval.',
+      apr_pending_banner: 'Awaiting approval — client email is on hold.',
+      apr_rejected_banner:'Approval rejected.',
+      exp_expires:        'Expires',
+      flt_all_products:   'All Products',
       // Status modal
       modal_upd_status:   'Update Status',
       modal_new_status:   'New Status',
@@ -455,6 +464,15 @@
       modal_cancel:       'إلغاء',
       modal_send_quote:   'إرسال العرض',
       toast_quote_sent:   'تم إرسال عرض السعر بنجاح!',
+      modal_discount:     'الخصم (٪)',
+      modal_expiry:       'انتهاء صلاحية العرض',
+      modal_reason:       'سبب التعديل',
+      ph_reason:          'ما سبب تعديل عرض السعر؟',
+      apr_submitted:      'تم حفظ العرض وإرساله للموافقة. سيُرسل البريد الإلكتروني للعميل بعد الموافقة.',
+      apr_pending_banner: 'بانتظار الموافقة — تم تعليق إرسال البريد للعميل.',
+      apr_rejected_banner:'تم رفض الموافقة.',
+      exp_expires:        'ينتهي في',
+      flt_all_products:   'كل المنتجات',
       // Status modal
       modal_upd_status:   'تحديث الحالة',
       modal_new_status:   'الحالة الجديدة',
@@ -625,6 +643,12 @@
 
   window.toggleDashLang = function () {
     applyDashLang(currentLang === 'en' ? 'ar' : 'en');
+  };
+
+  // Dictionary lookup for JS-composed strings (toasts, dynamic labels).
+  window.dashT = function (key, fallback) {
+    var t = T[currentLang] || {};
+    return t[key] !== undefined ? t[key] : (fallback !== undefined ? fallback : key);
   };
 
   // Re-apply the CURRENT language to the whole document. Call this
