@@ -83,6 +83,7 @@
         <div class="bg-surface border border-border rounded shadow-[0_2px_12px_rgba(0,0,0,0.07)] p-6 space-y-4">
 
           <div id="sf-error" class="hidden bg-error-bg border border-error/30 text-error text-sm font-semibold px-4 py-3 rounded" data-i18n="sf_required_err">Please fill all required fields.</div>
+          <div id="sf-date-error" class="hidden bg-error-bg border border-error/30 text-error text-sm font-semibold px-4 py-3 rounded" data-i18n="err_past_date">The date cannot be in the past — concrete cannot be booked for a day that has already gone.</div>
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
@@ -182,7 +183,7 @@
     <a href="bookings.html" class="underline font-bold whitespace-nowrap" data-i18n="sf_view_req">View Requests →</a>
   </div>
 
-  <script src="js/dash-data.js?v=5"></script>
+  <script src="js/dash-data.js?v=6"></script>
   <script>
     var D = window.JehanData;
     var product = 'concrete';
@@ -278,6 +279,18 @@
       err.classList.toggle('hidden', !bad);
       if (bad) { window.scrollTo(0, 0); return; }
 
+      // Past dates are not bookable
+      var dateErr = document.getElementById('sf-date-error');
+      if (date < new Date().toISOString().slice(0, 10)) {
+        dateErr.classList.remove('hidden');
+        var df = document.getElementById('sf-date');
+        df.classList.add('border-error', 'ring-1', 'ring-error');
+        df.focus();
+        setTimeout(function () { df.classList.remove('border-error', 'ring-1', 'ring-error'); }, 1800);
+        return;
+      }
+      dateErr.classList.add('hidden');
+
       var email = document.getElementById('sf-email').value.trim();
       var mix = document.getElementById('sf-product-select').value;
 
@@ -328,7 +341,9 @@
     }
 
     setProduct('concrete');
+    // Required date can only be today or later
+    document.getElementById('sf-date').min = new Date().toISOString().slice(0, 10);
   </script>
-  <script src="js/dash-lang.js?v=5"></script>
+  <script src="js/dash-lang.js?v=6"></script>
 </body>
 </html>

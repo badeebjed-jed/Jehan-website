@@ -448,11 +448,17 @@
     });
     read(K_REQ).forEach(function (r) {
       if ((r.productType || 'concrete') === 'concrete' && r.deliveryDate === day &&
-          !counted[r.id] && ['Cancelled', 'Rejected', 'Expired'].indexOf(r.status) === -1) {
+          !counted[r.id] && ['Cancelled', 'Rejected', 'Expired'].indexOf(r.status) === -1 &&
+          !approvalRejected(r)) {
         var q = parseFloat(r.quantity); if (!isNaN(q)) sum += q;
       }
     });
     return sum;
+  }
+  // A request whose approval was rejected must not occupy the schedule
+  // until it is revised and approved.
+  function approvalRejected(r) {
+    return !!(r.approval && r.approval.required && r.approval.status === 'rejected');
   }
 
   // ── Audit log ────────────────────────────────────────────────
@@ -521,7 +527,7 @@
       // sales KPIs
       openLeads: leads.filter(function (l) { return ['Won', 'Lost'].indexOf(l.stage) === -1; }).length,
       pendingQuotes: reqs.filter(function (r) { return ['Pending', 'Pending Confirmation', 'Quote Sent'].indexOf(r.status) !== -1; }).length,
-      upcomingBookings: reqs.filter(function (r) { return r.deliveryDate && r.deliveryDate >= today && ['Cancelled', 'Rejected', 'Expired'].indexOf(r.status) === -1; }).length,
+      upcomingBookings: reqs.filter(function (r) { return r.deliveryDate && r.deliveryDate >= today && ['Cancelled', 'Rejected', 'Expired'].indexOf(r.status) === -1 && !approvalRejected(r); }).length,
       overdueFollowUps: overdueTasks().length,
       pendingApprovals: pendingApprovals().length
     };
@@ -634,6 +640,7 @@
     // audit + approvals
     getAudit: getAudit, logAudit: logAudit,
     approvalReasons: approvalReasons, pendingApprovals: pendingApprovals,
+    approvalRejected: approvalRejected,
     maybeExpireQuotes: maybeExpireQuotes,
     // constants
     LEAD_STAGES: LEAD_STAGES, WORKFLOW_STAGES: WORKFLOW_STAGES,

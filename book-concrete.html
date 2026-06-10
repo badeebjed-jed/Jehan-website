@@ -173,8 +173,21 @@
       } catch (e) {}
     }
 
+    // Delivery date can only be today or later.
+    (function () {
+      var dd = document.querySelector('input[name="delivery_date"]');
+      if (dd) dd.min = new Date().toISOString().slice(0, 10);
+    })();
+
     function handleSubmit(e) {
       e.preventDefault();
+      var dd = e.target.querySelector('input[name="delivery_date"]');
+      if (dd && dd.value && dd.value < new Date().toISOString().slice(0, 10)) {
+        dd.setCustomValidity('Delivery date cannot be in the past · لا يمكن اختيار تاريخ تسليم في الماضي');
+        dd.reportValidity();
+        dd.addEventListener('input', function () { dd.setCustomValidity(''); }, { once: true });
+        return;
+      }
       sendQuoteRequest(e.target);
       openConfirmationModal();
       e.target.reset();

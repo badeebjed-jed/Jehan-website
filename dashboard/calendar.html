@@ -153,6 +153,7 @@
           <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5"><span data-i18n="cal_day">Day</span> <span class="text-error">*</span></label>
           <input id="ef-day" type="date" class="w-full border border-border rounded px-3 py-2.5 text-sm text-dark bg-bg focus:outline-none focus:border-primary"/>
         </div>
+        <div id="ef-date-error" class="hidden md:col-span-2 bg-error-bg border border-error/30 text-error text-sm font-semibold px-4 py-3 rounded" data-i18n="err_past_date">The date cannot be in the past — concrete cannot be booked for a day that has already gone.</div>
         <div>
           <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5" data-i18n="sf_dispatch">Dispatch Time Frame</label>
           <select id="ef-window" class="w-full border border-border rounded px-3 py-2.5 text-sm text-dark bg-bg focus:outline-none focus:border-primary">
@@ -206,7 +207,7 @@
     <span id="cal-toast-msg">Done</span>
   </div>
 
-  <script src="js/dash-data.js?v=5"></script>
+  <script src="js/dash-data.js?v=6"></script>
   <script>
     var D = window.JehanData;
     var calProduct = 'concrete';
@@ -243,6 +244,7 @@
         if ((r.productType || 'concrete') !== product) return;
         if (!r.deliveryDate || linked[r.id]) return;
         if (['Cancelled', 'Rejected', 'Expired'].indexOf(r.status) !== -1) return;
+        if (D.approvalRejected(r)) return; // rejected approvals stay off the schedule
         out.push({
           kind: 'request', id: r.id, day: r.deliveryDate, window: r.dispatchWindow || 'flexible',
           client: r.client, qty: r.quantity, location: r.location || '',
@@ -371,7 +373,8 @@
     function renderUnassigned() {
       var list = D.getRequests().filter(function (r) {
         return (r.productType || 'concrete') === calProduct && !r.deliveryDate &&
-          ['Cancelled', 'Rejected', 'Expired', 'Closed'].indexOf(r.status) === -1;
+          ['Cancelled', 'Rejected', 'Expired', 'Closed'].indexOf(r.status) === -1 &&
+          !D.approvalRejected(r);
       });
       var c = document.getElementById('cal-unassigned');
       if (!list.length) {
@@ -442,6 +445,8 @@
       document.getElementById('ef-product').value = calProduct;
       document.getElementById('ef-product').disabled = false;
       document.getElementById('ef-day').value = (typeof day === 'string') ? day : todayKey();
+      document.getElementById('ef-day').min = todayKey();   // no past bookings
+      document.getElementById('ef-date-error').classList.add('hidden');
       document.getElementById('ef-window').value = 'flexible';
       document.getElementById('ef-qty').value = '';
       document.getElementById('ef-location').value = '';
@@ -492,6 +497,15 @@
       var client = document.getElementById('ef-client').value.trim();
       var day = document.getElementById('ef-day').value;
       if (!client || !day) return;
+      // Past dates are not bookable
+      if (day < todayKey()) {
+        document.getElementById('ef-date-error').classList.remove('hidden');
+        var df = document.getElementById('ef-day');
+        df.classList.add('border-error', 'ring-1', 'ring-error');
+        df.focus();
+        setTimeout(function () { df.classList.remove('border-error', 'ring-1', 'ring-error'); }, 1800);
+        return;
+      }
       var data = {
         client: client,
         productType: document.getElementById('ef-product').value,
@@ -583,6 +597,6 @@
     setCalProduct('concrete');
     D.subscribe(renderCal);
   </script>
-  <script src="js/dash-lang.js?v=5"></script>
+  <script src="js/dash-lang.js?v=6"></script>
 </body>
 </html>

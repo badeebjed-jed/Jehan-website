@@ -135,7 +135,7 @@
     </main>
   </div>
 
-  <script src="js/dash-lang.js?v=5"></script>
+  <script src="js/dash-lang.js?v=6"></script>
   <script>
     // ── Company Profile Upload ────────────────────────────────────
     function uploadProfile(input) {
@@ -175,7 +175,7 @@
     })();
     updateProfileDateUI();
   </script>
-  <script src="js/dash-data.js?v=5"></script>
+  <script src="js/dash-data.js?v=6"></script>
   <script>
     var D = window.JehanData;
 
@@ -415,7 +415,8 @@
       var items = [];
       D.getRequests().forEach(function (r) {
         if (r.deliveryDate && r.deliveryDate >= tk && r.deliveryDate <= horizon &&
-            ['Cancelled', 'Rejected', 'Expired'].indexOf(r.status) === -1) {
+            ['Cancelled', 'Rejected', 'Expired'].indexOf(r.status) === -1 &&
+            !D.approvalRejected(r)) {
           items.push({ day: r.deliveryDate, client: r.client, qty: r.quantity, status: r.status, type: r.productType || 'concrete', win: r.dispatchWindow });
         }
       });

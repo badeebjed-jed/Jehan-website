@@ -240,6 +240,8 @@
           <input id="modal-delivery" type="date"
             class="w-full border border-border rounded px-3 py-2.5 text-sm text-dark bg-bg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors"/>
         </div>
+        <!-- Past-date error -->
+        <div id="modal-date-error" class="hidden bg-error-bg border border-error/30 text-error text-sm font-semibold px-4 py-3 rounded" data-i18n="err_past_date">The date cannot be in the past — concrete cannot be booked for a day that has already gone.</div>
         <!-- Revision reason (only when a quote already exists) -->
         <div id="modal-reason-wrap" class="hidden">
           <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5"><span data-i18n="modal_reason">Reason for Change</span> <span class="text-error">*</span></label>
@@ -308,7 +310,7 @@
     </div>
   </div>
 
-  <script src="js/dash-data.js?v=5"></script>
+  <script src="js/dash-data.js?v=6"></script>
   <script>
     var D = window.JehanData;
     // Only the Primary Administrator may delete quote requests.
@@ -607,6 +609,11 @@
       // Quote expiry: default 14 days out for new quotes
       var def = new Date(Date.now() + 14 * 86400000).toISOString().slice(0, 10);
       document.getElementById('modal-expiry').value = r.expiry || def;
+      // No past dates: delivery and expiry can only be today or later
+      var todayStr = new Date().toISOString().slice(0, 10);
+      document.getElementById('modal-delivery').min = todayStr;
+      document.getElementById('modal-expiry').min = todayStr;
+      document.getElementById('modal-date-error').classList.add('hidden');
       // Revision reason only required when re-quoting
       var isRevision = !!(r.versions && r.versions.length);
       document.getElementById('modal-reason-wrap').classList.toggle('hidden', !isRevision);
@@ -731,6 +738,18 @@
 
       var q = gatherQuote(r);
 
+      // Past dates are not bookable (delivery or expiry before today)
+      var todayStr = new Date().toISOString().slice(0, 10);
+      if ((q.delivery && q.delivery < todayStr) || (q.expiry && q.expiry < todayStr)) {
+        var bad = (q.delivery && q.delivery < todayStr) ? 'modal-delivery' : 'modal-expiry';
+        var del = document.getElementById(bad);
+        del.classList.add('border-error', 'ring-1', 'ring-error');
+        del.focus();
+        document.getElementById('modal-date-error').classList.remove('hidden');
+        setTimeout(function () { del.classList.remove('border-error', 'ring-1', 'ring-error'); }, 1800);
+        return;
+      }
+
       // Revisions require a reason (version control)
       var isRevision = !!(r.versions && r.versions.length);
       if (isRevision && !q.reason) {
@@ -765,6 +784,8 @@
         quote: quoteObj, versions: versions, expiry: q.expiry, discount: q.discount,
         stage: 'Quote'
       };
+      // Keep the schedule in sync: the quoted delivery date is the booking date.
+      if (q.delivery) patch.deliveryDate = q.delivery;
       if (needsApproval) {
         patch.status = 'Pending Confirmation';
         patch.approval = { required: true, reasons: reasons, status: 'pending', by: '', date: '', note: '' };
@@ -963,7 +984,7 @@
     D.subscribe(renderRequests);
   </script>
 
-  <script src="js/dash-lang.js?v=5"></script>
+  <script src="js/dash-lang.js?v=6"></script>
   <script>
     // ── Company Profile Upload ────────────────────────────────────
     function uploadProfile(input) {
