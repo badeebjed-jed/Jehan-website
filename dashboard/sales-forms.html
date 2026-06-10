@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Sales Forms - Jehan Holding Group</title>
+  <script src="js/auth.js?v=6"></script>
+  <script>if (!window.JehanAuth || !window.JehanAuth.enforce('bookings')) { /* halted by redirect */ }</script>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600;700&family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+  <script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          primary:       '#3D5A34',
+          'primary-mid': '#5C7A48',
+          'primary-lt':  '#8CAE78',
+          gold:          '#C49A1A',
+          'gold-hover':  '#A07D10',
+          bg:            '#F2F1EE',
+          surface:       '#FFFFFF',
+          'surface-dim': '#F8F7F4',
+          'surface-mid': '#EEEDE9',
+          'surface-high':'#E4E3DF',
+          dark:          '#1E1E1E',
+          mid:           '#444444',
+          light:         '#888888',
+          border:        '#DCDBD7',
+          error:         '#ba1a1a',
+          'error-bg':    '#ffdad6',
+          'gold-bg':     '#FBF0C4',
+        },
+        fontFamily: {
+          heading: ['"Barlow Condensed"', 'Arial', 'sans-serif'],
+          body:    ['Barlow', 'Arial', 'sans-serif'],
+        },
+        borderRadius: { DEFAULT: '4px', full: '9999px' },
+      }
+    }
+  };
+  </script>
+  <style>
+    body { font-family: 'Barlow', Arial, sans-serif; }
+    h1,h2,h3,h4,h5 { font-family: 'Barlow Condensed', Arial, sans-serif; font-weight: 700; letter-spacing: 0.02em; }
+    .material-symbols-outlined { font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24; }
+  </style>
+</head>
+<body class="bg-bg text-dark h-screen flex overflow-hidden">
+
+  <aside class="w-64 h-full flex flex-col bg-surface border-r border-border flex-shrink-0" data-nav></aside>
+  <script src="js/dash-nav.js?v=1"></script>
+
+  <div class="flex-1 flex flex-col overflow-hidden">
+
+    <header class="bg-surface border-b border-border h-16 flex items-center justify-between px-8 flex-shrink-0">
+      <h1 class="font-heading font-bold text-2xl uppercase tracking-wide text-dark" data-i18n="page_sales_forms">Sales Forms</h1>
+    </header>
+
+    <div class="flex-1 overflow-y-auto p-8">
+      <div class="max-w-3xl mx-auto space-y-6">
+
+        <p class="text-sm text-light" data-i18n="sf_intro">Create a quote or booking on behalf of a client — walk-in, phone, or representative requests.</p>
+
+        <!-- Product type toggle -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3" id="sf-tabs">
+          <button onclick="setProduct('concrete')" data-tab="concrete" class="sf-tab border rounded p-4 text-center transition-colors">
+            <span class="material-symbols-outlined text-[26px] mb-1">local_shipping</span>
+            <p class="text-sm font-bold" data-i18n="sf_tab_concrete">Concrete Booking</p>
+          </button>
+          <button onclick="setProduct('precast')" data-tab="precast" class="sf-tab border rounded p-4 text-center transition-colors">
+            <span class="material-symbols-outlined text-[26px] mb-1">view_in_ar</span>
+            <p class="text-sm font-bold" data-i18n="sf_tab_precast">Precast Quote</p>
+          </button>
+          <button onclick="setProduct('block')" data-tab="block" class="sf-tab border rounded p-4 text-center transition-colors">
+            <span class="material-symbols-outlined text-[26px] mb-1">grid_view</span>
+            <p class="text-sm font-bold" data-i18n="sf_tab_block">Construction Block Quote</p>
+          </button>
+        </div>
+
+        <!-- Form card -->
+        <div class="bg-surface border border-border rounded shadow-[0_2px_12px_rgba(0,0,0,0.07)] p-6 space-y-4">
+
+          <div id="sf-error" class="hidden bg-error-bg border border-error/30 text-error text-sm font-semibold px-4 py-3 rounded" data-i18n="sf_required_err">Please fill all required fields.</div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5"><span data-i18n="sf_client">Client Name</span> <span class="text-error">*</span></label>
+              <input id="sf-client" type="text" onblur="matchCustomer()" class="w-full border border-border rounded px-3 py-2.5 text-sm text-dark bg-bg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"/>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5"><span data-i18n="th_phone">Phone</span> <span class="text-error">*</span></label>
+              <input id="sf-phone" type="tel" onblur="matchCustomer()" class="w-full border border-border rounded px-3 py-2.5 text-sm text-dark bg-bg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"/>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5" data-i18n="th_email">Email</label>
+              <input id="sf-email" type="email" onblur="matchCustomer()" class="w-full border border-border rounded px-3 py-2.5 text-sm text-dark bg-bg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"/>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5"><span data-i18n="sf_location">Project Location</span> <span class="text-error">*</span></label>
+              <input id="sf-location" type="text" class="w-full border border-border rounded px-3 py-2.5 text-sm text-dark bg-bg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"/>
+            </div>
+
+            <!-- Product-specific selector -->
+            <div>
+              <label id="sf-product-label" class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5" data-i18n="sf_mix_grade">Mix Grade</label>
+              <select id="sf-product-select" class="w-full border border-border rounded px-3 py-2.5 text-sm text-dark bg-bg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"></select>
+            </div>
+            <div>
+              <label id="sf-qty-label" class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5"><span data-i18n="sf_qty_m3">Quantity (m³)</span> <span class="text-error">*</span></label>
+              <input id="sf-qty" type="number" min="0" step="any" class="w-full border border-border rounded px-3 py-2.5 text-sm text-dark bg-bg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"/>
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5"><span data-i18n="sf_req_date">Required Date</span> <span class="text-error">*</span></label>
+              <input id="sf-date" type="date" onchange="previewApproval()" class="w-full border border-border rounded px-3 py-2.5 text-sm text-dark bg-bg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"/>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5" data-i18n="sf_dispatch">Dispatch Time Frame</label>
+              <select id="sf-window" class="w-full border border-border rounded px-3 py-2.5 text-sm text-dark bg-bg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary">
+                <option value="flexible" data-i18n="sf_dw_flexible">Flexible</option>
+                <option value="06:00–10:00" data-i18n="sf_dw_morning">Morning (06:00–10:00)</option>
+                <option value="10:00–14:00" data-i18n="sf_dw_midday">Midday (10:00–14:00)</option>
+                <option value="14:00–18:00" data-i18n="sf_dw_afternoon">Afternoon (14:00–18:00)</option>
+                <option value="18:00–22:00" data-i18n="sf_dw_evening">Evening (18:00–22:00)</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5" data-i18n="lbl_source">Lead Source</label>
+              <select id="sf-source" onchange="toggleRep()" class="w-full border border-border rounded px-3 py-2.5 text-sm text-dark bg-bg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary">
+                <option value="walk-in" data-i18n="src_walkin">Walk-in</option>
+                <option value="phone" data-i18n="src_phone">Phone</option>
+                <option value="website" data-i18n="src_website">Website</option>
+                <option value="representative" data-i18n="src_rep">Representative</option>
+              </select>
+            </div>
+            <div id="sf-rep-wrap" class="hidden">
+              <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5"><span data-i18n="lbl_rep">Representative</span> <span class="text-error">*</span></label>
+              <input id="sf-rep" type="text" data-i18n-ph="ph_rep_name" placeholder="Representative name…" class="w-full border border-border rounded px-3 py-2.5 text-sm text-dark bg-bg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"/>
+            </div>
+
+            <div class="md:col-span-2">
+              <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5" data-i18n="sf_details">Additional Details</label>
+              <textarea id="sf-details" rows="3" class="w-full border border-border rounded px-3 py-2.5 text-sm text-dark bg-bg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary resize-none"></textarea>
+            </div>
+          </div>
+
+          <!-- Approval preview -->
+          <div id="sf-approval" class="hidden bg-gold-bg border border-gold rounded p-3 text-xs text-dark">
+            <p class="font-bold flex items-center gap-1 mb-1"><span class="material-symbols-outlined text-[16px]">gavel</span><span data-i18n="sf_approval_note">This request will require approval:</span></p>
+            <ul id="sf-approval-list" class="list-disc ms-5"></ul>
+          </div>
+
+          <!-- Customer DB integration -->
+          <div id="sf-cust-new" class="flex items-center gap-2 bg-surface-dim border border-border rounded p-3">
+            <input id="sf-add-cust" type="checkbox" checked class="rounded border-border text-primary focus:ring-primary"/>
+            <label for="sf-add-cust" class="text-xs font-semibold text-mid" data-i18n="sf_add_customer">Add this client to the Customer Database</label>
+          </div>
+          <div id="sf-cust-match" class="hidden bg-primary-lt/15 border border-primary-lt rounded p-3 text-xs text-primary flex items-center gap-2">
+            <span class="material-symbols-outlined text-[16px]">how_to_reg</span>
+            <span data-i18n="sf_existing_customer">Matched an existing customer record — no duplicate will be created.</span>
+          </div>
+
+          <div class="flex justify-end pt-2">
+            <button onclick="submitSalesForm()" class="flex items-center gap-2 bg-gold hover:bg-gold-hover text-white text-sm font-semibold tracking-wide px-6 py-3 rounded transition-colors">
+              <span class="material-symbols-outlined text-[18px]">send</span>
+              <span data-i18n="sf_submit">Create & Send to Workflow →</span>
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Success toast with link -->
+  <div id="sf-toast" class="hidden fixed bottom-6 right-6 z-50 bg-primary text-white text-sm font-semibold px-5 py-3 rounded shadow-lg flex items-center gap-3">
+    <span class="material-symbols-outlined text-[18px]">check_circle</span>
+    <span><span id="sf-toast-ref" class="font-bold"></span> <span data-i18n="sf_success">Created successfully — now in Quotes & Booking Requests</span></span>
+    <a href="bookings.html" class="underline font-bold whitespace-nowrap" data-i18n="sf_view_req">View Requests →</a>
+  </div>
+
+  <script src="js/dash-data.js?v=5"></script>
+  <script>
+    var D = window.JehanData;
+    var product = 'concrete';
+
+    var PRODUCT_OPTIONS = {
+      concrete: ['C10','C15','C20','C25','C30','C35','C40','C45','C50','C60'].map(function (g) {
+        return { value: g + ' MPa', key: null, label: g + ' MPa' };
+      }),
+      precast: [
+        { value: 'Hollow-core Slabs', key: 'pc_hollow',   label: 'Hollow-core Slabs' },
+        { value: 'Wall Panels',       key: 'pc_wall',     label: 'Wall Panels' },
+        { value: 'Beams & Columns',   key: 'pc_beam',     label: 'Beams & Columns' },
+        { value: 'Stairs',            key: 'pc_stairs',   label: 'Stairs' },
+        { value: 'Boundary Walls',    key: 'pc_boundary', label: 'Boundary Walls' },
+        { value: 'Custom Element',    key: 'pc_custom',   label: 'Custom Element' }
+      ],
+      block: [
+        { value: 'Normal Hollow Block (20cm)',   key: 'bl_nh20',   label: 'Normal Hollow Block (20cm)' },
+        { value: 'Normal Solid Block (20cm)',    key: 'bl_ns20',   label: 'Normal Solid Block (20cm)' },
+        { value: 'Insulated Block (20cm)',       key: 'bl_ins20',  label: 'Insulated Block (20cm)' },
+        { value: 'Blue Insulated Block (30cm)',  key: 'bl_ins30',  label: 'Blue Insulated Block (30cm)' },
+        { value: 'White Insulated Block (30cm)', key: 'bl_wins30', label: 'White Insulated Block (30cm)' }
+      ]
+    };
+    var PRODUCT_LABEL_KEY = { concrete: 'sf_mix_grade', precast: 'sf_precast_product', block: 'sf_block_product' };
+    var QTY_LABEL_KEY = { concrete: 'sf_qty_m3', precast: 'sf_qty_units', block: 'sf_qty_pcs' };
+    var PROJECT_PREFIX = { concrete: 'Concrete Booking', precast: 'Precast Quote', block: 'Block Quote' };
+
+    function setProduct(p) {
+      product = p;
+      // tab highlight
+      document.querySelectorAll('.sf-tab').forEach(function (b) {
+        var active = b.getAttribute('data-tab') === p;
+        b.className = 'sf-tab border rounded p-4 text-center transition-colors ' +
+          (active ? 'border-primary bg-primary text-white' : 'border-border bg-surface text-mid hover:border-primary hover:text-primary');
+      });
+      // product selector
+      var sel = document.getElementById('sf-product-select');
+      sel.innerHTML = PRODUCT_OPTIONS[p].map(function (o) {
+        return '<option value="' + o.value + '"' + (o.key ? ' data-i18n="' + o.key + '"' : '') + '>' + o.label + '</option>';
+      }).join('');
+      document.getElementById('sf-product-label').setAttribute('data-i18n', PRODUCT_LABEL_KEY[p]);
+      document.getElementById('sf-qty-label').querySelector('span[data-i18n]').setAttribute('data-i18n', QTY_LABEL_KEY[p]);
+      previewApproval();
+      if (window.reapplyDashLang) window.reapplyDashLang();
+    }
+
+    function toggleRep() {
+      var isRep = document.getElementById('sf-source').value === 'representative';
+      document.getElementById('sf-rep-wrap').classList.toggle('hidden', !isRep);
+    }
+
+    // Live approval preview (same-day / large concrete volume)
+    function previewApproval() {
+      var qty = parseFloat(document.getElementById('sf-qty').value);
+      var date = document.getElementById('sf-date').value;
+      var reasons = D.approvalReasons({ quantity: product === 'concrete' ? qty : NaN, deliveryDate: date, discount: 0 });
+      var box = document.getElementById('sf-approval');
+      if (!reasons.length) { box.classList.add('hidden'); return; }
+      var KEY = { large_volume: 'apr_large_volume', high_discount: 'apr_high_discount', same_day_dispatch: 'apr_same_day' };
+      document.getElementById('sf-approval-list').innerHTML = reasons.map(function (r) {
+        return '<li><span data-i18n="' + KEY[r] + '"></span></li>';
+      }).join('');
+      box.classList.remove('hidden');
+      if (window.reapplyDashLang) window.reapplyDashLang();
+    }
+    document.getElementById('sf-qty').addEventListener('input', previewApproval);
+
+    // Customer DB match check
+    function matchCustomer() {
+      var email = (document.getElementById('sf-email').value || '').trim().toLowerCase();
+      var phone = String(document.getElementById('sf-phone').value || '').replace(/\D/g, '');
+      var match = D.getCustomers().some(function (c) {
+        var ce = (c.email || '').trim().toLowerCase();
+        var cp = String(c.phone || '').replace(/\D/g, '');
+        return (email && ce && ce === email) || (phone && cp && cp === phone);
+      });
+      document.getElementById('sf-cust-new').classList.toggle('hidden', match);
+      document.getElementById('sf-cust-match').classList.toggle('hidden', !match);
+      return match;
+    }
+
+    function submitSalesForm() {
+      var client = document.getElementById('sf-client').value.trim();
+      var phone = document.getElementById('sf-phone').value.trim();
+      var location = document.getElementById('sf-location').value.trim();
+      var qty = document.getElementById('sf-qty').value;
+      var date = document.getElementById('sf-date').value;
+      var source = document.getElementById('sf-source').value;
+      var rep = document.getElementById('sf-rep').value.trim();
+      var err = document.getElementById('sf-error');
+      var bad = !client || !phone || !location || !qty || !date || (source === 'representative' && !rep);
+      err.classList.toggle('hidden', !bad);
+      if (bad) { window.scrollTo(0, 0); return; }
+
+      var email = document.getElementById('sf-email').value.trim();
+      var mix = document.getElementById('sf-product-select').value;
+
+      var req = D.addRequest({
+        project: PROJECT_PREFIX[product] + ' · ' + location,
+        client: client, email: email, phone: phone,
+        quantity: parseFloat(qty),
+        mix: mix, location: location,
+        message: document.getElementById('sf-details').value.trim(),
+        deliveryDate: date,
+        dispatchWindow: document.getElementById('sf-window').value,
+        productType: product, stage: 'Inquiry',
+        source: source, representative: source === 'representative' ? rep : ''
+      });
+
+      // Approval flag at creation (volume / same-day)
+      var reasons = D.approvalReasons(req);
+      if (reasons.length) {
+        D.updateRequest(req.id, { approval: { required: true, reasons: reasons, status: 'pending', by: '', date: '', note: '' } });
+      }
+
+      // Customer DB integration
+      var matched = matchCustomer();
+      if (!matched && document.getElementById('sf-add-cust').checked) {
+        D.addCustomer({
+          name: client, email: email, phone: phone, location: location,
+          activity: PROJECT_PREFIX[product], notes: req.ref + ' · ' + req.project,
+          segment: source === 'walk-in' ? 'walk-in' : '',
+          representative: source === 'representative' ? rep : ''
+        });
+      }
+
+      D.logAudit('request_created', PROJECT_PREFIX[product] + ' created via sales form (' + source + ')' +
+        (reasons.length ? ' — approval required' : ''), req.id, req.ref);
+
+      // success toast + reset
+      document.getElementById('sf-toast-ref').textContent = req.ref + ' ·';
+      var toast = document.getElementById('sf-toast');
+      toast.classList.remove('hidden');
+      setTimeout(function () { toast.classList.add('hidden'); }, 6000);
+      ['sf-client','sf-phone','sf-email','sf-location','sf-qty','sf-date','sf-details','sf-rep'].forEach(function (id) {
+        document.getElementById(id).value = '';
+      });
+      document.getElementById('sf-approval').classList.add('hidden');
+      document.getElementById('sf-cust-new').classList.remove('hidden');
+      document.getElementById('sf-cust-match').classList.add('hidden');
+      if (window.reapplyDashLang) window.reapplyDashLang();
+    }
+
+    setProduct('concrete');
+  </script>
+  <script src="js/dash-lang.js?v=5"></script>
+</body>
+</html>
