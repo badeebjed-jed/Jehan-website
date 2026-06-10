@@ -189,14 +189,14 @@
         { label: 'New Leads', value: k.newLeads.toLocaleString(),
           icon: 'person_add', iconBg: 'bg-gold-bg', iconColor: 'text-gold',
           href: 'bookings.html?status=Pending', i18n: 'kpi_leads',
-          hint: 'Pending requests' },
+          hint: '<span data-i18n="kpi_hint_pending">Pending requests</span>' },
         { label: 'Est. Volume (m³)', value: Math.round(k.estVolume).toLocaleString(),
           icon: 'layers', iconBg: 'bg-surface-high', iconColor: 'text-mid',
           href: 'bookings.html', i18n: 'kpi_volume' },
         { label: 'Active Quotes', value: k.activeQuotes.toLocaleString(),
           icon: 'request_quote', iconBg: 'bg-error-bg', iconColor: 'text-error',
           href: 'bookings.html?status=Quote%20Sent', i18n: 'kpi_quotes',
-          hint: 'Awaiting client' }
+          hint: '<span data-i18n="kpi_hint_awaiting">Awaiting client</span>' }
       ];
       document.getElementById('kpi-grid').innerHTML = cards.map(function (c) {
         return '<a href="' + c.href + '" class="group bg-surface border border-border rounded shadow-[0_2px_12px_rgba(0,0,0,0.07)] p-6 block hover:border-primary hover:shadow-[0_4px_18px_rgba(0,0,0,0.10)] transition-all">' +
