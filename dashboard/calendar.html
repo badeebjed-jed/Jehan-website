@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Calendar Management - Jehan Holding Group</title>
+  <script src="js/auth.js?v=6"></script>
+  <script>if (!window.JehanAuth || !window.JehanAuth.enforce('bookings')) { /* halted by redirect */ }</script>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600;700&family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+  <script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          primary:       '#3D5A34',
+          'primary-mid': '#5C7A48',
+          'primary-lt':  '#8CAE78',
+          gold:          '#C49A1A',
+          'gold-hover':  '#A07D10',
+          bg:            '#F2F1EE',
+          surface:       '#FFFFFF',
+          'surface-dim': '#F8F7F4',
+          'surface-mid': '#EEEDE9',
+          'surface-high':'#E4E3DF',
+          dark:          '#1E1E1E',
+          mid:           '#444444',
+          light:         '#888888',
+          border:        '#DCDBD7',
+          error:         '#ba1a1a',
+          'error-bg':    '#ffdad6',
+          'gold-bg':     '#FBF0C4',
+        },
+        fontFamily: {
+          heading: ['"Barlow Condensed"', 'Arial', 'sans-serif'],
+          body:    ['Barlow', 'Arial', 'sans-serif'],
+        },
+        borderRadius: { DEFAULT: '4px', full: '9999px' },
+      }
+    }
+  };
+  </script>
+  <style>
+    body { font-family: 'Barlow', Arial, sans-serif; }
+    h1,h2,h3,h4,h5 { font-family: 'Barlow Condensed', Arial, sans-serif; font-weight: 700; letter-spacing: 0.02em; }
+    .material-symbols-outlined { font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24; }
+    .cal-chip { cursor: grab; }
+    .cal-chip:active { cursor: grabbing; }
+    .cal-day.dragover { outline: 2px dashed #3D5A34; outline-offset: -2px; background: #F8F7F4; }
+  </style>
+</head>
+<body class="bg-bg text-dark h-screen flex overflow-hidden">
+
+  <aside class="w-64 h-full flex flex-col bg-surface border-r border-border flex-shrink-0" data-nav></aside>
+  <script src="js/dash-nav.js?v=1"></script>
+
+  <div class="flex-1 flex flex-col overflow-hidden">
+
+    <header class="bg-surface border-b border-border h-16 flex items-center justify-between px-8 flex-shrink-0 gap-4">
+      <h1 class="font-heading font-bold text-2xl uppercase tracking-wide text-dark" data-i18n="page_calendar">Calendar Management</h1>
+      <div class="flex items-center gap-2 flex-shrink-0">
+        <div class="relative">
+          <button onclick="document.getElementById('export-menu').classList.toggle('hidden')" class="flex items-center gap-2 px-4 py-2 border border-border rounded text-sm font-semibold text-mid hover:bg-surface-mid transition-colors">
+            <span class="material-symbols-outlined text-[18px]">download</span><span data-i18n="cal_export">Export</span>
+          </button>
+          <div id="export-menu" class="hidden absolute end-0 mt-1 bg-surface border border-border rounded shadow-lg z-20 w-44">
+            <button onclick="exportCsv('day')" class="block w-full text-start px-4 py-2.5 text-sm text-mid hover:bg-surface-mid" data-i18n="cal_export_day">Today (CSV)</button>
+            <button onclick="exportCsv('week')" class="block w-full text-start px-4 py-2.5 text-sm text-mid hover:bg-surface-mid" data-i18n="cal_export_week">This Week (CSV)</button>
+            <button onclick="exportCsv('month')" class="block w-full text-start px-4 py-2.5 text-sm text-mid hover:bg-surface-mid" data-i18n="cal_export_month">This Month (CSV)</button>
+          </div>
+        </div>
+        <button onclick="openEntryModal()" class="flex items-center gap-2 bg-gold hover:bg-gold-hover text-white text-sm font-semibold tracking-wide px-5 py-2 rounded transition-colors">
+          <span class="material-symbols-outlined text-[18px]">add</span><span data-i18n="cal_add_entry">Add Entry →</span>
+        </button>
+      </div>
+    </header>
+
+    <div class="flex-1 overflow-y-auto p-8">
+      <div class="max-w-6xl mx-auto space-y-5">
+
+        <!-- Product switch + month nav + filters -->
+        <div class="flex flex-wrap items-center gap-3 justify-between">
+          <div class="flex gap-2" id="cal-product-tabs">
+            <button onclick="setCalProduct('concrete')" data-cp="concrete" class="px-4 py-2 rounded border text-sm font-bold transition-colors"><span data-i18n="product_concrete">Concrete</span></button>
+            <button onclick="setCalProduct('precast')" data-cp="precast" class="px-4 py-2 rounded border text-sm font-bold transition-colors"><span data-i18n="product_precast">Precast</span></button>
+            <button onclick="setCalProduct('block')" data-cp="block" class="px-4 py-2 rounded border text-sm font-bold transition-colors"><span data-i18n="product_block">Construction Block</span></button>
+          </div>
+          <div class="flex items-center gap-2">
+            <button onclick="moveMonth(-1)" class="p-2 rounded border border-border text-mid hover:bg-surface-mid"><span class="material-symbols-outlined text-[18px]">chevron_left</span></button>
+            <p id="cal-month-label" class="text-base font-bold text-dark min-w-[150px] text-center"></p>
+            <button onclick="moveMonth(1)" class="p-2 rounded border border-border text-mid hover:bg-surface-mid"><span class="material-symbols-outlined text-[18px]">chevron_right</span></button>
+            <button onclick="goToday()" class="px-3 py-2 rounded border border-border text-xs font-bold text-mid hover:bg-surface-mid" data-i18n="cal_today">Today</button>
+          </div>
+        </div>
+        <div class="flex flex-wrap gap-3">
+          <input id="cal-region" type="text" data-i18n-ph="cal_filter_region" placeholder="Filter by location…" oninput="renderCal()"
+            class="flex-1 min-w-[180px] max-w-xs border border-border rounded px-3 py-2 text-sm bg-surface text-dark placeholder-light focus:outline-none focus:border-primary"/>
+          <input id="cal-rep" type="text" data-i18n-ph="cal_filter_rep" placeholder="Filter by representative…" oninput="renderCal()"
+            class="flex-1 min-w-[180px] max-w-xs border border-border rounded px-3 py-2 text-sm bg-surface text-dark placeholder-light focus:outline-none focus:border-primary"/>
+        </div>
+
+        <!-- Month grid -->
+        <div class="bg-surface border border-border rounded shadow-[0_2px_12px_rgba(0,0,0,0.07)] overflow-hidden">
+          <div id="cal-weekdays" class="grid grid-cols-7 bg-surface-dim border-b border-border"></div>
+          <div id="cal-grid" class="grid grid-cols-7"></div>
+        </div>
+
+        <!-- Unassigned queue + upcoming -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          <div class="bg-surface border border-border rounded shadow-[0_2px_12px_rgba(0,0,0,0.07)]">
+            <div class="px-5 py-3.5 border-b border-border">
+              <h2 class="text-base uppercase tracking-wide flex items-center gap-2"><span class="material-symbols-outlined text-gold text-[20px]">pending_actions</span><span data-i18n="cal_unassigned">Unassigned Queue</span></h2>
+              <p class="text-xs text-light mt-0.5" data-i18n="cal_unassigned_d">Requests without a delivery date or dispatch window.</p>
+            </div>
+            <div id="cal-unassigned" class="p-4 space-y-2 max-h-64 overflow-y-auto"></div>
+          </div>
+          <div class="bg-surface border border-border rounded shadow-[0_2px_12px_rgba(0,0,0,0.07)]">
+            <div class="px-5 py-3.5 border-b border-border">
+              <h2 class="text-base uppercase tracking-wide flex items-center gap-2"><span class="material-symbols-outlined text-primary text-[20px]">notifications</span><span data-i18n="cal_upcoming">Upcoming (next 3 days)</span></h2>
+            </div>
+            <div id="cal-upcoming" class="p-4 space-y-2 max-h-64 overflow-y-auto"></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Entry modal -->
+  <div id="entry-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div class="absolute inset-0 bg-black/40" onclick="closeEntryModal()"></div>
+    <div class="relative bg-surface rounded-lg shadow-xl w-full max-w-lg max-h-[92vh] overflow-y-auto">
+      <div class="px-6 py-4 border-b border-border flex items-center justify-between">
+        <h3 class="text-lg font-bold text-dark" data-i18n="cal_entry">Calendar Entry</h3>
+        <button onclick="closeEntryModal()" class="text-light hover:text-dark transition-colors"><span class="material-symbols-outlined">close</span></button>
+      </div>
+      <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div id="ef-linked" class="hidden md:col-span-2 bg-surface-dim rounded p-3 text-xs text-mid"></div>
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5"><span data-i18n="cal_client">Client</span> <span class="text-error">*</span></label>
+          <input id="ef-client" type="text" class="w-full border border-border rounded px-3 py-2.5 text-sm text-dark bg-bg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"/>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5" data-i18n="lbl_product_type">Product Type</label>
+          <select id="ef-product" class="w-full border border-border rounded px-3 py-2.5 text-sm text-dark bg-bg focus:outline-none focus:border-primary">
+            <option value="concrete" data-i18n="product_concrete">Concrete</option>
+            <option value="precast" data-i18n="product_precast">Precast</option>
+            <option value="block" data-i18n="product_block">Construction Block</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5"><span data-i18n="cal_day">Day</span> <span class="text-error">*</span></label>
+          <input id="ef-day" type="date" class="w-full border border-border rounded px-3 py-2.5 text-sm text-dark bg-bg focus:outline-none focus:border-primary"/>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5" data-i18n="sf_dispatch">Dispatch Time Frame</label>
+          <select id="ef-window" class="w-full border border-border rounded px-3 py-2.5 text-sm text-dark bg-bg focus:outline-none focus:border-primary">
+            <option value="flexible" data-i18n="sf_dw_flexible">Flexible</option>
+            <option value="06:00–10:00" data-i18n="sf_dw_morning">Morning (06:00–10:00)</option>
+            <option value="10:00–14:00" data-i18n="sf_dw_midday">Midday (10:00–14:00)</option>
+            <option value="14:00–18:00" data-i18n="sf_dw_afternoon">Afternoon (14:00–18:00)</option>
+            <option value="18:00–22:00" data-i18n="sf_dw_evening">Evening (18:00–22:00)</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5" data-i18n="cal_qty">Quantity</label>
+          <input id="ef-qty" type="number" min="0" step="any" class="w-full border border-border rounded px-3 py-2.5 text-sm text-dark bg-bg focus:outline-none focus:border-primary"/>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5" data-i18n="label_location">Location</label>
+          <input id="ef-location" type="text" class="w-full border border-border rounded px-3 py-2.5 text-sm text-dark bg-bg focus:outline-none focus:border-primary"/>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5" data-i18n="th_status">Status</label>
+          <select id="ef-status" class="w-full border border-border rounded px-3 py-2.5 text-sm text-dark bg-bg focus:outline-none focus:border-primary">
+            <option value="Pending Confirmation" data-i18n="status_pending_conf">Pending Confirmation</option>
+            <option value="Booked" data-i18n="status_booked">Booked</option>
+            <option value="Paid" data-i18n="status_paid">Paid</option>
+            <option value="Delayed" data-i18n="status_delayed">Delayed</option>
+            <option value="Cancelled" data-i18n="status_cancelled">Cancelled</option>
+          </select>
+        </div>
+        <div class="flex items-center gap-2 md:col-span-2 bg-surface-dim border border-border rounded p-3">
+          <input id="ef-tentative" type="checkbox" class="rounded border-border text-primary focus:ring-primary"/>
+          <label for="ef-tentative" class="text-xs font-semibold text-mid" data-i18n="cal_mark_tentative">Tentative booking (reserve space before confirmation)</label>
+        </div>
+      </div>
+      <div class="px-6 py-4 border-t border-border flex gap-3 justify-between">
+        <button id="ef-delete" onclick="deleteEntry()" class="hidden flex items-center gap-2 border border-error/40 text-error text-sm font-semibold px-4 py-2 rounded hover:bg-error hover:text-white transition-colors">
+          <span class="material-symbols-outlined text-[18px]">delete</span><span data-i18n="btn_delete">Delete</span>
+        </button>
+        <div class="flex gap-3 ms-auto">
+          <button onclick="closeEntryModal()" class="px-5 py-2 border border-border rounded text-sm font-semibold text-mid hover:bg-surface-mid transition-colors" data-i18n="btn_cancel">Cancel</button>
+          <button onclick="saveEntry()" class="flex items-center gap-2 bg-gold hover:bg-gold-hover text-white text-sm font-semibold px-5 py-2 rounded transition-colors">
+            <span class="material-symbols-outlined text-[18px]">save</span><span data-i18n="btn_save">Save</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="cal-toast" class="hidden fixed bottom-6 right-6 z-50 bg-primary text-white text-sm font-semibold px-5 py-3 rounded shadow-lg flex items-center gap-2">
+    <span class="material-symbols-outlined text-[18px]">check_circle</span>
+    <span id="cal-toast-msg">Done</span>
+  </div>
+
+  <script src="js/dash-data.js?v=5"></script>
+  <script>
+    var D = window.JehanData;
+    var calProduct = 'concrete';
+    var anchor = new Date(); anchor.setDate(1); // first of displayed month
+    var editingEventId = null;   // event being edited (kind=event)
+    var editingReqId = null;     // request being scheduled/edited (kind=request)
+
+    function pad(n) { return (n < 10 ? '0' : '') + n; }
+    function dayKey(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+    function todayKey() { return dayKey(new Date()); }
+    function lang() { return localStorage.getItem('dashLang') === 'ar' ? 'ar' : 'en-GB'; }
+    function toast(key, fallback) {
+      var el = document.getElementById('cal-toast');
+      document.getElementById('cal-toast-msg').textContent = window.dashT ? window.dashT(key, fallback) : fallback;
+      el.classList.remove('hidden');
+      setTimeout(function () { el.classList.add('hidden'); }, 2500);
+    }
+
+    // ── Unified entry collection ───────────────────────────────
+    // Manual events + dated requests (that have no linked event).
+    function entriesFor(product) {
+      var out = [];
+      var linked = {};
+      D.getEvents().forEach(function (ev) {
+        if (ev.productType !== product) return;
+        if (ev.requestId != null) linked[ev.requestId] = true;
+        out.push({
+          kind: 'event', id: ev.id, day: ev.day, window: ev.window || 'flexible',
+          client: ev.client || ev.title || '', qty: ev.quantity, location: ev.location || '',
+          status: ev.status || 'Pending Confirmation', tentative: !!ev.tentative, requestId: ev.requestId
+        });
+      });
+      D.getRequests().forEach(function (r) {
+        if ((r.productType || 'concrete') !== product) return;
+        if (!r.deliveryDate || linked[r.id]) return;
+        if (['Cancelled', 'Rejected', 'Expired'].indexOf(r.status) !== -1) return;
+        out.push({
+          kind: 'request', id: r.id, day: r.deliveryDate, window: r.dispatchWindow || 'flexible',
+          client: r.client, qty: r.quantity, location: r.location || '',
+          status: r.status, tentative: !!r.tentative, rep: r.representative || ''
+        });
+      });
+      // filters
+      var region = (document.getElementById('cal-region').value || '').trim().toLowerCase();
+      var rep = (document.getElementById('cal-rep').value || '').trim().toLowerCase();
+      return out.filter(function (e) {
+        if (region && (e.location || '').toLowerCase().indexOf(region) === -1) return false;
+        if (rep) {
+          var r = e.kind === 'request' ? (e.rep || '') : '';
+          if (e.kind === 'request') { var rq = D.getRequest(e.id); r = rq ? (rq.representative || '') : ''; }
+          if ((r || '').toLowerCase().indexOf(rep) === -1) return false;
+        }
+        return true;
+      });
+    }
+
+    function conflictsForDay(dayEntries, day) {
+      var flags = [];
+      // capacity (concrete only)
+      if (calProduct === 'concrete' && D.dayConcreteVolume(day) > D.CONCRETE_DAILY_CAPACITY) {
+        flags.push('capacity');
+      }
+      // dispatch window overlap (two+ non-flexible entries in the same window)
+      var seen = {};
+      dayEntries.forEach(function (e) {
+        if (!e.window || e.window === 'flexible') return;
+        if (e.status === 'Cancelled') return;
+        if (seen[e.window]) { if (flags.indexOf('window') === -1) flags.push('window'); }
+        seen[e.window] = true;
+      });
+      return flags;
+    }
+
+    // ── Rendering ──────────────────────────────────────────────
+    function setCalProduct(p) {
+      calProduct = p;
+      document.querySelectorAll('#cal-product-tabs button').forEach(function (b) {
+        var active = b.getAttribute('data-cp') === p;
+        b.className = 'px-4 py-2 rounded border text-sm font-bold transition-colors ' +
+          (active ? 'bg-primary text-white border-primary' : 'bg-surface text-mid border-border hover:border-primary hover:text-primary');
+      });
+      renderCal();
+    }
+    function moveMonth(d) { anchor.setMonth(anchor.getMonth() + d); renderCal(); }
+    function goToday() { anchor = new Date(); anchor.setDate(1); renderCal(); }
+
+    function chipHtml(e) {
+      var pill = D.statusPill(e.status);
+      var qty = (e.qty !== '' && e.qty != null && !isNaN(parseFloat(e.qty))) ? parseFloat(e.qty) : null;
+      return '<div draggable="true" ondragstart="dragStart(event, \'' + e.kind + '\',' + e.id + ')" ' +
+        'onclick="openEntryFor(\'' + e.kind + '\',' + e.id + ')" ' +
+        'class="cal-chip ' + pill + ' rounded px-1.5 py-1 text-[10px] font-semibold leading-tight truncate' +
+        (e.tentative ? ' opacity-60 border-dashed' : '') + '" title="' +
+        D.escapeHtml(e.client + (qty ? ' · ' + qty : '') + (e.location ? ' · ' + e.location : '') + ' · ' + e.status) + '">' +
+        (e.tentative ? '◌ ' : '') + D.escapeHtml(e.client || '—') + (qty ? ' · ' + qty : '') +
+      '</div>';
+    }
+
+    function renderCal() {
+      // month label + weekday headers
+      document.getElementById('cal-month-label').textContent =
+        anchor.toLocaleDateString(lang(), { month: 'long', year: 'numeric' });
+      var wd = document.getElementById('cal-weekdays');
+      var base = new Date(2026, 5, 7); // a Sunday
+      var names = [];
+      for (var i = 0; i < 7; i++) {
+        var d2 = new Date(base); d2.setDate(base.getDate() + i);
+        names.push(d2.toLocaleDateString(lang(), { weekday: 'short' }));
+      }
+      wd.innerHTML = names.map(function (n) {
+        return '<div class="px-2 py-2 text-center text-[11px] font-bold uppercase tracking-widest text-light">' + n + '</div>';
+      }).join('');
+
+      var entries = entriesFor(calProduct);
+      var byDay = {};
+      entries.forEach(function (e) { (byDay[e.day] = byDay[e.day] || []).push(e); });
+
+      // grid: from Sunday before the 1st to Saturday after month end
+      var first = new Date(anchor);
+      var start = new Date(first); start.setDate(1 - first.getDay());
+      var cells = [];
+      var cur = new Date(start);
+      var tk = todayKey();
+      for (var c = 0; c < 42; c++) {
+        var key = dayKey(cur);
+        var inMonth = cur.getMonth() === anchor.getMonth();
+        var dayEntries = (byDay[key] || []).slice().sort(function (a, b) { return String(a.window).localeCompare(String(b.window)); });
+        var flags = conflictsForDay(dayEntries, key);
+        var vol = calProduct === 'concrete' ? D.dayConcreteVolume(key) : 0;
+        var pct = Math.min(100, Math.round(vol / D.CONCRETE_DAILY_CAPACITY * 100));
+        var volBar = (calProduct === 'concrete' && vol > 0)
+          ? '<div class="mt-1" title="' + vol + ' / ' + D.CONCRETE_DAILY_CAPACITY + ' m³">' +
+              '<div class="h-1 rounded-full bg-surface-high overflow-hidden"><div class="h-full ' +
+              (vol > D.CONCRETE_DAILY_CAPACITY ? 'bg-error' : pct >= 80 ? 'bg-gold' : 'bg-primary') +
+              '" style="width:' + pct + '%"></div></div>' +
+              '<p class="text-[9px] text-light mt-0.5">' + vol + '/' + D.CONCRETE_DAILY_CAPACITY + ' m³</p></div>'
+          : '';
+        var conflictIcon = flags.length
+          ? '<span class="material-symbols-outlined text-error text-[14px]" title="' +
+            flags.map(function (f) { return f === 'capacity' ? (window.dashT ? window.dashT('cal_conflict_capacity','Daily capacity exceeded') : 'Capacity exceeded') : (window.dashT ? window.dashT('cal_conflict_window','Dispatch window overlap') : 'Window overlap'); }).join(' · ') + '">warning</span>'
+          : '';
+        cells.push('<div class="cal-day min-h-[96px] border-b border-e border-border p-1.5 align-top ' +
+          (inMonth ? 'bg-surface' : 'bg-surface-dim opacity-60') + (key === tk ? ' ring-2 ring-inset ring-primary/40' : '') + '" ' +
+          'data-day="' + key + '" ondragover="event.preventDefault(); this.classList.add(\'dragover\')" ' +
+          'ondragleave="this.classList.remove(\'dragover\')" ondrop="dropOn(event, \'' + key + '\')" ' +
+          'ondblclick="openEntryModal(\'' + key + '\')">' +
+          '<div class="flex items-center justify-between">' +
+            '<span class="text-[11px] font-bold ' + (key === tk ? 'text-primary' : inMonth ? 'text-dark' : 'text-light') + '">' + cur.getDate() + '</span>' +
+            conflictIcon +
+          '</div>' + volBar +
+          '<div class="mt-1 space-y-1">' + dayEntries.map(chipHtml).join('') + '</div>' +
+        '</div>');
+        cur.setDate(cur.getDate() + 1);
+      }
+      document.getElementById('cal-grid').innerHTML = cells.join('');
+
+      renderUnassigned();
+      renderUpcoming(entries);
+      if (window.reapplyDashLang) window.reapplyDashLang();
+    }
+
+    function renderUnassigned() {
+      var list = D.getRequests().filter(function (r) {
+        return (r.productType || 'concrete') === calProduct && !r.deliveryDate &&
+          ['Cancelled', 'Rejected', 'Expired', 'Closed'].indexOf(r.status) === -1;
+      });
+      var c = document.getElementById('cal-unassigned');
+      if (!list.length) {
+        c.innerHTML = '<p class="text-xs text-light text-center py-4" data-i18n="cal_empty_day">No entries</p>';
+        return;
+      }
+      c.innerHTML = list.map(function (r) {
+        return '<div class="flex items-center justify-between gap-2 border border-border rounded p-2.5">' +
+          '<div class="min-w-0"><p class="text-sm font-semibold text-dark truncate">' + D.escapeHtml(r.client) + '</p>' +
+          '<p class="text-xs text-light truncate">' + D.escapeHtml(r.ref) + (r.quantity ? ' · ' + r.quantity : '') + (r.location ? ' · ' + D.escapeHtml(r.location) : '') + '</p></div>' +
+          '<button onclick="scheduleRequest(' + r.id + ')" class="flex-shrink-0 text-xs font-bold text-primary border border-primary rounded px-3 py-1.5 hover:bg-primary hover:text-white transition-colors" data-i18n="cal_schedule">Schedule</button>' +
+        '</div>';
+      }).join('');
+    }
+
+    function renderUpcoming(entries) {
+      var t = new Date(); t.setHours(0, 0, 0, 0);
+      var horizon = new Date(t.getTime() + 3 * 86400000);
+      var up = entries.filter(function (e) {
+        if (!e.day || e.status === 'Cancelled') return false;
+        var d = new Date(e.day + 'T00:00:00');
+        return d >= t && d <= horizon;
+      }).sort(function (a, b) { return a.day.localeCompare(b.day); });
+      var c = document.getElementById('cal-upcoming');
+      if (!up.length) {
+        c.innerHTML = '<p class="text-xs text-light text-center py-4" data-i18n="cal_none_upcoming">Nothing scheduled in the next 3 days.</p>';
+        return;
+      }
+      c.innerHTML = up.map(function (e) {
+        return '<div class="flex items-center justify-between gap-2 border border-border rounded p-2.5">' +
+          '<div class="min-w-0"><p class="text-sm font-semibold text-dark truncate">' + D.escapeHtml(e.client) + '</p>' +
+          '<p class="text-xs text-light">' + D.fmtDate(e.day) + (e.window && e.window !== 'flexible' ? ' · ' + e.window : '') + (e.qty ? ' · ' + e.qty : '') + '</p></div>' +
+          '<span class="' + D.statusPill(e.status) + ' text-[10px] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap">' + D.escapeHtml(e.status) + '</span>' +
+        '</div>';
+      }).join('');
+    }
+
+    // ── Drag & drop rescheduling ───────────────────────────────
+    function dragStart(ev, kind, id) {
+      ev.dataTransfer.setData('text/plain', kind + ':' + id);
+      ev.stopPropagation();
+    }
+    function dropOn(ev, day) {
+      ev.preventDefault();
+      ev.currentTarget.classList.remove('dragover');
+      var data = ev.dataTransfer.getData('text/plain');
+      if (!data) return;
+      var parts = data.split(':');
+      var kind = parts[0], id = parseInt(parts[1], 10);
+      if (kind === 'event') {
+        D.updateEvent(id, { day: day });
+        D.logAudit('rescheduled', 'Calendar entry moved to ' + day, id, '');
+      } else {
+        var r = D.getRequest(id); if (!r) return;
+        D.updateRequest(id, { deliveryDate: day });
+        D.logAudit('rescheduled', r.ref + ' delivery moved to ' + day, id, r.ref);
+      }
+      renderCal();
+      toast('toast_rescheduled', 'Rescheduled');
+    }
+
+    // ── Entry modal (create / edit event, or edit dated request) ─
+    function openEntryModal(day) {
+      editingEventId = null; editingReqId = null;
+      document.getElementById('ef-linked').classList.add('hidden');
+      document.getElementById('ef-delete').classList.add('hidden');
+      document.getElementById('ef-client').value = '';
+      document.getElementById('ef-product').value = calProduct;
+      document.getElementById('ef-product').disabled = false;
+      document.getElementById('ef-day').value = (typeof day === 'string') ? day : todayKey();
+      document.getElementById('ef-window').value = 'flexible';
+      document.getElementById('ef-qty').value = '';
+      document.getElementById('ef-location').value = '';
+      document.getElementById('ef-status').value = 'Pending Confirmation';
+      document.getElementById('ef-tentative').checked = false;
+      document.getElementById('entry-modal').classList.remove('hidden');
+      if (window.reapplyDashLang) window.reapplyDashLang();
+    }
+    function openEntryFor(kind, id) {
+      if (kind === 'event') {
+        var ev = D.getEvents().filter(function (x) { return x.id === id; })[0];
+        if (!ev) return;
+        openEntryModal(ev.day);
+        editingEventId = id;
+        document.getElementById('ef-client').value = ev.client || '';
+        document.getElementById('ef-product').value = ev.productType;
+        document.getElementById('ef-window').value = ev.window || 'flexible';
+        document.getElementById('ef-qty').value = ev.quantity != null ? ev.quantity : '';
+        document.getElementById('ef-location').value = ev.location || '';
+        document.getElementById('ef-status').value = ev.status || 'Pending Confirmation';
+        document.getElementById('ef-tentative').checked = !!ev.tentative;
+        document.getElementById('ef-delete').classList.remove('hidden');
+      } else {
+        var r = D.getRequest(id); if (!r) return;
+        openEntryModal(r.deliveryDate);
+        editingReqId = id;
+        document.getElementById('ef-client').value = r.client;
+        document.getElementById('ef-product').value = r.productType || 'concrete';
+        document.getElementById('ef-product').disabled = true;
+        document.getElementById('ef-window').value = r.dispatchWindow || 'flexible';
+        document.getElementById('ef-qty').value = r.quantity != null ? r.quantity : '';
+        document.getElementById('ef-location').value = r.location || '';
+        var st = ['Pending Confirmation','Booked','Paid','Delayed','Cancelled'].indexOf(r.status) !== -1 ? r.status : 'Pending Confirmation';
+        document.getElementById('ef-status').value = st;
+        document.getElementById('ef-tentative').checked = !!r.tentative;
+        var link = document.getElementById('ef-linked');
+        link.innerHTML = '<strong data-i18n="cal_linked_req">Linked request</strong>: ' + D.escapeHtml(r.ref) + ' · ' + D.escapeHtml(r.project);
+        link.classList.remove('hidden');
+      }
+      if (window.reapplyDashLang) window.reapplyDashLang();
+    }
+    function closeEntryModal() {
+      document.getElementById('entry-modal').classList.add('hidden');
+      editingEventId = null; editingReqId = null;
+      document.getElementById('ef-product').disabled = false;
+    }
+    function saveEntry() {
+      var client = document.getElementById('ef-client').value.trim();
+      var day = document.getElementById('ef-day').value;
+      if (!client || !day) return;
+      var data = {
+        client: client,
+        productType: document.getElementById('ef-product').value,
+        day: day,
+        window: document.getElementById('ef-window').value,
+        quantity: document.getElementById('ef-qty').value !== '' ? parseFloat(document.getElementById('ef-qty').value) : '',
+        location: document.getElementById('ef-location').value.trim(),
+        status: document.getElementById('ef-status').value,
+        tentative: document.getElementById('ef-tentative').checked
+      };
+      if (editingReqId != null) {
+        D.updateRequest(editingReqId, {
+          client: client, deliveryDate: day, dispatchWindow: data.window,
+          quantity: data.quantity, location: data.location, status: data.status, tentative: data.tentative
+        });
+        D.logAudit('booking_updated', 'Schedule details updated via calendar', editingReqId, '');
+      } else if (editingEventId != null) {
+        D.updateEvent(editingEventId, data);
+        D.logAudit('event_updated', 'Calendar entry updated', editingEventId, client);
+      } else {
+        var ev = D.addEvent(data);
+        D.logAudit('event_created', data.productType + ' calendar entry on ' + day, ev.id, client);
+      }
+      closeEntryModal();
+      renderCal();
+      toast('toast_entry_saved', 'Calendar entry saved');
+    }
+    function deleteEntry() {
+      if (editingEventId == null) return;
+      D.deleteEvent(editingEventId);
+      D.logAudit('event_deleted', 'Calendar entry removed', editingEventId, '');
+      closeEntryModal();
+      renderCal();
+      toast('toast_entry_deleted', 'Calendar entry deleted');
+    }
+
+    // Schedule an unassigned request: open the modal in request mode
+    function scheduleRequest(id) {
+      var r = D.getRequest(id); if (!r) return;
+      D.updateRequest(id, { deliveryDate: r.deliveryDate || todayKey() });
+      openEntryFor('request', id);
+    }
+
+    // ── CSV export ─────────────────────────────────────────────
+    function exportCsv(scope) {
+      document.getElementById('export-menu').classList.add('hidden');
+      var t = new Date(); t.setHours(0, 0, 0, 0);
+      var from, to;
+      if (scope === 'day') { from = new Date(t); to = new Date(t); }
+      else if (scope === 'week') {
+        from = new Date(t); from.setDate(t.getDate() - t.getDay());
+        to = new Date(from); to.setDate(from.getDate() + 6);
+      } else {
+        from = new Date(anchor.getFullYear(), anchor.getMonth(), 1);
+        to = new Date(anchor.getFullYear(), anchor.getMonth() + 1, 0);
+      }
+      var fk = dayKey(from), tk2 = dayKey(to);
+      var rows = entriesFor(calProduct).filter(function (e) { return e.day >= fk && e.day <= tk2; })
+        .sort(function (a, b) { return a.day.localeCompare(b.day); });
+      var csv = 'Date,Window,Product,Client,Quantity,Location,Status,Tentative\n' + rows.map(function (e) {
+        var esc = function (s) { s = String(s == null ? '' : s); return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+        return [e.day, e.window, calProduct, esc(e.client), e.qty, esc(e.location), e.status, e.tentative ? 'yes' : 'no'].join(',');
+      }).join('\n');
+      var a = document.createElement('a');
+      a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent('﻿' + csv);
+      a.download = 'jehan-calendar-' + calProduct + '-' + scope + '-' + dayKey(new Date()) + '.csv';
+      document.body.appendChild(a); a.click(); a.remove();
+    }
+
+    // Re-render on language toggle so month/weekday names switch locale.
+    (function () {
+      var orig = window.toggleDashLang;
+      var hook = function () { setTimeout(renderCal, 80); };
+      Object.defineProperty(window, 'toggleDashLang', {
+        configurable: true,
+        get: function () { return function () { orig ? orig() : null; hook(); }; },
+        set: function (f) { orig = f; }
+      });
+    })();
+
+    // close export menu on outside click
+    document.addEventListener('click', function (e) {
+      var m = document.getElementById('export-menu');
+      if (!m.classList.contains('hidden') && !m.contains(e.target) && !e.target.closest('button[onclick*="export-menu"]')) {
+        m.classList.add('hidden');
+      }
+    });
+
+    setCalProduct('concrete');
+    D.subscribe(renderCal);
+  </script>
+  <script src="js/dash-lang.js?v=5"></script>
+</body>
+</html>
