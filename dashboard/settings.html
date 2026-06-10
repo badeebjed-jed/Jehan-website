@@ -70,7 +70,7 @@
     <!-- Header -->
     <header class="bg-surface border-b border-border h-16 flex items-center justify-between px-8 flex-shrink-0">
       <h1 class="text-2xl font-800 uppercase tracking-wide text-dark" data-i18n="page_settings">Settings</h1>
-      <button id="btn-save-all" onclick="document.getElementById('save-toast').classList.remove('hidden')" class="flex items-center gap-2 bg-gold hover:bg-gold-hover text-white text-sm font-semibold tracking-wide px-5 py-2 rounded transition-colors">
+      <button id="btn-save-all" onclick="savePrefs()" class="flex items-center gap-2 bg-gold hover:bg-gold-hover text-white text-sm font-semibold tracking-wide px-5 py-2 rounded transition-colors">
         <span class="material-symbols-outlined text-[18px]">save</span>
         <span data-i18n="btn_save_changes">Save Changes</span>
       </button>
@@ -336,24 +336,57 @@
     // ── Per-section gating ───────────────────────────────────────
     // Settings is open to everyone; what you see inside depends on
     // your permissions:
-    //   My Account                         → every user
+    //   My Account / Notifications /
+    //   System Preferences + Save Changes  → every user (personal prefs)
     //   Workspace cards                    → 'profile' perm / admin (handled by auth.js)
-    //   Company Info / Notifications /
-    //   System Preferences + Save Changes  → 'settings' perm
+    //   Company Information                → 'settings' perm
     //   Danger Zone                        → primary administrator only
     (function () {
       var A = window.JehanAuth;
       var s = A.currentUser();
       var hasSettings = A.can('settings');
       var isPrimary = !!(s && s.primary);
-      ['sect-company', 'sect-notif', 'sect-system'].forEach(function (id) {
-        var el = document.getElementById(id);
-        if (el && !hasSettings) el.style.display = 'none';
-      });
-      var saveAll = document.getElementById('btn-save-all');
-      if (saveAll && !hasSettings) saveAll.style.display = 'none';
+      var company = document.getElementById('sect-company');
+      if (company && !hasSettings) company.style.display = 'none';
       var danger = document.getElementById('sect-danger');
       if (danger && !isPrimary) danger.style.display = 'none';
+    })();
+
+    // ── Personal preferences: persist per user ───────────────────
+    // Notification toggles + system preferences are saved per login
+    // and restored on every visit. The language preference actually
+    // switches the dashboard language.
+    (function () {
+      var s = window.JehanAuth.currentUser();
+      var KEY = 'jehan_prefs_' + ((s && s.email) || 'anon').toLowerCase();
+      var notifs = document.querySelectorAll('#sect-notif input[type=checkbox]');
+      var selects = document.querySelectorAll('#sect-system select');
+
+      // restore
+      try {
+        var saved = JSON.parse(localStorage.getItem(KEY) || 'null');
+        if (saved) {
+          (saved.notifs || []).forEach(function (v, i) { if (notifs[i]) notifs[i].checked = !!v; });
+          (saved.system || []).forEach(function (v, i) { if (selects[i] && v != null) selects[i].value = v; });
+        }
+      } catch (e) {}
+
+      window.savePrefs = function () {
+        var data = {
+          notifs: [].map.call(notifs, function (n) { return n.checked; }),
+          system: [].map.call(selects, function (sel) { return sel.value; })
+        };
+        try { localStorage.setItem(KEY, JSON.stringify(data)); } catch (e) {}
+        // Apply the language choice immediately
+        var langSel = selects[0];
+        if (langSel) {
+          var want = langSel.value.indexOf('عرب') !== -1 ? 'ar' : 'en';
+          var cur = localStorage.getItem('dashLang') || 'en';
+          if (want !== cur && window.toggleDashLang) window.toggleDashLang();
+        }
+        document.getElementById('save-toast').classList.remove('hidden');
+        setTimeout(function () { document.getElementById('save-toast').classList.add('hidden'); }, 2500);
+      };
     })();
 
     // ── My Account: change own name + password ──────────────────
