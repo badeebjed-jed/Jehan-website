@@ -43,7 +43,7 @@
   var SESSION_TIMEOUT_MS = 1000 * 60 * 60 * 8; // 8 hours
 
   // Permission modules every account can be granted.
-  var MODULES = ['bookings', 'customers', 'financials', 'settings', 'profile'];
+  var MODULES = ['bookings', 'customers', 'financials', 'settings', 'profile', 'approvals'];
 
   // ── Crypto ───────────────────────────────────────────────────
   function sha256Hex(message) {
@@ -225,6 +225,16 @@
     if (!isAdmin()) { window.location.replace('overview.html'); return false; }
     return true;
   }
+  // Approval rights: administrators always, plus anyone granted the
+  // 'approvals' permission in User Access.
+  function canApprove() {
+    return isAdmin() || can('approvals');
+  }
+  function enforceApprover() {
+    if (!requireAuth()) return false;
+    if (!canApprove()) { window.location.replace('overview.html'); return false; }
+    return true;
+  }
 
   // ── User management API (admin) ──────────────────────────────
   function listUsers() {
@@ -350,7 +360,7 @@
       document.querySelectorAll('nav a[href]').forEach(function (a) {
         var href = a.getAttribute('href');
         if (map[href] && !can(map[href])) { a.style.display = 'none'; }
-        if (href === 'approvals.html' && !isAdmin()) { a.style.display = 'none'; }
+        if (href === 'approvals.html' && !canApprove()) { a.style.display = 'none'; }
       });
       // Settings → Workspace cards: hide individually based on permission,
       // and hide the whole section if neither card is visible.
@@ -382,9 +392,11 @@
     requireAuth: requireAuth,
     enforce: enforce,
     enforceAdmin: enforceAdmin,
+    enforceApprover: enforceApprover,
     currentUser: currentUser,
     isAdmin: isAdmin,
     can: can,
+    canApprove: canApprove,
     // user management
     listUsers: listUsers,
     getUser: getUser,

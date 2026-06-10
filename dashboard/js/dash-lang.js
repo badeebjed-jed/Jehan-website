@@ -373,6 +373,8 @@
       access_cust_d:      'View customer database',
       access_settings:    'System Settings',
       access_sett_d:      'Modify system configuration',
+      access_approvals:   'Approvals & Audit',
+      access_approvals_d: 'Approve or reject quotes that trip approval rules',
       btn_save_config:    'Save Configuration',
       btn_revoke:         'Revoke All Access',
       // Settings
@@ -799,6 +801,8 @@
       access_cust_d:      'عرض قاعدة بيانات العملاء',
       access_settings:    'إعدادات النظام',
       access_sett_d:      'تعديل إعدادات النظام',
+      access_approvals:   'الموافقات والتدقيق',
+      access_approvals_d: 'الموافقة على العروض الخاضعة لقواعد الموافقة أو رفضها',
       btn_save_config:    'حفظ الإعدادات',
       btn_revoke:         'إلغاء جميع الصلاحيات',
       // Settings

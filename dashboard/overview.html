@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Dashboard Overview - Jehan Holding Group</title>
   <!-- Auth guard: redirects to login if no valid session -->
-  <script src="js/auth.js?v=6"></script>
+  <script src="js/auth.js?v=7"></script>
   <script>if (!window.JehanAuth || !window.JehanAuth.requireAuth()) { /* halted by redirect */ }</script>
   <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600;700&family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet"/>
@@ -331,15 +331,15 @@
     // ── Sales command strip ────────────────────────────────────
     function renderSalesStrip() {
       var k = D.kpis();
-      var isAdmin = false;
-      try { isAdmin = window.JehanAuth.isAdmin(); } catch (e) {}
+      var approver = false;
+      try { approver = window.JehanAuth.canApprove(); } catch (e) {}
       var items = [
         ['leads.html',     'person_search',  'ov_open_leads',   'Open Leads',        k.openLeads,        ''],
         ['bookings.html',  'request_quote',  'ov_pending_q',    'Pending Quotes',    k.pendingQuotes,    ''],
         ['calendar.html',  'calendar_month', 'ov_upcoming_b',   'Upcoming Bookings', k.upcomingBookings, ''],
         ['tasks.html',     'task_alt',       'ov_overdue_f',    'Overdue Follow-Ups',k.overdueFollowUps, k.overdueFollowUps > 0 ? 'alert' : ''],
       ];
-      if (isAdmin) items.push(['approvals.html', 'gavel', 'ov_pending_apr', 'Pending Approvals', k.pendingApprovals, k.pendingApprovals > 0 ? 'alert' : '']);
+      if (approver) items.push(['approvals.html', 'gavel', 'ov_pending_apr', 'Pending Approvals', k.pendingApprovals, k.pendingApprovals > 0 ? 'alert' : '']);
       document.getElementById('sales-strip').innerHTML = items.map(function (it) {
         var alert = it[5] === 'alert';
         return '<a href="' + it[0] + '" class="bg-surface border ' + (alert ? 'border-error/40' : 'border-border') + ' rounded p-4 flex items-center gap-3 hover:border-primary transition-colors">' +
