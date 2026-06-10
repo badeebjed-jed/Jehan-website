@@ -28,14 +28,34 @@
   var K_REQ  = 'jehan_requests';
   var K_CUST = 'jehan_customers';
   var K_MSG  = 'jehan_messages';
+  var K_LEAD = 'jehan_leads';
+  var K_TASK = 'jehan_tasks';
+  var K_EVT  = 'jehan_events';
+  var K_AUD  = 'jehan_audit';
   var K_VER  = 'jehan_data_version';
-  var VERSION = '3';
+  var VERSION = '4';
+
+  // Sales-system constants
+  var CONCRETE_DAILY_CAPACITY = 600; // m³ per day
+  var APPROVAL_VOLUME_THRESHOLD = 200; // m³ — bookings at/above need approval
+  var APPROVAL_DISCOUNT_THRESHOLD = 10; // % — discounts above need approval
+  var LEAD_STAGES = ['New', 'Contacted', 'Qualified', 'Quoted', 'Negotiation', 'Won', 'Lost'];
+  var WORKFLOW_STAGES = {
+    concrete: ['Inquiry', 'Quote', 'Confirmed Booking', 'Dispatch Planned', 'Delivered', 'Closed'],
+    precast:  ['Inquiry', 'Quote', 'Design / Approval', 'Production Queue', 'Delivery Plan', 'Closed'],
+    block:    ['Inquiry', 'Quote', 'Confirmed', 'Dispatch', 'Closed']
+  };
+  var BOOKING_STATUSES = ['Pending', 'Pending Confirmation', 'Quote Sent', 'Booked', 'Paid', 'Delayed', 'Cancelled', 'Expired', 'Rejected', 'Approved', 'Contacted'];
 
   // Map cache key → server collection name.
   var COLLECTION = {};
   COLLECTION[K_REQ]  = 'requests';
   COLLECTION[K_CUST] = 'customers';
   COLLECTION[K_MSG]  = 'messages';
+  COLLECTION[K_LEAD] = 'leads';
+  COLLECTION[K_TASK] = 'tasks';
+  COLLECTION[K_EVT]  = 'events';
+  COLLECTION[K_AUD]  = 'audit';
 
   // api.php lives at the site root. Dashboard pages are one level deeper.
   var API = (location.pathname.indexOf('/dashboard/') !== -1) ? '../api.php' : 'api.php';
@@ -44,9 +64,9 @@
   // ── One-time cache reset on version bump ─────────────────────
   try {
     if (localStorage.getItem(K_VER) !== VERSION) {
-      localStorage.setItem(K_REQ, '[]');
-      localStorage.setItem(K_CUST, '[]');
-      localStorage.setItem(K_MSG, '[]');
+      [K_REQ, K_CUST, K_MSG, K_LEAD, K_TASK, K_EVT, K_AUD].forEach(function (k) {
+        localStorage.setItem(k, '[]');
+      });
       localStorage.setItem(K_VER, VERSION);
     }
   } catch (e) {}
@@ -98,14 +118,18 @@
   function pull() {
     if (pulling) return;
     pulling = true;
-    Promise.all([serverGet('requests'), serverGet('customers'), serverGet('messages')])
+    var keys = [K_REQ, K_CUST, K_MSG, K_LEAD, K_TASK, K_EVT, K_AUD];
+    Promise.all(keys.map(function (k) { return serverGet(COLLECTION[k]); }))
       .then(function (res) {
         var changed = false;
-        if (res[0] && res[0].constructor === Array) { write(K_REQ, res[0]); changed = true; }
-        if (res[1] && res[1].constructor === Array) { write(K_CUST, res[1]); changed = true; }
-        if (res[2] && res[2].constructor === Array) { write(K_MSG, res[2]); changed = true; }
+        for (var i = 0; i < keys.length; i++) {
+          if (res[i] && res[i].constructor === Array) { write(keys[i], res[i]); changed = true; }
+        }
         pulling = false;
-        if (changed) notify();
+        if (changed) {
+          try { maybeExpireQuotes(); } catch (e) {}
+          notify();
+        }
       })
       .catch(function () { pulling = false; });
   }
@@ -128,7 +152,19 @@
       quantity: data.quantity != null ? data.quantity : '',
       mix: data.mix || '', location: data.location || '',
       message: data.message || '', deliveryDate: data.deliveryDate || '',
-      status: 'Pending', date: nowISO(), quote: null, addedToCustomers: false
+      status: data.status || 'Pending', date: nowISO(), quote: null, addedToCustomers: false,
+      // ── Sales-system fields ──
+      productType: data.productType || 'concrete',        // concrete | precast | block
+      stage: data.stage || 'Inquiry',                     // workflow stage (per product type)
+      source: data.source || 'website',                   // walk-in | phone | website | representative
+      representative: data.representative || '',          // rep name when source = representative
+      dispatchWindow: data.dispatchWindow || '',          // e.g. "08:00–12:00"
+      followUp: data.followUp || '',                      // next follow-up date (YYYY-MM-DD)
+      discount: data.discount != null ? data.discount : 0,// % discount on the quote
+      versions: [],                                       // quote version history [{v, rate, total, reason, date, by}]
+      expiry: data.expiry || '',                          // quote expiry date (YYYY-MM-DD)
+      approval: null,                                     // {required, reasons[], status, by, date, note}
+      tentative: !!data.tentative
     };
     list.push(req); write(K_REQ, list);
     push(K_REQ, 'create', req);
@@ -165,16 +201,52 @@
     var cust = {
       id: uid(), name: data.name || 'Unknown', email: data.email || '',
       phone: data.phone || '', location: data.location || '',
-      activity: data.activity || 'Enquiry', notes: data.notes || '', date: nowISO()
+      activity: data.activity || 'Enquiry', notes: data.notes || '', date: nowISO(),
+      // ── Sales-system fields ──
+      company: data.company || '',
+      segment: data.segment || '',                    // contractor | consultant | walk-in | government | retail | developer
+      keyAccount: !!data.keyAccount,
+      representative: data.representative || '',
+      contacts: data.contacts || []                   // [{name, phone, email, role}]
     };
     list.push(cust); write(K_CUST, list);
     push(K_CUST, 'create', cust);
     return cust;
   }
+  function updateCustomer(id, patch) { return updateIn(K_CUST, id, patch); }
+  function deleteCustomer(id) { deleteIn(K_CUST, id); }
+  function getCustomer(id) { return getById(K_CUST, id); }
   function customerExists(email) {
     email = (email || '').trim().toLowerCase();
     if (!email) return false;
     return read(K_CUST).some(function (c) { return (c.email || '').trim().toLowerCase() === email; });
+  }
+  // Activity timeline for a customer: quotes, messages and tasks matched
+  // by email/phone, merged and sorted (newest first).
+  function customerTimeline(cust) {
+    var em = (cust.email || '').trim().toLowerCase();
+    var ph = String(cust.phone || '').replace(/\D/g, '');
+    var items = [];
+    read(K_REQ).forEach(function (r) {
+      var rEm = (r.email || '').trim().toLowerCase();
+      var rPh = String(r.phone || '').replace(/\D/g, '');
+      if ((em && rEm === em) || (ph && rPh === ph)) {
+        items.push({ kind: 'request', date: r.date, label: r.ref + ' · ' + (r.project || ''), status: r.status, id: r.id });
+        if (r.quote && r.quote.sentAt) items.push({ kind: 'quote', date: r.quote.sentAt, label: r.ref + ' · ' + (r.quote.total || '') + ' SAR', status: 'Quote Sent', id: r.id });
+      }
+    });
+    read(K_MSG).forEach(function (m) {
+      if (em && (m.email || '').trim().toLowerCase() === em) {
+        items.push({ kind: 'message', date: m.date, label: m.subject || '(message)', status: m.read ? 'Read' : 'Unread', id: m.id });
+      }
+    });
+    read(K_TASK).forEach(function (t) {
+      if (t.linkType === 'customer' && t.linkId === cust.id) {
+        items.push({ kind: 'task', date: t.date, label: t.title, status: t.status, id: t.id });
+      }
+    });
+    items.sort(function (a, b) { return new Date(b.date) - new Date(a.date); });
+    return items;
   }
 
   // ── Messages ─────────────────────────────────────────────────
@@ -208,16 +280,250 @@
     return read(K_MSG).filter(function (m) { return !m.read; }).length;
   }
 
+  // ── Generic CRUD helper for the sales collections ────────────
+  function listOf(key, sortField) {
+    return read(key).slice().sort(function (a, b) {
+      return new Date(b[sortField || 'date']) - new Date(a[sortField || 'date']);
+    });
+  }
+  function getById(key, id) {
+    return read(key).filter(function (x) { return x.id === id; })[0] || null;
+  }
+  function createIn(key, obj) {
+    var list = read(key);
+    if (obj.id == null) obj.id = uid();
+    if (!obj.date) obj.date = nowISO();
+    list.push(obj); write(key, list);
+    push(key, 'create', obj);
+    return obj;
+  }
+  function updateIn(key, id, patch) {
+    var list = read(key);
+    for (var i = 0; i < list.length; i++) {
+      if (list[i].id === id) {
+        for (var k in patch) { if (patch.hasOwnProperty(k)) list[i][k] = patch[k]; }
+        write(key, list);
+        push(key, 'update', list[i]);
+        return list[i];
+      }
+    }
+    return null;
+  }
+  function deleteIn(key, id) {
+    write(key, read(key).filter(function (x) { return x.id !== id; }));
+    push(key, 'delete', { id: id });
+  }
+
+  // ── Leads (pipeline) ─────────────────────────────────────────
+  // lead = { id, name, company, email, phone, productType, stage, priority,
+  //          source, representative, followUp, notes, lastActivity, date,
+  //          convertedRequestId }
+  function getLeads() { return listOf(K_LEAD); }
+  function getLead(id) { return getById(K_LEAD, id); }
+  function addLead(data) {
+    return createIn(K_LEAD, {
+      id: uid(),
+      name: data.name || 'Unknown',
+      company: data.company || '',
+      email: data.email || '',
+      phone: data.phone || '',
+      productType: data.productType || 'concrete',
+      stage: data.stage || 'New',
+      priority: data.priority || 'Medium',          // High | Medium | Low
+      source: data.source || 'phone',
+      representative: data.representative || '',
+      followUp: data.followUp || '',
+      notes: data.notes || '',
+      lastActivity: nowISO(),
+      date: nowISO(),
+      convertedRequestId: null
+    });
+  }
+  function updateLead(id, patch) {
+    patch.lastActivity = nowISO();
+    return updateIn(K_LEAD, id, patch);
+  }
+  function deleteLead(id) { deleteIn(K_LEAD, id); }
+  // Duplicate detection: match by phone digits or normalized name across
+  // leads AND customers. Returns array of {type, record} matches.
+  function findDuplicates(name, phone, email, excludeLeadId) {
+    var digits = String(phone || '').replace(/\D/g, '');
+    var nm = String(name || '').trim().toLowerCase();
+    var em = String(email || '').trim().toLowerCase();
+    var out = [];
+    read(K_LEAD).forEach(function (l) {
+      if (l.id === excludeLeadId) return;
+      var lp = String(l.phone || '').replace(/\D/g, '');
+      if ((digits && lp && digits === lp) ||
+          (nm && (l.name || '').trim().toLowerCase() === nm) ||
+          (em && (l.email || '').trim().toLowerCase() === em)) {
+        out.push({ type: 'lead', record: l });
+      }
+    });
+    read(K_CUST).forEach(function (c) {
+      var cp = String(c.phone || '').replace(/\D/g, '');
+      if ((digits && cp && digits === cp) ||
+          (nm && (c.name || '').trim().toLowerCase() === nm) ||
+          (em && (c.email || '').trim().toLowerCase() === em)) {
+        out.push({ type: 'customer', record: c });
+      }
+    });
+    return out;
+  }
+  // Hours a lead has been waiting since its last activity (SLA timer).
+  function leadWaitingHours(lead) {
+    var t = new Date(lead.lastActivity || lead.date);
+    if (isNaN(t)) return 0;
+    return Math.floor((Date.now() - t.getTime()) / 3600000);
+  }
+
+  // ── Tasks & follow-ups ───────────────────────────────────────
+  // task = { id, title, due, status, assignee, linkType, linkId, linkLabel,
+  //          notes, date, doneDate }
+  function getTasks() {
+    return read(K_TASK).slice().sort(function (a, b) {
+      // open tasks first, then by due date ascending
+      var ao = a.status === 'Done' ? 1 : 0, bo = b.status === 'Done' ? 1 : 0;
+      if (ao !== bo) return ao - bo;
+      return String(a.due || '9999').localeCompare(String(b.due || '9999'));
+    });
+  }
+  function addTask(data) {
+    return createIn(K_TASK, {
+      id: uid(),
+      title: data.title || 'Follow up',
+      due: data.due || '',
+      status: data.status || 'Open',                // Open | Done
+      assignee: data.assignee || '',
+      linkType: data.linkType || '',                // request | lead | customer
+      linkId: data.linkId != null ? data.linkId : null,
+      linkLabel: data.linkLabel || '',
+      notes: data.notes || '',
+      date: nowISO(), doneDate: null
+    });
+  }
+  function updateTask(id, patch) { return updateIn(K_TASK, id, patch); }
+  function deleteTask(id) { deleteIn(K_TASK, id); }
+  function overdueTasks() {
+    var today = new Date(); today.setHours(0, 0, 0, 0);
+    return read(K_TASK).filter(function (t) {
+      return t.status !== 'Done' && t.due && new Date(t.due + 'T23:59:59') < new Date() &&
+             new Date(t.due) < today;
+    });
+  }
+
+  // ── Calendar events ──────────────────────────────────────────
+  // event = { id, title, productType, day (YYYY-MM-DD), window, quantity,
+  //           location, client, status, tentative, requestId, notes, date }
+  function getEvents() { return listOf(K_EVT, 'day'); }
+  function addEvent(data) {
+    return createIn(K_EVT, {
+      id: uid(),
+      title: data.title || '',
+      productType: data.productType || 'concrete',
+      day: data.day || '',
+      window: data.window || '',
+      quantity: data.quantity != null ? data.quantity : '',
+      location: data.location || '',
+      client: data.client || '',
+      status: data.status || 'Pending Confirmation',
+      tentative: !!data.tentative,
+      requestId: data.requestId != null ? data.requestId : null,
+      notes: data.notes || '',
+      date: nowISO()
+    });
+  }
+  function updateEvent(id, patch) { return updateIn(K_EVT, id, patch); }
+  function deleteEvent(id) { deleteIn(K_EVT, id); }
+  // Concrete m³ booked on a given day (events + dated concrete bookings
+  // that have no event of their own).
+  function dayConcreteVolume(day) {
+    var sum = 0;
+    var counted = {};
+    read(K_EVT).forEach(function (ev) {
+      if (ev.day === day && ev.productType === 'concrete' && ev.status !== 'Cancelled') {
+        var q = parseFloat(ev.quantity); if (!isNaN(q)) sum += q;
+        if (ev.requestId != null) counted[ev.requestId] = true;
+      }
+    });
+    read(K_REQ).forEach(function (r) {
+      if ((r.productType || 'concrete') === 'concrete' && r.deliveryDate === day &&
+          !counted[r.id] && ['Cancelled', 'Rejected', 'Expired'].indexOf(r.status) === -1) {
+        var q = parseFloat(r.quantity); if (!isNaN(q)) sum += q;
+      }
+    });
+    return sum;
+  }
+
+  // ── Audit log ────────────────────────────────────────────────
+  // entry = { id, action, detail, refId, refLabel, by, date }
+  function getAudit() { return listOf(K_AUD); }
+  function logAudit(action, detail, refId, refLabel) {
+    var by = '';
+    try {
+      var u = window.JehanAuth && window.JehanAuth.currentUser();
+      if (u) by = u.name || u.email || '';
+    } catch (e) {}
+    return createIn(K_AUD, {
+      id: uid(), action: action, detail: detail || '',
+      refId: refId != null ? refId : null, refLabel: refLabel || '',
+      by: by, date: nowISO()
+    });
+  }
+
+  // ── Approval rules ───────────────────────────────────────────
+  // Evaluate whether a request needs approval. Returns array of reason codes.
+  function approvalReasons(req, opts) {
+    var reasons = [];
+    var qty = parseFloat(req.quantity);
+    if (!isNaN(qty) && qty >= APPROVAL_VOLUME_THRESHOLD) reasons.push('large_volume');
+    var disc = parseFloat((opts && opts.discount != null) ? opts.discount : req.discount);
+    if (!isNaN(disc) && disc > APPROVAL_DISCOUNT_THRESHOLD) reasons.push('high_discount');
+    var today = new Date().toISOString().slice(0, 10);
+    if (req.deliveryDate === today) reasons.push('same_day_dispatch');
+    return reasons;
+  }
+  function pendingApprovals() {
+    return read(K_REQ).filter(function (r) {
+      return r.approval && r.approval.required && r.approval.status === 'pending';
+    });
+  }
+
+  // ── Quote expiry auto-marking ────────────────────────────────
+  function maybeExpireQuotes() {
+    var today = new Date().toISOString().slice(0, 10);
+    var list = read(K_REQ);
+    var changed = false;
+    list.forEach(function (r) {
+      if (r.expiry && r.expiry < today && r.status === 'Quote Sent') {
+        r.status = 'Expired';
+        changed = true;
+        push(K_REQ, 'update', r);
+        try { logAudit('quote_expired', 'Quote passed its expiry date (' + r.expiry + ')', r.id, r.ref); } catch (e) {}
+      }
+    });
+    if (changed) write(K_REQ, list);
+    return changed;
+  }
+
   // ── KPIs ─────────────────────────────────────────────────────
   function kpis() {
     var reqs = read(K_REQ);
+    var leads = read(K_LEAD);
+    var today = new Date().toISOString().slice(0, 10);
     return {
       totalRequests: reqs.length,
       newLeads: reqs.filter(function (r) { return r.status === 'Pending'; }).length,
       activeQuotes: reqs.filter(function (r) { return r.status === 'Quote Sent'; }).length,
       estVolume: reqs.reduce(function (s, r) { var q = parseFloat(r.quantity); return s + (isNaN(q) ? 0 : q); }, 0),
       customers: read(K_CUST).length,
-      unreadMessages: unreadMessageCount()
+      unreadMessages: unreadMessageCount(),
+      // sales KPIs
+      openLeads: leads.filter(function (l) { return ['Won', 'Lost'].indexOf(l.stage) === -1; }).length,
+      pendingQuotes: reqs.filter(function (r) { return ['Pending', 'Pending Confirmation', 'Quote Sent'].indexOf(r.status) !== -1; }).length,
+      upcomingBookings: reqs.filter(function (r) { return r.deliveryDate && r.deliveryDate >= today && ['Cancelled', 'Rejected', 'Expired'].indexOf(r.status) === -1; }).length,
+      overdueFollowUps: overdueTasks().length,
+      pendingApprovals: pendingApprovals().length
     };
   }
 
@@ -250,12 +556,25 @@
   }
   function statusPill(status) {
     switch (status) {
-      case 'Pending':    return 'bg-gold-bg text-dark border border-gold';
-      case 'Contacted':  return 'bg-surface-mid text-mid border border-border';
-      case 'Quote Sent': return 'bg-primary-lt/20 text-primary border border-primary-lt';
-      case 'Approved':   return 'bg-primary-lt/30 text-primary border border-primary-lt';
-      case 'Rejected':   return 'bg-error-bg text-error border border-error/30';
-      default:           return 'bg-surface-mid text-mid border border-border';
+      case 'Pending':               return 'bg-gold-bg text-dark border border-gold';
+      case 'Pending Confirmation':  return 'bg-gold-bg text-dark border border-gold';
+      case 'Contacted':             return 'bg-surface-mid text-mid border border-border';
+      case 'Quote Sent':            return 'bg-primary-lt/20 text-primary border border-primary-lt';
+      case 'Approved':              return 'bg-primary-lt/30 text-primary border border-primary-lt';
+      case 'Booked':                return 'bg-primary-lt/30 text-primary border border-primary-lt';
+      case 'Paid':                  return 'bg-primary text-white border border-primary';
+      case 'Delayed':               return 'bg-gold-bg text-gold-hover border border-gold';
+      case 'Cancelled':             return 'bg-error-bg text-error border border-error/30';
+      case 'Rejected':              return 'bg-error-bg text-error border border-error/30';
+      case 'Expired':               return 'bg-surface-high text-light border border-border';
+      // lead stages
+      case 'New':                   return 'bg-gold-bg text-dark border border-gold';
+      case 'Qualified':             return 'bg-primary-lt/20 text-primary border border-primary-lt';
+      case 'Quoted':                return 'bg-primary-lt/20 text-primary border border-primary-lt';
+      case 'Negotiation':           return 'bg-gold-bg text-gold-hover border border-gold';
+      case 'Won':                   return 'bg-primary text-white border border-primary';
+      case 'Lost':                  return 'bg-error-bg text-error border border-error/30';
+      default:                      return 'bg-surface-mid text-mid border border-border';
     }
   }
 
@@ -297,9 +616,31 @@
   window.JehanData = {
     getRequests: getRequests, getRequest: getRequest, addRequest: addRequest,
     updateRequest: updateRequest, deleteRequest: deleteRequest,
-    getCustomers: getCustomers, addCustomer: addCustomer, customerExists: customerExists,
+    getCustomers: getCustomers, getCustomer: getCustomer, addCustomer: addCustomer,
+    updateCustomer: updateCustomer, deleteCustomer: deleteCustomer,
+    customerExists: customerExists, customerTimeline: customerTimeline,
     getMessages: getMessages, addMessage: addMessage, updateMessage: updateMessage,
     unreadMessageCount: unreadMessageCount,
+    // leads
+    getLeads: getLeads, getLead: getLead, addLead: addLead,
+    updateLead: updateLead, deleteLead: deleteLead,
+    findDuplicates: findDuplicates, leadWaitingHours: leadWaitingHours,
+    // tasks
+    getTasks: getTasks, addTask: addTask, updateTask: updateTask,
+    deleteTask: deleteTask, overdueTasks: overdueTasks,
+    // calendar events
+    getEvents: getEvents, addEvent: addEvent, updateEvent: updateEvent,
+    deleteEvent: deleteEvent, dayConcreteVolume: dayConcreteVolume,
+    // audit + approvals
+    getAudit: getAudit, logAudit: logAudit,
+    approvalReasons: approvalReasons, pendingApprovals: pendingApprovals,
+    maybeExpireQuotes: maybeExpireQuotes,
+    // constants
+    LEAD_STAGES: LEAD_STAGES, WORKFLOW_STAGES: WORKFLOW_STAGES,
+    BOOKING_STATUSES: BOOKING_STATUSES,
+    CONCRETE_DAILY_CAPACITY: CONCRETE_DAILY_CAPACITY,
+    APPROVAL_VOLUME_THRESHOLD: APPROVAL_VOLUME_THRESHOLD,
+    APPROVAL_DISCOUNT_THRESHOLD: APPROVAL_DISCOUNT_THRESHOLD,
     kpis: kpis, fmtDate: fmtDate, fmtRelative: fmtRelative, initials: initials,
     escapeHtml: escapeHtml, statusPill: statusPill, syncInboxBadge: syncInboxBadge,
     // server sync

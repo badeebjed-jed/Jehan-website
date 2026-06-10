@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Tasks & Follow-Ups - Jehan Holding Group</title>
+  <script src="js/auth.js?v=6"></script>
+  <script>if (!window.JehanAuth || !window.JehanAuth.enforce('bookings')) { /* halted by redirect */ }</script>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600;700&family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+  <script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          primary:       '#3D5A34',
+          'primary-mid': '#5C7A48',
+          'primary-lt':  '#8CAE78',
+          gold:          '#C49A1A',
+          'gold-hover':  '#A07D10',
+          bg:            '#F2F1EE',
+          surface:       '#FFFFFF',
+          'surface-dim': '#F8F7F4',
+          'surface-mid': '#EEEDE9',
+          'surface-high':'#E4E3DF',
+          dark:          '#1E1E1E',
+          mid:           '#444444',
+          light:         '#888888',
+          border:        '#DCDBD7',
+          error:         '#ba1a1a',
+          'error-bg':    '#ffdad6',
+          'gold-bg':     '#FBF0C4',
+        },
+        fontFamily: {
+          heading: ['"Barlow Condensed"', 'Arial', 'sans-serif'],
+          body:    ['Barlow', 'Arial', 'sans-serif'],
+        },
+        borderRadius: { DEFAULT: '4px', full: '9999px' },
+      }
+    }
+  };
+  </script>
+  <style>
+    body { font-family: 'Barlow', Arial, sans-serif; }
+    h1,h2,h3,h4,h5 { font-family: 'Barlow Condensed', Arial, sans-serif; font-weight: 700; letter-spacing: 0.02em; }
+    .material-symbols-outlined { font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24; }
+  </style>
+</head>
+<body class="bg-bg text-dark h-screen flex overflow-hidden">
+
+  <aside class="w-64 h-full flex flex-col bg-surface border-r border-border flex-shrink-0" data-nav></aside>
+  <script src="js/dash-nav.js?v=1"></script>
+
+  <div class="flex-1 flex flex-col overflow-hidden">
+
+    <header class="bg-surface border-b border-border h-16 flex items-center justify-between px-8 flex-shrink-0 gap-4">
+      <h1 class="font-heading font-bold text-2xl uppercase tracking-wide text-dark" data-i18n="page_tasks">Tasks & Follow-Ups</h1>
+      <button onclick="openTaskModal()" class="flex items-center gap-2 bg-gold hover:bg-gold-hover text-white text-sm font-semibold tracking-wide px-5 py-2 rounded transition-colors flex-shrink-0">
+        <span class="material-symbols-outlined text-[18px]">add_task</span>
+        <span data-i18n="btn_add_task">Add Task →</span>
+      </button>
+    </header>
+
+    <div class="flex-1 overflow-y-auto p-8">
+      <div class="max-w-4xl mx-auto space-y-5">
+
+        <!-- Filter chips + search -->
+        <div class="flex flex-wrap items-center gap-3">
+          <div class="flex gap-2" id="task-chips"></div>
+          <div class="relative flex-1 min-w-[200px] max-w-sm ms-auto">
+            <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-light text-[20px] rtl-icon-r">search</span>
+            <input id="task-search" type="text" data-i18n-ph="ph_search_tasks" placeholder="Search tasks…" oninput="render()"
+              class="rtl-search w-full pl-10 pr-4 py-2 bg-surface border border-border rounded text-sm text-dark placeholder-light focus:outline-none focus:border-primary"/>
+          </div>
+        </div>
+
+        <!-- Tasks list -->
+        <div id="tasks-container" class="space-y-2.5"></div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Task modal -->
+  <div id="task-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div class="absolute inset-0 bg-black/40" onclick="closeTaskModal()"></div>
+    <div class="relative bg-surface rounded-lg shadow-xl w-full max-w-lg max-h-[92vh] overflow-y-auto">
+      <div class="px-6 py-4 border-b border-border flex items-center justify-between">
+        <h3 id="task-modal-title" class="text-lg font-bold text-dark" data-i18n="modal_add_task">Add Task</h3>
+        <button onclick="closeTaskModal()" class="text-light hover:text-dark transition-colors"><span class="material-symbols-outlined">close</span></button>
+      </div>
+      <div class="p-6 space-y-4">
+        <div id="task-error" class="hidden bg-error-bg border border-error/30 text-error text-sm font-semibold px-4 py-3 rounded" data-i18n="task_title_req">A task title and due date are required.</div>
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5"><span data-i18n="task_title">Task</span> <span class="text-error">*</span></label>
+          <input id="tf-title" type="text" data-i18n-ph="ph_task_title" placeholder="e.g. Call client about the C35 quote…" class="w-full border border-border rounded px-3 py-2.5 text-sm text-dark bg-bg focus:outline-none focus:border-primary"/>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5"><span data-i18n="task_due">Due Date</span> <span class="text-error">*</span></label>
+            <input id="tf-due" type="date" class="w-full border border-border rounded px-3 py-2.5 text-sm text-dark bg-bg focus:outline-none focus:border-primary"/>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5" data-i18n="task_assignee">Assigned To</label>
+            <select id="tf-assignee" class="w-full border border-border rounded px-3 py-2.5 text-sm text-dark bg-bg focus:outline-none focus:border-primary"></select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5" data-i18n="task_link">Related Record</label>
+            <select id="tf-linktype" onchange="fillLinkOptions()" class="w-full border border-border rounded px-3 py-2.5 text-sm text-dark bg-bg focus:outline-none focus:border-primary">
+              <option value="" data-i18n="task_link_none">— Not linked —</option>
+              <option value="request" data-i18n="task_link_request">Quote / Booking</option>
+              <option value="lead" data-i18n="task_link_lead">Lead</option>
+              <option value="customer" data-i18n="task_link_customer">Customer</option>
+            </select>
+          </div>
+          <div id="tf-linkid-wrap" class="hidden">
+            <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5">&nbsp;</label>
+            <select id="tf-linkid" class="w-full border border-border rounded px-3 py-2.5 text-sm text-dark bg-bg focus:outline-none focus:border-primary"></select>
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5" data-i18n="lbl_notes">Notes</label>
+          <textarea id="tf-notes" rows="2" class="w-full border border-border rounded px-3 py-2.5 text-sm text-dark bg-bg focus:outline-none focus:border-primary resize-none"></textarea>
+        </div>
+      </div>
+      <div class="px-6 py-4 border-t border-border flex gap-3 justify-between">
+        <button id="tf-delete" onclick="deleteTaskNow()" class="hidden flex items-center gap-2 border border-error/40 text-error text-sm font-semibold px-4 py-2 rounded hover:bg-error hover:text-white transition-colors">
+          <span class="material-symbols-outlined text-[18px]">delete</span><span data-i18n="btn_delete">Delete</span>
+        </button>
+        <div class="flex gap-3 ms-auto">
+          <button onclick="closeTaskModal()" class="px-5 py-2 border border-border rounded text-sm font-semibold text-mid hover:bg-surface-mid transition-colors" data-i18n="btn_cancel">Cancel</button>
+          <button onclick="saveTask()" class="flex items-center gap-2 bg-gold hover:bg-gold-hover text-white text-sm font-semibold px-5 py-2 rounded transition-colors">
+            <span class="material-symbols-outlined text-[18px]">save</span><span data-i18n="btn_save">Save</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="task-toast" class="hidden fixed bottom-6 right-6 z-50 bg-primary text-white text-sm font-semibold px-5 py-3 rounded shadow-lg flex items-center gap-2">
+    <span class="material-symbols-outlined text-[18px]">check_circle</span>
+    <span id="task-toast-msg">Done</span>
+  </div>
+
+  <script src="js/dash-data.js?v=5"></script>
+  <script>
+    var D = window.JehanData;
+    var editingTaskId = null;
+    var activeFilter = 'open'; // all | open | overdue | done
+
+    function toast(key, fallback) {
+      var el = document.getElementById('task-toast');
+      document.getElementById('task-toast-msg').textContent = window.dashT ? window.dashT(key, fallback) : fallback;
+      el.classList.remove('hidden');
+      setTimeout(function () { el.classList.add('hidden'); }, 2500);
+    }
+    function isOverdue(t) {
+      if (t.status === 'Done' || !t.due) return false;
+      return t.due < new Date().toISOString().slice(0, 10);
+    }
+    function linkIcon(t) {
+      return t.linkType === 'request' ? 'list_alt' : t.linkType === 'lead' ? 'person_search' : t.linkType === 'customer' ? 'group' : '';
+    }
+    function linkHref(t) {
+      if (t.linkType === 'request') return 'bookings.html';
+      if (t.linkType === 'lead') return 'leads.html';
+      if (t.linkType === 'customer') return 'customers.html';
+      return '#';
+    }
+
+    function renderChips() {
+      var tasks = D.getTasks();
+      var defs = [
+        ['all',     'task_all',     'All',     tasks.length],
+        ['open',    'task_open',    'Open',    tasks.filter(function (t) { return t.status !== 'Done'; }).length],
+        ['overdue', 'task_overdue', 'Overdue', tasks.filter(isOverdue).length],
+        ['done',    'task_done',    'Done',    tasks.filter(function (t) { return t.status === 'Done'; }).length]
+      ];
+      document.getElementById('task-chips').innerHTML = defs.map(function (d) {
+        var active = activeFilter === d[0];
+        var danger = d[0] === 'overdue' && d[3] > 0;
+        var cls = active ? 'bg-primary text-white border-primary'
+                : danger ? 'bg-error-bg text-error border-error/30 hover:border-error'
+                : 'bg-surface text-mid border-border hover:border-primary hover:text-primary';
+        return '<button onclick="setFilter(\'' + d[0] + '\')" class="px-3 py-1.5 rounded-full border text-xs font-bold transition-colors ' + cls + '">' +
+          '<span data-i18n="' + d[1] + '">' + d[2] + '</span> <span class="opacity-70">(' + d[3] + ')</span></button>';
+      }).join('');
+    }
+    function setFilter(f) { activeFilter = f; render(); }
+
+    function render() {
+      renderChips();
+      var q = (document.getElementById('task-search').value || '').trim().toLowerCase();
+      var tasks = D.getTasks().filter(function (t) {
+        if (activeFilter === 'open' && t.status === 'Done') return false;
+        if (activeFilter === 'done' && t.status !== 'Done') return false;
+        if (activeFilter === 'overdue' && !isOverdue(t)) return false;
+        if (q && [t.title, t.assignee, t.notes, t.linkLabel].join(' ').toLowerCase().indexOf(q) === -1) return false;
+        return true;
+      });
+      var c = document.getElementById('tasks-container');
+      if (!tasks.length) {
+        c.innerHTML = '<div class="bg-surface border border-border rounded py-16 text-center">' +
+          '<span class="material-symbols-outlined text-[40px] text-light">task_alt</span>' +
+          '<p class="font-bold text-dark mt-2" data-i18n="task_none">No tasks yet</p>' +
+          '<p class="text-sm text-light mt-1" data-i18n="task_none_d">Create follow-up tasks so nothing slips through the cracks.</p>' +
+        '</div>';
+        if (window.reapplyDashLang) window.reapplyDashLang();
+        return;
+      }
+      c.innerHTML = tasks.map(function (t) {
+        var done = t.status === 'Done';
+        var od = isOverdue(t);
+        return '<div class="bg-surface border ' + (od ? 'border-error/40' : 'border-border') + ' rounded p-4 flex items-center gap-4">' +
+          '<button onclick="toggleDone(' + t.id + ')" title="" class="flex-shrink-0 ' + (done ? 'text-primary' : 'text-light hover:text-primary') + ' transition-colors">' +
+            '<span class="material-symbols-outlined text-[24px]"' + (done ? ' style="font-variation-settings:\'FILL\' 1"' : '') + '>' + (done ? 'check_circle' : 'radio_button_unchecked') + '</span></button>' +
+          '<div class="min-w-0 flex-1">' +
+            '<p class="text-sm font-semibold ' + (done ? 'text-light line-through' : 'text-dark') + '">' + D.escapeHtml(t.title) + '</p>' +
+            '<div class="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-0.5 text-xs text-light">' +
+              (t.due ? '<span class="' + (od ? 'text-error font-bold' : '') + '"><span class="material-symbols-outlined text-[13px] align-middle">event</span> ' + D.fmtDate(t.due) + (od ? ' · <span data-i18n="task_overdue">Overdue</span>' : '') + '</span>' : '') +
+              (t.assignee ? '<span><span class="material-symbols-outlined text-[13px] align-middle">person</span> ' + D.escapeHtml(t.assignee) + '</span>' : '') +
+              (t.linkType ? '<a href="' + linkHref(t) + '" class="text-primary hover:underline"><span class="material-symbols-outlined text-[13px] align-middle">' + linkIcon(t) + '</span> ' + D.escapeHtml(t.linkLabel || t.linkType) + '</a>' : '') +
+              (t.notes ? '<span class="truncate max-w-[260px]">' + D.escapeHtml(t.notes) + '</span>' : '') +
+            '</div>' +
+          '</div>' +
+          '<button onclick="openTaskModal(' + t.id + ')" class="flex-shrink-0 p-2 rounded text-primary hover:bg-primary-lt/20 transition-colors"><span class="material-symbols-outlined text-[20px]">edit</span></button>' +
+        '</div>';
+      }).join('');
+      if (window.reapplyDashLang) window.reapplyDashLang();
+    }
+
+    function toggleDone(id) {
+      var t = D.getTasks().filter(function (x) { return x.id === id; })[0];
+      if (!t) return;
+      var done = t.status !== 'Done';
+      D.updateTask(id, { status: done ? 'Done' : 'Open', doneDate: done ? new Date().toISOString() : null });
+      render();
+    }
+
+    // ── Modal ──────────────────────────────────────────────────
+    function fillAssignees(sel) {
+      var users = [];
+      try { users = window.JehanAuth.listUsers().filter(function (u) { return u.status === 'Active'; }); } catch (e) {}
+      var el = document.getElementById('tf-assignee');
+      el.innerHTML = '<option value=""></option>' + users.map(function (u) {
+        return '<option value="' + D.escapeHtml(u.name) + '">' + D.escapeHtml(u.name) + '</option>';
+      }).join('');
+      if (sel) el.value = sel;
+    }
+    function fillLinkOptions(selId) {
+      var type = document.getElementById('tf-linktype').value;
+      var wrap = document.getElementById('tf-linkid-wrap');
+      var el = document.getElementById('tf-linkid');
+      if (!type) { wrap.classList.add('hidden'); el.innerHTML = ''; return; }
+      var items = [];
+      if (type === 'request') items = D.getRequests().map(function (r) { return [r.id, r.ref + ' · ' + r.client]; });
+      if (type === 'lead') items = D.getLeads().map(function (l) { return [l.id, l.name + (l.company ? ' · ' + l.company : '')]; });
+      if (type === 'customer') items = D.getCustomers().map(function (c) { return [c.id, c.name]; });
+      el.innerHTML = items.map(function (it) { return '<option value="' + it[0] + '">' + D.escapeHtml(it[1]) + '</option>'; }).join('');
+      if (selId != null) el.value = String(selId);
+      wrap.classList.remove('hidden');
+    }
+    function openTaskModal(id) {
+      editingTaskId = id || null;
+      var t = id ? D.getTasks().filter(function (x) { return x.id === id; })[0] : null;
+      document.getElementById('task-modal-title').setAttribute('data-i18n', t ? 'modal_edit_task' : 'modal_add_task');
+      document.getElementById('tf-title').value = t ? t.title : '';
+      document.getElementById('tf-due').value = t ? (t.due || '') : '';
+      fillAssignees(t ? t.assignee : '');
+      document.getElementById('tf-linktype').value = t ? (t.linkType || '') : '';
+      fillLinkOptions(t ? t.linkId : null);
+      document.getElementById('tf-notes').value = t ? (t.notes || '') : '';
+      document.getElementById('tf-delete').classList.toggle('hidden', !t);
+      document.getElementById('task-error').classList.add('hidden');
+      document.getElementById('task-modal').classList.remove('hidden');
+      if (window.reapplyDashLang) window.reapplyDashLang();
+    }
+    function closeTaskModal() { document.getElementById('task-modal').classList.add('hidden'); editingTaskId = null; }
+    function saveTask() {
+      var title = document.getElementById('tf-title').value.trim();
+      var due = document.getElementById('tf-due').value;
+      if (!title || !due) { document.getElementById('task-error').classList.remove('hidden'); return; }
+      var type = document.getElementById('tf-linktype').value;
+      var linkId = type ? parseInt(document.getElementById('tf-linkid').value, 10) : null;
+      var linkLabel = '';
+      if (type) {
+        var opt = document.getElementById('tf-linkid').selectedOptions[0];
+        linkLabel = opt ? opt.textContent : '';
+      }
+      var data = {
+        title: title, due: due,
+        assignee: document.getElementById('tf-assignee').value,
+        linkType: type, linkId: isNaN(linkId) ? null : linkId, linkLabel: linkLabel,
+        notes: document.getElementById('tf-notes').value.trim()
+      };
+      if (editingTaskId) { D.updateTask(editingTaskId, data); }
+      else { D.addTask(data); }
+      closeTaskModal();
+      render();
+      toast('toast_task_saved', 'Task saved');
+    }
+    function deleteTaskNow() {
+      if (!editingTaskId) return;
+      D.deleteTask(editingTaskId);
+      closeTaskModal();
+      render();
+      toast('toast_task_deleted', 'Task deleted');
+    }
+
+    render();
+    D.subscribe(render);
+  </script>
+  <script src="js/dash-lang.js?v=5"></script>
+</body>
+</html>

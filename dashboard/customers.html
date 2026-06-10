@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Customer Database - Jehan Holding Group</title>
   <!-- Auth guard: redirects to login if no valid session -->
-  <script src="js/auth.js?v=5"></script>
+  <script src="js/auth.js?v=6"></script>
   <script>if (!window.JehanAuth || !window.JehanAuth.enforce('customers')) { /* halted by redirect */ }</script>
   <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600;700&family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet"/>
@@ -56,55 +56,8 @@
 <body class="bg-bg text-dark h-screen flex overflow-hidden">
 
   <!-- Sidebar -->
-  <aside class="w-64 h-full flex flex-col bg-surface border-r border-border flex-shrink-0">
-    <div class="px-6 py-5 border-b border-border flex items-center justify-between">
-      <img src="../assets/images/logo.png" class="h-8 object-contain" alt="Jehan Holding Group"/>
-      <button onclick="toggleDashLang()" id="dash-lang-btn" class="text-xs font-bold px-2.5 py-1 rounded border border-border text-mid hover:bg-surface-mid hover:text-primary transition-colors flex-shrink-0">&#x0639;&#x0631;&#x0628;&#x064A;</button>
-    </div>
-    <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-      <a href="overview.html" class="flex items-center gap-3 px-4 py-2.5 rounded text-sm font-semibold tracking-wide transition-colors text-mid hover:bg-surface-mid hover:text-dark">
-        <span class="material-symbols-outlined text-[20px]">dashboard</span>
-        <span data-i18n="nav_overview">Overview</span>
-      </a>
-      <a href="bookings.html" class="flex items-center gap-3 px-4 py-2.5 rounded text-sm font-semibold tracking-wide transition-colors text-mid hover:bg-surface-mid hover:text-dark">
-        <span class="material-symbols-outlined text-[20px]">list_alt</span>
-        <span data-i18n="nav_bookings">Booking Requests</span>
-      </a>
-      <a href="inbox.html" class="flex items-center gap-3 px-4 py-2.5 rounded text-sm font-semibold tracking-wide transition-colors text-mid hover:bg-surface-mid hover:text-dark">
-        <span class="material-symbols-outlined text-[20px]">inbox</span>
-        <span data-i18n="nav_inbox">Inbox</span>
-        <span class="ml-auto bg-gold text-white text-xs font-bold px-2 py-0.5 rounded-full">12</span>
-      </a>
-      <a href="customers.html" class="flex items-center gap-3 px-4 py-2.5 rounded text-sm font-semibold tracking-wide transition-colors bg-primary text-white">
-        <span class="material-symbols-outlined text-[20px]">group</span>
-        <span data-i18n="nav_customers">Customer Database</span>
-      </a>
-      <a href="settings.html" class="flex items-center gap-3 px-4 py-2.5 rounded text-sm font-semibold tracking-wide transition-colors text-mid hover:bg-surface-mid hover:text-dark">
-        <span class="material-symbols-outlined text-[20px]">settings</span>
-        <span data-i18n="nav_settings">Settings</span>
-      </a>
-
-    </nav>
-    <div class="px-4 py-4 border-t border-border">
-      <div class="flex items-center gap-3 mb-3">
-        <div class="w-9 h-9 rounded-full bg-primary-lt/30 text-primary flex items-center justify-center flex-shrink-0">
-          <span class="text-xs font-bold">AU</span>
-        </div>
-        <div class="overflow-hidden">
-          <p class="text-sm font-semibold text-dark truncate">Admin User</p>
-          <p class="text-xs text-light truncate" data-i18n="nav_role">System Manager</p>
-        </div>
-      </div>
-      <a href="../index.html" class="flex items-center gap-2 px-3 py-2 rounded text-sm font-semibold text-mid hover:bg-surface-mid hover:text-dark transition-colors w-full mb-1">
-        <span class="material-symbols-outlined text-[20px]">arrow_back</span>
-        <span data-i18n="nav_back">Back to Website</span>
-      </a>
-      <a href="login.html" onclick="event.preventDefault(); window.JehanAuth.logout();" class="flex items-center gap-2 px-3 py-2 rounded text-sm font-semibold text-mid hover:bg-error-bg hover:text-error transition-colors w-full">
-        <span class="material-symbols-outlined text-[20px]">logout</span>
-        <span data-i18n="nav_logout">Logout</span>
-      </a>
-    </div>
-  </aside>
+  <aside class="w-64 h-full flex flex-col bg-surface border-r border-border flex-shrink-0" data-nav></aside>
+  <script src="js/dash-nav.js?v=1"></script>
 
   <!-- Main -->
   <div class="flex-1 flex flex-col overflow-hidden">
@@ -127,14 +80,20 @@
         <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-light text-[20px]">search</span>
         <input id="cust-search" type="text" oninput="renderCustomers()" data-i18n-ph="ph_search_cust" placeholder="Search customers…" class="w-full pl-10 pr-4 py-2 border border-border rounded bg-bg text-sm text-dark placeholder-light focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"/>
       </div>
-      <button class="flex items-center gap-2 px-4 py-2 border border-border rounded text-sm font-semibold text-mid hover:bg-surface-mid hover:text-dark transition-colors">
-        <span class="material-symbols-outlined text-[20px]">filter_list</span>
-        <span data-i18n="btn_filter">Filter</span>
-      </button>
-      <button class="flex items-center gap-2 px-4 py-2 border border-border rounded text-sm font-semibold text-mid hover:bg-surface-mid hover:text-dark transition-colors">
-        <span class="material-symbols-outlined text-[20px]">sort</span>
-        <span data-i18n="btn_sort">Sort</span>
-      </button>
+      <select id="cust-segment-filter" onchange="renderCustomers()" class="px-3 py-2 border border-border rounded text-sm font-semibold text-mid bg-surface focus:outline-none focus:border-primary">
+        <option value="" data-i18n="flt_all_segments">All Segments</option>
+        <option value="contractor" data-i18n="seg_contractor">Contractor</option>
+        <option value="consultant" data-i18n="seg_consultant">Consultant</option>
+        <option value="walk-in" data-i18n="seg_walkin">Walk-in</option>
+        <option value="government" data-i18n="seg_government">Government</option>
+        <option value="retail" data-i18n="seg_retail">Retail</option>
+        <option value="developer" data-i18n="seg_developer">Developer</option>
+      </select>
+      <label class="flex items-center gap-2 text-sm font-semibold text-mid cursor-pointer">
+        <input id="cust-key-filter" type="checkbox" onchange="renderCustomers()" class="rounded border-border text-gold focus:ring-gold"/>
+        <span class="material-symbols-outlined text-gold text-[18px]">star</span>
+        <span data-i18n="cust_key">Key Account</span>
+      </label>
     </div>
 
     <!-- Table -->
@@ -217,7 +176,95 @@
   </div>
   <div id="rec-toast" style="display:none;position:fixed;bottom:32px;left:50%;transform:translateX(-50%);background:#3D5A34;color:#fff;font-weight:600;font-size:0.875rem;padding:12px 24px;border-radius:6px;z-index:60;box-shadow:0 4px 16px rgba(0,0,0,0.18);">Customer record added successfully!</div>
 
-  <script src="js/dash-lang.js?v=4"></script>
+  <!-- Customer Profile modal -->
+  <div id="profile-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div class="absolute inset-0 bg-black/40" onclick="closeProfile()"></div>
+    <div class="relative bg-surface rounded-lg shadow-xl w-full max-w-2xl max-h-[92vh] overflow-y-auto">
+      <div class="px-6 py-4 border-b border-border flex items-center justify-between sticky top-0 bg-surface z-10">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full bg-primary-lt/30 text-primary flex items-center justify-center"><span id="pf-initials" class="text-sm font-bold">—</span></div>
+          <div>
+            <h3 class="text-lg font-bold text-dark flex items-center gap-1.5"><span id="pf-title">Customer</span><span id="pf-star" class="hidden material-symbols-outlined text-gold text-[18px]" style="font-variation-settings:'FILL' 1">star</span></h3>
+            <p class="text-xs text-light" data-i18n="cust_profile">Customer Profile</p>
+          </div>
+        </div>
+        <button onclick="closeProfile()" class="text-light hover:text-dark transition-colors"><span class="material-symbols-outlined">close</span></button>
+      </div>
+      <div class="p-6 space-y-5">
+        <!-- Sales history stats -->
+        <div>
+          <p class="text-xs font-bold uppercase tracking-widest text-light mb-2" data-i18n="cust_stats">Sales History</p>
+          <div class="grid grid-cols-3 gap-3 text-center">
+            <div class="bg-surface-dim rounded p-3"><p id="pf-stat-quotes" class="text-xl font-bold text-dark">0</p><p class="text-[11px] text-light uppercase tracking-wide" data-i18n="cust_quotes_n">Quotes</p></div>
+            <div class="bg-surface-dim rounded p-3"><p id="pf-stat-booked" class="text-xl font-bold text-primary">0</p><p class="text-[11px] text-light uppercase tracking-wide" data-i18n="cust_booked_n">Booked / Paid</p></div>
+            <div class="bg-surface-dim rounded p-3"><p id="pf-stat-volume" class="text-xl font-bold text-dark">0</p><p class="text-[11px] text-light uppercase tracking-wide" data-i18n="cust_volume_n">Total Volume</p></div>
+          </div>
+        </div>
+        <!-- Editable fields -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5" data-i18n="lbl_name">Name</label>
+            <input id="pf-name" type="text" class="w-full border border-border rounded px-3 py-2.5 text-sm text-dark bg-bg focus:outline-none focus:border-primary"/>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5" data-i18n="lbl_company">Company</label>
+            <input id="pf-company" type="text" class="w-full border border-border rounded px-3 py-2.5 text-sm text-dark bg-bg focus:outline-none focus:border-primary"/>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5" data-i18n="th_email">Email</label>
+            <input id="pf-email" type="email" class="w-full border border-border rounded px-3 py-2.5 text-sm text-dark bg-bg focus:outline-none focus:border-primary"/>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5" data-i18n="th_phone">Phone</label>
+            <input id="pf-phone" type="tel" class="w-full border border-border rounded px-3 py-2.5 text-sm text-dark bg-bg focus:outline-none focus:border-primary"/>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5" data-i18n="th_location_c">Location</label>
+            <input id="pf-location" type="text" class="w-full border border-border rounded px-3 py-2.5 text-sm text-dark bg-bg focus:outline-none focus:border-primary"/>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5" data-i18n="lbl_segment">Segment</label>
+            <select id="pf-segment" class="w-full border border-border rounded px-3 py-2.5 text-sm text-dark bg-bg focus:outline-none focus:border-primary">
+              <option value="" data-i18n="seg_none">— None —</option>
+              <option value="contractor" data-i18n="seg_contractor">Contractor</option>
+              <option value="consultant" data-i18n="seg_consultant">Consultant</option>
+              <option value="walk-in" data-i18n="seg_walkin">Walk-in</option>
+              <option value="government" data-i18n="seg_government">Government</option>
+              <option value="retail" data-i18n="seg_retail">Retail</option>
+              <option value="developer" data-i18n="seg_developer">Developer</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5" data-i18n="lbl_rep">Representative</label>
+            <input id="pf-rep" type="text" data-i18n-ph="ph_rep_name" placeholder="Representative name…" class="w-full border border-border rounded px-3 py-2.5 text-sm text-dark bg-bg focus:outline-none focus:border-primary"/>
+          </div>
+          <div class="flex items-end">
+            <label class="flex items-center gap-2 bg-surface-dim border border-border rounded p-3 w-full cursor-pointer">
+              <input id="pf-key" type="checkbox" class="rounded border-border text-gold focus:ring-gold"/>
+              <span class="text-xs font-semibold text-mid" data-i18n="cust_mark_key">Mark as key account (important repeat customer)</span>
+            </label>
+          </div>
+          <div class="md:col-span-2">
+            <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5" data-i18n="lbl_notes">Notes</label>
+            <textarea id="pf-notes" rows="2" class="w-full border border-border rounded px-3 py-2.5 text-sm text-dark bg-bg focus:outline-none focus:border-primary resize-none"></textarea>
+          </div>
+        </div>
+        <!-- Activity timeline -->
+        <div>
+          <p class="text-xs font-bold uppercase tracking-widest text-light mb-2" data-i18n="cust_timeline">Activity Timeline</p>
+          <div id="pf-timeline" class="space-y-2 max-h-56 overflow-y-auto"></div>
+        </div>
+      </div>
+      <div class="px-6 py-4 border-t border-border flex gap-3 justify-end sticky bottom-0 bg-surface">
+        <button onclick="closeProfile()" class="px-5 py-2 border border-border rounded text-sm font-semibold text-mid hover:bg-surface-mid transition-colors" data-i18n="btn_cancel">Cancel</button>
+        <button onclick="saveProfile()" class="flex items-center gap-2 bg-gold hover:bg-gold-hover text-white text-sm font-semibold px-5 py-2 rounded transition-colors">
+          <span class="material-symbols-outlined text-[18px]">save</span><span data-i18n="btn_save">Save</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/dash-lang.js?v=5"></script>
   <script>
     // ── Company Profile Upload ────────────────────────────────────
     function uploadProfile(input) {
@@ -257,7 +304,7 @@
     })();
     updateProfileDateUI();
   </script>
-  <script src="js/dash-data.js?v=4"></script>
+  <script src="js/dash-data.js?v=5"></script>
   <script>
     var D = window.JehanData;
 
@@ -269,12 +316,25 @@
       }
     }
 
+    var SEG_I18N = { 'contractor':'seg_contractor','consultant':'seg_consultant','walk-in':'seg_walkin',
+      'government':'seg_government','retail':'seg_retail','developer':'seg_developer' };
+    function segPill(c) {
+      if (!c.segment) return '';
+      return '<span class="inline-block bg-surface-mid text-mid border border-border text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide" data-i18n="' + (SEG_I18N[c.segment] || '') + '">' + D.escapeHtml(c.segment) + '</span>';
+    }
+    function keyStar(c) {
+      return c.keyAccount ? '<span class="material-symbols-outlined text-gold text-[16px]" style="font-variation-settings:\'FILL\' 1" title="Key Account">star</span>' : '';
+    }
     function renderCustomers() {
       var all = D.getCustomers();
       var q = (document.getElementById('cust-search').value || '').trim().toLowerCase();
+      var seg = document.getElementById('cust-segment-filter').value;
+      var keyOnly = document.getElementById('cust-key-filter').checked;
       var rows = all.filter(function (c) {
+        if (seg && c.segment !== seg) return false;
+        if (keyOnly && !c.keyAccount) return false;
         if (!q) return true;
-        return [c.name, c.email, c.phone, c.location, c.activity].join(' ').toLowerCase().indexOf(q) !== -1;
+        return [c.name, c.company, c.email, c.phone, c.location, c.activity, c.representative].join(' ').toLowerCase().indexOf(q) !== -1;
       });
       var tbody = document.getElementById('cust-tbody');
       var count = document.getElementById('cust-count');
@@ -296,12 +356,14 @@
       }
 
       tbody.innerHTML = rows.map(function (c) {
-        return '<tr class="bg-surface hover:bg-surface-dim transition-colors group">' +
-          '<td class="px-6 py-4"><input type="checkbox" class="rounded border-border text-primary focus:ring-primary"/></td>' +
+        return '<tr class="bg-surface hover:bg-surface-dim transition-colors group cursor-pointer" onclick="openProfile(' + c.id + ')">' +
+          '<td class="px-6 py-4" onclick="event.stopPropagation()"><input type="checkbox" class="rounded border-border text-primary focus:ring-primary"/></td>' +
           '<td class="px-4 py-4"><div class="flex items-center gap-3">' +
             '<div class="w-9 h-9 rounded-full bg-primary-lt/30 text-primary flex items-center justify-center flex-shrink-0"><span class="text-xs font-bold">' + D.initials(c.name) + '</span></div>' +
-            '<span class="text-sm font-semibold text-dark">' + D.escapeHtml(c.name) + '</span></div></td>' +
-          '<td class="px-4 py-4 text-sm text-light">' + (c.email ? D.escapeHtml(c.email) : '—') + '</td>' +
+            '<div><div class="flex items-center gap-1.5"><span class="text-sm font-semibold text-dark">' + D.escapeHtml(c.name) + '</span>' + keyStar(c) + '</div>' +
+            '<div class="flex items-center gap-1.5 mt-0.5">' + (c.company ? '<span class="text-xs text-light">' + D.escapeHtml(c.company) + '</span>' : '') + segPill(c) + '</div></div></div></td>' +
+          '<td class="px-4 py-4 text-sm text-light">' + (c.email ? D.escapeHtml(c.email) : '—') +
+            (c.representative ? '<p class="text-[11px] text-light mt-0.5"><span class="material-symbols-outlined text-[12px] align-middle">badge</span> ' + D.escapeHtml(c.representative) + '</p>' : '') + '</td>' +
           '<td class="px-4 py-4 text-sm text-light">' + (c.phone ? D.escapeHtml(c.phone) : '—') + '</td>' +
           '<td class="px-4 py-4"><span class="' + activityPill(c.activity) + ' text-xs font-semibold px-3 py-1 rounded-full">' + D.escapeHtml(c.activity) + '</span></td>' +
           '<td class="px-4 py-4 text-sm text-light">' + (c.location ? D.escapeHtml(c.location) : '—') + '</td>' +
@@ -360,6 +422,78 @@
       a.href = url; a.download = 'jehan-customers.csv';
       document.body.appendChild(a); a.click(); document.body.removeChild(a);
       URL.revokeObjectURL(url);
+    }
+
+    // ── Customer profile drawer ────────────────────────────────
+    var profileId = null;
+    var TIMELINE_ICON = { request: 'list_alt', quote: 'request_quote', message: 'mail', task: 'task_alt' };
+    function openProfile(id) {
+      var c = D.getCustomer(id); if (!c) return;
+      profileId = id;
+      document.getElementById('pf-initials').textContent = D.initials(c.name);
+      document.getElementById('pf-title').textContent = c.name;
+      document.getElementById('pf-star').classList.toggle('hidden', !c.keyAccount);
+      document.getElementById('pf-name').value = c.name || '';
+      document.getElementById('pf-company').value = c.company || '';
+      document.getElementById('pf-email').value = c.email || '';
+      document.getElementById('pf-phone').value = c.phone || '';
+      document.getElementById('pf-location').value = c.location || '';
+      document.getElementById('pf-segment').value = c.segment || '';
+      document.getElementById('pf-rep').value = c.representative || '';
+      document.getElementById('pf-key').checked = !!c.keyAccount;
+      document.getElementById('pf-notes').value = c.notes || '';
+
+      // Sales history stats from matched requests
+      var em = (c.email || '').trim().toLowerCase();
+      var ph = String(c.phone || '').replace(/\D/g, '');
+      var matched = D.getRequests().filter(function (r) {
+        var rEm = (r.email || '').trim().toLowerCase();
+        var rPh = String(r.phone || '').replace(/\D/g, '');
+        return (em && rEm === em) || (ph && rPh === ph);
+      });
+      var quoted = matched.filter(function (r) { return r.quote; }).length;
+      var booked = matched.filter(function (r) { return ['Booked', 'Paid', 'Approved'].indexOf(r.status) !== -1; }).length;
+      var vol = matched.reduce(function (s, r) { var q = parseFloat(r.quantity); return s + (isNaN(q) ? 0 : q); }, 0);
+      document.getElementById('pf-stat-quotes').textContent = quoted;
+      document.getElementById('pf-stat-booked').textContent = booked;
+      document.getElementById('pf-stat-volume').textContent = vol.toLocaleString();
+
+      // Timeline
+      var items = D.customerTimeline(c);
+      var tl = document.getElementById('pf-timeline');
+      tl.innerHTML = items.length ? items.slice(0, 30).map(function (it) {
+        return '<div class="flex items-start gap-3 border border-border rounded p-2.5">' +
+          '<span class="material-symbols-outlined text-primary text-[18px] mt-0.5">' + (TIMELINE_ICON[it.kind] || 'history') + '</span>' +
+          '<div class="min-w-0 flex-1"><p class="text-sm font-semibold text-dark truncate">' + D.escapeHtml(it.label) + '</p>' +
+          '<p class="text-xs text-light">' + D.fmtDate(it.date) + '</p></div>' +
+          '<span class="' + D.statusPill(it.status) + ' text-[10px] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap">' + D.escapeHtml(it.status) + '</span>' +
+        '</div>';
+      }).join('') : '<p class="text-xs text-light text-center py-3" data-i18n="cust_no_timeline">No activity recorded yet.</p>';
+
+      document.getElementById('profile-modal').classList.remove('hidden');
+      if (window.reapplyDashLang) window.reapplyDashLang();
+    }
+    function closeProfile() { document.getElementById('profile-modal').classList.add('hidden'); profileId = null; }
+    function saveProfile() {
+      if (profileId == null) return;
+      D.updateCustomer(profileId, {
+        name: document.getElementById('pf-name').value.trim(),
+        company: document.getElementById('pf-company').value.trim(),
+        email: document.getElementById('pf-email').value.trim(),
+        phone: document.getElementById('pf-phone').value.trim(),
+        location: document.getElementById('pf-location').value.trim(),
+        segment: document.getElementById('pf-segment').value,
+        representative: document.getElementById('pf-rep').value.trim(),
+        keyAccount: document.getElementById('pf-key').checked,
+        notes: document.getElementById('pf-notes').value.trim()
+      });
+      D.logAudit('customer_updated', 'Customer profile updated', profileId, document.getElementById('pf-name').value.trim());
+      closeProfile();
+      renderCustomers();
+      var toast = document.getElementById('rec-toast');
+      toast.textContent = window.dashT ? window.dashT('toast_cust_saved', 'Customer saved') : 'Customer saved';
+      toast.style.display = 'block';
+      setTimeout(function () { toast.style.display = 'none'; }, 2500);
     }
 
     renderCustomers();

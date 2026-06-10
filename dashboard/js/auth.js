@@ -340,10 +340,17 @@
 
   function applyNavPermissions() {
     try {
-      var map = { 'bookings.html': 'bookings', 'customers.html': 'customers', 'settings.html': 'settings' };
+      var map = {
+        'bookings.html': 'bookings', 'customers.html': 'customers', 'settings.html': 'settings',
+        // sales modules ride on the bookings permission; reports on financials
+        'leads.html': 'bookings', 'sales-forms.html': 'bookings',
+        'calendar.html': 'bookings', 'tasks.html': 'bookings',
+        'reports.html': 'financials'
+      };
       document.querySelectorAll('nav a[href]').forEach(function (a) {
         var href = a.getAttribute('href');
         if (map[href] && !can(map[href])) { a.style.display = 'none'; }
+        if (href === 'approvals.html' && !isAdmin()) { a.style.display = 'none'; }
       });
       // Settings → Workspace cards: hide individually based on permission,
       // and hide the whole section if neither card is visible.

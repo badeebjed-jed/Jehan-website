@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Dashboard Overview - Jehan Holding Group</title>
   <!-- Auth guard: redirects to login if no valid session -->
-  <script src="js/auth.js?v=5"></script>
+  <script src="js/auth.js?v=6"></script>
   <script>if (!window.JehanAuth || !window.JehanAuth.requireAuth()) { /* halted by redirect */ }</script>
   <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600;700&family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet"/>
@@ -54,61 +54,14 @@
 <body class="bg-bg text-dark h-screen flex overflow-hidden">
 
   <!-- Sidebar -->
-  <aside class="w-64 h-full flex flex-col bg-surface border-r border-border flex-shrink-0">
-    <div class="px-6 py-5 border-b border-border flex items-center justify-between">
-      <img src="../assets/images/logo.png" class="h-8 object-contain" alt="Jehan Holding Group"/>
-      <button onclick="toggleDashLang()" id="dash-lang-btn" class="text-xs font-bold px-2.5 py-1 rounded border border-border text-mid hover:bg-surface-mid hover:text-primary transition-colors flex-shrink-0">&#x0639;&#x0631;&#x0628;&#x064A;</button>
-    </div>
-    <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-      <a href="overview.html" class="flex items-center gap-3 px-4 py-2.5 rounded text-sm font-semibold tracking-wide transition-colors bg-primary text-white">
-        <span class="material-symbols-outlined text-[20px]">dashboard</span>
-        <span data-i18n="nav_overview">Overview</span>
-      </a>
-      <a href="bookings.html" class="flex items-center gap-3 px-4 py-2.5 rounded text-sm font-semibold tracking-wide transition-colors text-mid hover:bg-surface-mid hover:text-dark">
-        <span class="material-symbols-outlined text-[20px]">list_alt</span>
-        <span data-i18n="nav_bookings">Booking Requests</span>
-      </a>
-      <a href="inbox.html" class="flex items-center gap-3 px-4 py-2.5 rounded text-sm font-semibold tracking-wide transition-colors text-mid hover:bg-surface-mid hover:text-dark">
-        <span class="material-symbols-outlined text-[20px]">inbox</span>
-        <span data-i18n="nav_inbox">Inbox</span>
-        <span class="ml-auto bg-gold text-white text-xs font-bold px-2 py-0.5 rounded-full">12</span>
-      </a>
-      <a href="customers.html" class="flex items-center gap-3 px-4 py-2.5 rounded text-sm font-semibold tracking-wide transition-colors text-mid hover:bg-surface-mid hover:text-dark">
-        <span class="material-symbols-outlined text-[20px]">group</span>
-        <span data-i18n="nav_customers">Customer Database</span>
-      </a>
-      <a href="settings.html" class="flex items-center gap-3 px-4 py-2.5 rounded text-sm font-semibold tracking-wide transition-colors text-mid hover:bg-surface-mid hover:text-dark">
-        <span class="material-symbols-outlined text-[20px]">settings</span>
-        <span data-i18n="nav_settings">Settings</span>
-      </a>
-
-    </nav>
-    <div class="px-4 py-4 border-t border-border">
-      <div class="flex items-center gap-3 mb-3">
-        <div class="w-9 h-9 rounded-full bg-primary-lt/30 text-primary flex items-center justify-center flex-shrink-0">
-          <span class="text-xs font-bold">AU</span>
-        </div>
-        <div class="overflow-hidden">
-          <p class="text-sm font-semibold text-dark truncate">Admin User</p>
-          <p class="text-xs text-light truncate" data-i18n="nav_role">System Manager</p>
-        </div>
-      </div>
-      <a href="../index.html" class="flex items-center gap-2 px-3 py-2 rounded text-sm font-semibold text-mid hover:bg-surface-mid hover:text-dark transition-colors w-full mb-1">
-        <span class="material-symbols-outlined text-[20px]">arrow_back</span>
-        <span data-i18n="nav_back">Back to Website</span>
-      </a>
-      <a href="login.html" onclick="event.preventDefault(); window.JehanAuth.logout();" class="flex items-center gap-2 px-3 py-2 rounded text-sm font-semibold text-mid hover:bg-error-bg hover:text-error transition-colors w-full">
-        <span class="material-symbols-outlined text-[20px]">logout</span>
-        <span data-i18n="nav_logout">Logout</span>
-      </a>
-    </div>
-  </aside>
+  <aside class="w-64 h-full flex flex-col bg-surface border-r border-border flex-shrink-0" data-nav></aside>
+  <script src="js/dash-nav.js?v=1"></script>
 
   <!-- Main -->
   <div class="flex-1 flex flex-col overflow-hidden">
     <!-- Header -->
     <header class="bg-surface border-b border-border h-16 flex items-center justify-between px-8 flex-shrink-0">
-      <h1 class="font-heading font-bold text-2xl uppercase tracking-wide text-dark" data-i18n="page_overview">Dashboard Overview</h1>
+      <h1 class="font-heading font-bold text-2xl uppercase tracking-wide text-dark" data-i18n="page_overview">Sales Overview</h1>
       <div class="flex items-center gap-4">
         <div class="relative">
           <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-light text-[20px]">search</span>
@@ -140,6 +93,36 @@
       <!-- KPI Cards (rendered from data) -->
       <div id="kpi-grid" class="grid grid-cols-2 xl:grid-cols-4 gap-6"></div>
 
+      <!-- Sales command strip -->
+      <div id="sales-strip" class="grid grid-cols-2 md:grid-cols-5 gap-4"></div>
+
+      <!-- Pipeline + Follow-ups -->
+      <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+        <div class="bg-surface border border-border rounded shadow-[0_2px_12px_rgba(0,0,0,0.07)]">
+          <div class="flex items-center justify-between px-6 py-4 border-b border-border">
+            <h2 class="font-heading text-xl font-bold text-dark" data-i18n="ov_pipeline">Lead Pipeline</h2>
+            <a href="leads.html" class="text-sm font-semibold text-primary hover:underline" data-i18n="recent_view_all">View All →</a>
+          </div>
+          <div id="ov-pipeline" class="p-6"></div>
+        </div>
+        <div class="bg-surface border border-border rounded shadow-[0_2px_12px_rgba(0,0,0,0.07)]">
+          <div class="flex items-center justify-between px-6 py-4 border-b border-border">
+            <h2 class="font-heading text-xl font-bold text-dark" data-i18n="ov_followups">Overdue Follow-Ups</h2>
+            <a href="tasks.html" class="text-sm font-semibold text-primary hover:underline" data-i18n="recent_view_all">View All →</a>
+          </div>
+          <div id="ov-followups" class="p-4 space-y-2 max-h-72 overflow-y-auto"></div>
+        </div>
+      </div>
+
+      <!-- Upcoming deliveries (calendar summary) -->
+      <div class="bg-surface border border-border rounded shadow-[0_2px_12px_rgba(0,0,0,0.07)]">
+        <div class="flex items-center justify-between px-6 py-4 border-b border-border">
+          <h2 class="font-heading text-xl font-bold text-dark" data-i18n="ov_upcoming">Upcoming Deliveries (7 days)</h2>
+          <a href="calendar.html" class="text-sm font-semibold text-primary hover:underline" data-i18n="recent_view_all">View All →</a>
+        </div>
+        <div id="ov-upcoming" class="p-4 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2.5"></div>
+      </div>
+
       <!-- Recent Booking Requests -->
       <div class="bg-surface border border-border rounded shadow-[0_2px_12px_rgba(0,0,0,0.07)] overflow-hidden">
         <div class="flex items-center justify-between px-6 py-4 border-b border-border">
@@ -152,7 +135,7 @@
     </main>
   </div>
 
-  <script src="js/dash-lang.js?v=4"></script>
+  <script src="js/dash-lang.js?v=5"></script>
   <script>
     // ── Company Profile Upload ────────────────────────────────────
     function uploadProfile(input) {
@@ -192,7 +175,7 @@
     })();
     updateProfileDateUI();
   </script>
-  <script src="js/dash-data.js?v=4"></script>
+  <script src="js/dash-data.js?v=5"></script>
   <script>
     var D = window.JehanData;
 
@@ -206,14 +189,14 @@
         { label: 'New Leads', value: k.newLeads.toLocaleString(),
           icon: 'person_add', iconBg: 'bg-gold-bg', iconColor: 'text-gold',
           href: 'bookings.html?status=Pending', i18n: 'kpi_leads',
-          hint: 'Pending requests' },
+          hint: '<span data-i18n="kpi_hint_pending">Pending requests</span>' },
         { label: 'Est. Volume (m³)', value: Math.round(k.estVolume).toLocaleString(),
           icon: 'layers', iconBg: 'bg-surface-high', iconColor: 'text-mid',
           href: 'bookings.html', i18n: 'kpi_volume' },
         { label: 'Active Quotes', value: k.activeQuotes.toLocaleString(),
           icon: 'request_quote', iconBg: 'bg-error-bg', iconColor: 'text-error',
           href: 'bookings.html?status=Quote%20Sent', i18n: 'kpi_quotes',
-          hint: 'Awaiting client' }
+          hint: '<span data-i18n="kpi_hint_awaiting">Awaiting client</span>' }
       ];
       document.getElementById('kpi-grid').innerHTML = cards.map(function (c) {
         return '<a href="' + c.href + '" class="group bg-surface border border-border rounded shadow-[0_2px_12px_rgba(0,0,0,0.07)] p-6 block hover:border-primary hover:shadow-[0_4px_18px_rgba(0,0,0,0.10)] transition-all">' +
@@ -345,10 +328,135 @@
       }
     })();
 
+    // ── Sales command strip ────────────────────────────────────
+    function renderSalesStrip() {
+      var k = D.kpis();
+      var isAdmin = false;
+      try { isAdmin = window.JehanAuth.isAdmin(); } catch (e) {}
+      var items = [
+        ['leads.html',     'person_search',  'ov_open_leads',   'Open Leads',        k.openLeads,        ''],
+        ['bookings.html',  'request_quote',  'ov_pending_q',    'Pending Quotes',    k.pendingQuotes,    ''],
+        ['calendar.html',  'calendar_month', 'ov_upcoming_b',   'Upcoming Bookings', k.upcomingBookings, ''],
+        ['tasks.html',     'task_alt',       'ov_overdue_f',    'Overdue Follow-Ups',k.overdueFollowUps, k.overdueFollowUps > 0 ? 'alert' : ''],
+      ];
+      if (isAdmin) items.push(['approvals.html', 'gavel', 'ov_pending_apr', 'Pending Approvals', k.pendingApprovals, k.pendingApprovals > 0 ? 'alert' : '']);
+      document.getElementById('sales-strip').innerHTML = items.map(function (it) {
+        var alert = it[5] === 'alert';
+        return '<a href="' + it[0] + '" class="bg-surface border ' + (alert ? 'border-error/40' : 'border-border') + ' rounded p-4 flex items-center gap-3 hover:border-primary transition-colors">' +
+          '<span class="material-symbols-outlined ' + (alert ? 'text-error' : 'text-primary') + ' text-[24px]">' + it[1] + '</span>' +
+          '<div><p class="text-xl font-bold ' + (alert ? 'text-error' : 'text-dark') + '">' + it[4] + '</p>' +
+          '<p class="text-[11px] font-semibold uppercase tracking-wide text-light" data-i18n="' + it[2] + '">' + it[3] + '</p></div>' +
+        '</a>';
+      }).join('');
+    }
+
+    // ── Lead pipeline summary ──────────────────────────────────
+    var PIPE_I18N = { 'New':'stage_new','Contacted':'stage_contacted','Qualified':'stage_qualified',
+      'Quoted':'stage_quoted','Negotiation':'stage_negotiation','Won':'stage_won','Lost':'stage_lost' };
+    function renderPipeline() {
+      var leads = D.getLeads();
+      var c = document.getElementById('ov-pipeline');
+      if (!leads.length) {
+        c.innerHTML = '<p class="text-sm text-light text-center py-6" data-i18n="ov_no_leads">No leads in the pipeline yet — add one in Leads & Opportunities.</p>';
+        return;
+      }
+      var max = 1;
+      var counts = D.LEAD_STAGES.map(function (s) {
+        var n = leads.filter(function (l) { return l.stage === s; }).length;
+        if (n > max) max = n;
+        return n;
+      });
+      c.innerHTML = D.LEAD_STAGES.map(function (s, i) {
+        var n = counts[i];
+        var pct = Math.round(n / max * 100);
+        return '<a href="leads.html" class="flex items-center gap-3 group py-1">' +
+          '<span class="w-28 text-xs font-semibold text-mid" data-i18n="' + PIPE_I18N[s] + '">' + s + '</span>' +
+          '<div class="flex-1 h-4 bg-surface-dim rounded-full overflow-hidden"><div class="h-full ' +
+            (s === 'Won' ? 'bg-primary' : s === 'Lost' ? 'bg-error/60' : 'bg-primary-lt') +
+            ' group-hover:opacity-80 transition-opacity" style="width:' + pct + '%"></div></div>' +
+          '<span class="w-6 text-end text-xs font-bold text-dark">' + n + '</span>' +
+        '</a>';
+      }).join('');
+    }
+
+    // ── Overdue follow-ups list ────────────────────────────────
+    function renderFollowups() {
+      var od = D.overdueTasks();
+      // also include leads whose follow-up date passed
+      var today = new Date().toISOString().slice(0, 10);
+      var leadOd = D.getLeads().filter(function (l) {
+        return l.followUp && l.followUp < today && ['Won', 'Lost'].indexOf(l.stage) === -1;
+      });
+      var c = document.getElementById('ov-followups');
+      if (!od.length && !leadOd.length) {
+        c.innerHTML = '<p class="text-sm text-light text-center py-6" data-i18n="ov_no_overdue">Nothing overdue — great job staying on top of follow-ups!</p>';
+        return;
+      }
+      var html = od.slice(0, 6).map(function (t) {
+        return '<a href="tasks.html" class="flex items-center justify-between gap-2 border border-error/30 bg-error-bg/40 rounded p-2.5 hover:border-error transition-colors">' +
+          '<div class="min-w-0"><p class="text-sm font-semibold text-dark truncate">' + D.escapeHtml(t.title) + '</p>' +
+          '<p class="text-xs text-error font-semibold">' + D.fmtDate(t.due) + (t.assignee ? ' · ' + D.escapeHtml(t.assignee) : '') + '</p></div>' +
+          '<span class="material-symbols-outlined text-error text-[18px]">schedule</span></a>';
+      }).join('');
+      html += leadOd.slice(0, 4).map(function (l) {
+        return '<a href="leads.html" class="flex items-center justify-between gap-2 border border-gold bg-gold-bg/40 rounded p-2.5 hover:border-gold-hover transition-colors">' +
+          '<div class="min-w-0"><p class="text-sm font-semibold text-dark truncate">' + D.escapeHtml(l.name) + '</p>' +
+          '<p class="text-xs text-gold-hover font-semibold">' + D.fmtDate(l.followUp) + ' · <span data-i18n="' + PIPE_I18N[l.stage] + '">' + l.stage + '</span></p></div>' +
+          '<span class="material-symbols-outlined text-gold-hover text-[18px]">person_search</span></a>';
+      }).join('');
+      c.innerHTML = html;
+    }
+
+    // ── Upcoming deliveries (calendar summary) ─────────────────
+    function renderUpcomingOv() {
+      var t = new Date(); t.setHours(0, 0, 0, 0);
+      var tk = t.toISOString().slice(0, 10);
+      var horizon = new Date(t.getTime() + 7 * 86400000).toISOString().slice(0, 10);
+      var items = [];
+      D.getRequests().forEach(function (r) {
+        if (r.deliveryDate && r.deliveryDate >= tk && r.deliveryDate <= horizon &&
+            ['Cancelled', 'Rejected', 'Expired'].indexOf(r.status) === -1) {
+          items.push({ day: r.deliveryDate, client: r.client, qty: r.quantity, status: r.status, type: r.productType || 'concrete', win: r.dispatchWindow });
+        }
+      });
+      D.getEvents().forEach(function (ev) {
+        if (ev.day && ev.day >= tk && ev.day <= horizon && ev.status !== 'Cancelled' && ev.requestId == null) {
+          items.push({ day: ev.day, client: ev.client, qty: ev.quantity, status: ev.status, type: ev.productType, win: ev.window });
+        }
+      });
+      items.sort(function (a, b) { return a.day.localeCompare(b.day); });
+      var c = document.getElementById('ov-upcoming');
+      if (!items.length) {
+        c.innerHTML = '<p class="text-sm text-light text-center py-6 md:col-span-2 xl:col-span-3" data-i18n="ov_no_upcoming">No deliveries scheduled in the next 7 days.</p>';
+        return;
+      }
+      var TYPE_I18N = { concrete: 'product_concrete', precast: 'product_precast', block: 'product_block' };
+      c.innerHTML = items.slice(0, 9).map(function (it) {
+        return '<a href="calendar.html" class="border border-border rounded p-3 hover:border-primary transition-colors block">' +
+          '<div class="flex items-center justify-between gap-2 mb-1">' +
+            '<p class="text-sm font-semibold text-dark truncate">' + D.escapeHtml(it.client || '—') + '</p>' +
+            '<span class="' + D.statusPill(it.status) + ' text-[10px] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap">' + D.escapeHtml(it.status) + '</span>' +
+          '</div>' +
+          '<p class="text-xs text-light">' + D.fmtDate(it.day) +
+            (it.win && it.win !== 'flexible' ? ' · ' + it.win : '') +
+            (it.qty ? ' · ' + it.qty : '') +
+            ' · <span data-i18n="' + TYPE_I18N[it.type] + '">' + it.type + '</span></p>' +
+        '</a>';
+      }).join('');
+    }
+
+    function renderSales() {
+      renderSalesStrip();
+      renderPipeline();
+      renderFollowups();
+      renderUpcomingOv();
+    }
+
     // Initial render
     renderKPIs();
     renderRecent();
     renderNotifications();
+    renderSales();
     D.syncInboxBadge();
     // Re-apply translations to freshly injected nodes
     if (window.reapplyDashLang) { try { window.reapplyDashLang(); } catch (e) {} }
@@ -358,6 +466,7 @@
       renderKPIs();
       renderRecent();
       renderNotifications();
+      renderSales();
       if (window.reapplyDashLang) { try { window.reapplyDashLang(); } catch (e) {} }
     });
   </script>
