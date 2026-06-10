@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Leads & Opportunities - Jehan Holding Group</title>
+  <!-- Auth guard: sales modules ride on the bookings permission -->
+  <script src="js/auth.js?v=6"></script>
+  <script>if (!window.JehanAuth || !window.JehanAuth.enforce('bookings')) { /* halted by redirect */ }</script>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600;700&family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+  <script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          primary:       '#3D5A34',
+          'primary-mid': '#5C7A48',
+          'primary-lt':  '#8CAE78',
+          gold:          '#C49A1A',
+          'gold-hover':  '#A07D10',
+          bg:            '#F2F1EE',
+          surface:       '#FFFFFF',
+          'surface-dim': '#F8F7F4',
+          'surface-mid': '#EEEDE9',
+          'surface-high':'#E4E3DF',
+          dark:          '#1E1E1E',
+          mid:           '#444444',
+          light:         '#888888',
+          border:        '#DCDBD7',
+          error:         '#ba1a1a',
+          'error-bg':    '#ffdad6',
+          'gold-bg':     '#FBF0C4',
+        },
+        fontFamily: {
+          heading: ['"Barlow Condensed"', 'Arial', 'sans-serif'],
+          body:    ['Barlow', 'Arial', 'sans-serif'],
+        },
+        borderRadius: { DEFAULT: '4px', full: '9999px' },
+      }
+    }
+  };
+  </script>
+  <style>
+    body { font-family: 'Barlow', Arial, sans-serif; }
+    h1,h2,h3,h4,h5 { font-family: 'Barlow Condensed', Arial, sans-serif; font-weight: 700; letter-spacing: 0.02em; }
+    .material-symbols-outlined { font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24; }
+  </style>
+</head>
+<body class="bg-bg text-dark h-screen flex overflow-hidden">
+
+  <!-- Sidebar (rendered by dash-nav.js) -->
+  <aside class="w-64 h-full flex flex-col bg-surface border-r border-border flex-shrink-0" data-nav></aside>
+  <script src="js/dash-nav.js?v=1"></script>
+
+  <!-- Main -->
+  <div class="flex-1 flex flex-col overflow-hidden">
+
+    <!-- Header -->
+    <header class="bg-surface border-b border-border h-16 flex items-center justify-between px-8 flex-shrink-0 gap-4">
+      <h1 class="font-heading font-bold text-2xl uppercase tracking-wide text-dark" data-i18n="page_leads">Lead & Opportunity Management</h1>
+      <button onclick="openLeadModal()" class="flex items-center gap-2 bg-gold hover:bg-gold-hover text-white text-sm font-semibold tracking-wide px-5 py-2 rounded transition-colors flex-shrink-0">
+        <span class="material-symbols-outlined text-[18px]">person_add</span>
+        <span data-i18n="btn_add_lead">Add Lead →</span>
+      </button>
+    </header>
+
+    <!-- Content -->
+    <div class="flex-1 overflow-y-auto p-8">
+      <div class="max-w-6xl mx-auto space-y-6">
+
+        <!-- Pipeline chips -->
+        <div id="pipeline-chips" class="flex flex-wrap gap-2"></div>
+
+        <!-- Toolbar -->
+        <div class="flex items-center gap-3">
+          <div class="relative flex-1 max-w-sm">
+            <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-light text-[20px] rtl-icon-r">search</span>
+            <input id="lead-search" type="text" data-i18n-ph="ph_search_leads" placeholder="Search leads…" oninput="render()"
+              class="rtl-search w-full pl-10 pr-4 py-2.5 bg-surface border border-border rounded text-sm text-dark placeholder-light focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-colors"/>
+          </div>
+          <p id="lead-summary" class="text-xs text-light"></p>
+        </div>
+
+        <!-- Leads table -->
+        <div id="leads-container" class="bg-surface border border-border rounded shadow-[0_2px_12px_rgba(0,0,0,0.07)] overflow-x-auto"></div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Add / Edit Lead modal -->
+  <div id="lead-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div class="absolute inset-0 bg-black/40" onclick="closeLeadModal()"></div>
+    <div class="relative bg-surface rounded-lg shadow-xl w-full max-w-lg max-h-[92vh] overflow-y-auto">
+      <div class="px-6 py-4 border-b border-border flex items-center justify-between">
+        <h3 id="lead-modal-title" class="text-lg font-bold text-dark" data-i18n="modal_add_lead">Add Lead</h3>
+        <button onclick="closeLeadModal()" class="text-light hover:text-dark transition-colors"><span class="material-symbols-outlined">close</span></button>
+      </div>
+      <div class="p-6 space-y-4">
+        <!-- Duplicate warning -->
+        <div id="dup-warning" class="hidden bg-gold-bg border border-gold rounded p-3 text-xs text-dark">
+          <p class="font-bold mb-1 flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">warning</span><span data-i18n="leads_dup_warn">Possible duplicate — matching records found:</span></p>
+          <ul id="dup-list" class="list-disc ms-5 space-y-0.5"></ul>
+        </div>
+        <!-- Error banner -->
+        <div id="lead-form-error" class="hidden bg-error-bg border border-error/30 text-error text-sm font-semibold px-4 py-3 rounded"></div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5"><span data-i18n="lbl_name">Name</span> <span class="text-error">*</span></label>
+            <input id="lf-name" type="text" onblur="checkDuplicates()" class="w-full border border-border rounded px-3 py-2.5 text-sm text-dark bg-bg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"/>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5" data-i18n="lbl_company">Company</label>
+            <input id="lf-company" type="text" class="w-full border border-border rounded px-3 py-2.5 text-sm text-dark bg-bg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"/>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5"><span data-i18n="th_phone">Phone</span> <span class="text-error">*</span></label>
+            <input id="lf-phone" type="tel" onblur="checkDuplicates()" class="w-full border border-border rounded px-3 py-2.5 text-sm text-dark bg-bg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"/>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5" data-i18n="th_email">Email</label>
+            <input id="lf-email" type="email" onblur="checkDuplicates()" class="w-full border border-border rounded px-3 py-2.5 text-sm text-dark bg-bg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"/>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5" data-i18n="lbl_product_type">Product Type</label>
+            <select id="lf-product" class="w-full border border-border rounded px-3 py-2.5 text-sm text-dark bg-bg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary">
+              <option value="concrete" data-i18n="product_concrete">Concrete</option>
+              <option value="precast" data-i18n="product_precast">Precast</option>
+              <option value="block" data-i18n="product_block">Construction Block</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5" data-i18n="lbl_stage">Stage</label>
+            <select id="lf-stage" class="w-full border border-border rounded px-3 py-2.5 text-sm text-dark bg-bg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"></select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5" data-i18n="lbl_priority">Priority</label>
+            <select id="lf-priority" class="w-full border border-border rounded px-3 py-2.5 text-sm text-dark bg-bg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary">
+              <option value="High" data-i18n="priority_high">High</option>
+              <option value="Medium" selected data-i18n="priority_medium">Medium</option>
+              <option value="Low" data-i18n="priority_low">Low</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5" data-i18n="lbl_source">Lead Source</label>
+            <select id="lf-source" onchange="toggleRepField()" class="w-full border border-border rounded px-3 py-2.5 text-sm text-dark bg-bg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary">
+              <option value="phone" data-i18n="src_phone">Phone</option>
+              <option value="walk-in" data-i18n="src_walkin">Walk-in</option>
+              <option value="website" data-i18n="src_website">Website</option>
+              <option value="representative" data-i18n="src_rep">Representative</option>
+            </select>
+          </div>
+          <div id="lf-rep-wrap" class="hidden md:col-span-2">
+            <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5"><span data-i18n="lbl_rep">Representative</span> <span class="text-error">*</span></label>
+            <input id="lf-rep" type="text" data-i18n-ph="ph_rep_name" placeholder="Representative name…" class="w-full border border-border rounded px-3 py-2.5 text-sm text-dark bg-bg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"/>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5"><span data-i18n="lbl_follow_up">Follow-up Date</span> <span class="text-error">*</span></label>
+            <input id="lf-followup" type="date" class="w-full border border-border rounded px-3 py-2.5 text-sm text-dark bg-bg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"/>
+          </div>
+          <div class="md:col-span-2">
+            <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5" data-i18n="lbl_notes">Notes</label>
+            <textarea id="lf-notes" rows="2" data-i18n-ph="ph_lead_notes" placeholder="Notes about this lead…" class="w-full border border-border rounded px-3 py-2.5 text-sm text-dark bg-bg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary resize-none"></textarea>
+          </div>
+        </div>
+      </div>
+      <div class="px-6 py-4 border-t border-border flex gap-3 justify-end">
+        <button onclick="closeLeadModal()" class="px-5 py-2 border border-border rounded text-sm font-semibold text-mid hover:bg-surface-mid transition-colors" data-i18n="btn_cancel">Cancel</button>
+        <button onclick="saveLead()" class="flex items-center gap-2 bg-gold hover:bg-gold-hover text-white text-sm font-semibold px-5 py-2 rounded transition-colors">
+          <span class="material-symbols-outlined text-[18px]">save</span><span data-i18n="btn_save">Save</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete confirm modal -->
+  <div id="lead-delete-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div class="absolute inset-0 bg-black/40" onclick="closeDeleteLead()"></div>
+    <div class="relative bg-surface rounded-lg shadow-xl w-full max-w-md">
+      <div class="p-6">
+        <div class="flex items-center gap-3 mb-3">
+          <span class="material-symbols-outlined text-error text-[28px]">warning</span>
+          <h3 class="text-lg font-bold text-dark" data-i18n="del_lead_t">Delete Lead</h3>
+        </div>
+        <p class="text-sm text-mid leading-relaxed"><strong id="del-lead-name" class="text-dark"></strong> — <span data-i18n="del_lead_d">This permanently removes the lead. This cannot be undone.</span></p>
+      </div>
+      <div class="px-6 py-4 border-t border-border flex gap-3 justify-end">
+        <button onclick="closeDeleteLead()" class="px-5 py-2 border border-border rounded text-sm font-semibold text-mid hover:bg-surface-mid transition-colors" data-i18n="btn_cancel">Cancel</button>
+        <button onclick="confirmDeleteLead()" class="flex items-center gap-2 bg-error hover:opacity-90 text-white text-sm font-semibold px-5 py-2 rounded transition-colors">
+          <span class="material-symbols-outlined text-[18px]">delete</span><span data-i18n="btn_delete">Delete</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="lead-toast" class="hidden fixed bottom-6 right-6 z-50 bg-primary text-white text-sm font-semibold px-5 py-3 rounded shadow-lg flex items-center gap-2">
+    <span class="material-symbols-outlined text-[18px]">check_circle</span>
+    <span id="lead-toast-msg">Done</span>
+  </div>
+
+  <script src="js/dash-data.js?v=5"></script>
+  <script>
+    var D = window.JehanData;
+    var editingId = null;
+    var deletingId = null;
+    var activeStage = '';   // '' = all
+
+    var STAGE_KEYS = { 'New':'stage_new','Contacted':'stage_contacted','Qualified':'stage_qualified',
+      'Quoted':'stage_quoted','Negotiation':'stage_negotiation','Won':'stage_won','Lost':'stage_lost' };
+    var PRIORITY_KEYS = { 'High':'priority_high','Medium':'priority_medium','Low':'priority_low' };
+    var PRODUCT_KEYS = { 'concrete':'product_concrete','precast':'product_precast','block':'product_block' };
+    var SOURCE_KEYS = { 'walk-in':'src_walkin','phone':'src_phone','website':'src_website','representative':'src_rep' };
+
+    function t18(key, fallback) {
+      // inline span carrying a dictionary key so dash-lang translates it
+      return '<span data-i18n="' + key + '">' + fallback + '</span>';
+    }
+    function toast(msgKey, fallback) {
+      var el = document.getElementById('lead-toast');
+      document.getElementById('lead-toast-msg').innerHTML = t18(msgKey, fallback);
+      el.classList.remove('hidden');
+      if (window.reapplyDashLang) window.reapplyDashLang();
+      setTimeout(function () { el.classList.add('hidden'); }, 3000);
+    }
+
+    function priorityPill(p) {
+      var cls = p === 'High' ? 'bg-error-bg text-error border-error/30'
+              : p === 'Low'  ? 'bg-surface-mid text-mid border-border'
+              :                'bg-gold-bg text-dark border-gold';
+      return '<span class="inline-block text-[11px] font-bold px-2 py-0.5 rounded-full border ' + cls + '">' +
+        t18(PRIORITY_KEYS[p] || 'priority_medium', p) + '</span>';
+    }
+    function slaLabel(lead) {
+      if (lead.stage === 'Won' || lead.stage === 'Lost') return '<span class="text-light">—</span>';
+      var h = D.leadWaitingHours(lead);
+      var txt = h < 24 ? h + 'h' : Math.floor(h / 24) + 'd ' + (h % 24) + 'h';
+      var cls = h >= 48 ? 'text-error font-bold' : h >= 24 ? 'text-gold-hover font-bold' : 'text-mid';
+      return '<span class="' + cls + '">' + txt + '</span>';
+    }
+    function followUpCell(lead) {
+      if (!lead.followUp) return '<span class="text-light">—</span>';
+      var today = new Date().toISOString().slice(0, 10);
+      var overdue = lead.followUp < today && lead.stage !== 'Won' && lead.stage !== 'Lost';
+      return '<span class="' + (overdue ? 'text-error font-bold' : 'text-mid') + '">' +
+        D.fmtDate(lead.followUp) +
+        (overdue ? ' <span class="text-[10px] uppercase">(' + t18('leads_overdue_fu', 'Overdue') + ')</span>' : '') +
+      '</span>';
+    }
+    function stageSelect(lead) {
+      var opts = D.LEAD_STAGES.map(function (s) {
+        return '<option value="' + s + '"' + (lead.stage === s ? ' selected' : '') +
+          ' data-i18n="' + STAGE_KEYS[s] + '">' + s + '</option>';
+      }).join('');
+      return '<select onchange="changeStage(' + lead.id + ', this.value)" ' +
+        'class="text-xs font-semibold border border-border rounded px-2 py-1.5 bg-bg text-dark focus:outline-none focus:border-primary">' +
+        opts + '</select>';
+    }
+
+    function renderChips() {
+      var leads = D.getLeads();
+      var html = chipHtml('', 'leads_all', 'All', leads.length);
+      D.LEAD_STAGES.forEach(function (s) {
+        var n = leads.filter(function (l) { return l.stage === s; }).length;
+        html += chipHtml(s, STAGE_KEYS[s], s, n);
+      });
+      document.getElementById('pipeline-chips').innerHTML = html;
+    }
+    function chipHtml(stage, key, fallback, count) {
+      var active = activeStage === stage;
+      var cls = active ? 'bg-primary text-white border-primary'
+                       : 'bg-surface text-mid border-border hover:border-primary hover:text-primary';
+      return '<button onclick="setStage(\'' + stage + '\')" class="px-3 py-1.5 rounded-full border text-xs font-bold transition-colors ' + cls + '">' +
+        t18(key, fallback) + ' <span class="opacity-70">(' + count + ')</span></button>';
+    }
+    function setStage(s) { activeStage = s; render(); }
+
+    function render() {
+      renderChips();
+      var q = (document.getElementById('lead-search').value || '').trim().toLowerCase();
+      var leads = D.getLeads().filter(function (l) {
+        if (activeStage && l.stage !== activeStage) return false;
+        if (q) {
+          var hay = [l.name, l.company, l.email, l.phone, l.notes, l.representative].join(' ').toLowerCase();
+          if (hay.indexOf(q) === -1) return false;
+        }
+        return true;
+      });
+      document.getElementById('lead-summary').textContent = leads.length ? leads.length + ' / ' + D.getLeads().length : '';
+
+      var c = document.getElementById('leads-container');
+      if (!leads.length) {
+        c.innerHTML = '<div class="py-16 text-center">' +
+          '<span class="material-symbols-outlined text-[40px] text-light">person_search</span>' +
+          '<p class="font-bold text-dark mt-2">' + t18('leads_none', 'No leads yet') + '</p>' +
+          '<p class="text-sm text-light mt-1">' + t18('leads_none_d', 'Add your first lead to start tracking the sales pipeline.') + '</p>' +
+        '</div>';
+        if (window.reapplyDashLang) window.reapplyDashLang();
+        return;
+      }
+
+      var rows = leads.map(function (l) {
+        var converted = l.convertedRequestId != null;
+        return '<tr class="border-b border-border last:border-0 hover:bg-surface-dim transition-colors">' +
+          '<td class="px-4 py-3">' +
+            '<p class="text-sm font-semibold text-dark">' + D.escapeHtml(l.name) + '</p>' +
+            '<p class="text-xs text-light">' + D.escapeHtml(l.company || l.phone || '') + '</p>' +
+          '</td>' +
+          '<td class="px-4 py-3 text-xs text-mid">' + t18(PRODUCT_KEYS[l.productType] || 'product_concrete', l.productType) + '</td>' +
+          '<td class="px-4 py-3">' + priorityPill(l.priority) + '</td>' +
+          '<td class="px-4 py-3">' + stageSelect(l) + '</td>' +
+          '<td class="px-4 py-3 text-xs text-mid">' + t18(SOURCE_KEYS[l.source] || 'src_phone', l.source) +
+            (l.representative ? '<p class="text-[11px] text-light">' + D.escapeHtml(l.representative) + '</p>' : '') + '</td>' +
+          '<td class="px-4 py-3 text-xs">' + slaLabel(l) + '</td>' +
+          '<td class="px-4 py-3 text-xs">' + followUpCell(l) + '</td>' +
+          '<td class="px-4 py-3">' +
+            '<div class="flex items-center gap-1 justify-end">' +
+              (converted
+                ? '<span class="text-[11px] font-bold text-primary px-2">' + t18('leads_converted', 'Converted') + '</span>'
+                : '<button onclick="convertLead(' + l.id + ')" title="Convert to Quote" class="p-2 rounded text-gold hover:bg-gold-bg transition-colors"><span class="material-symbols-outlined text-[20px]">request_quote</span></button>') +
+              '<button onclick="openLeadModal(' + l.id + ')" title="Edit" class="p-2 rounded text-primary hover:bg-primary-lt/20 transition-colors"><span class="material-symbols-outlined text-[20px]">edit</span></button>' +
+              '<button onclick="openDeleteLead(' + l.id + ')" title="Delete" class="p-2 rounded text-error hover:bg-error-bg transition-colors"><span class="material-symbols-outlined text-[20px]">delete</span></button>' +
+            '</div>' +
+          '</td>' +
+        '</tr>';
+      }).join('');
+
+      c.innerHTML = '<table class="w-full min-w-[860px]">' +
+        '<thead><tr class="bg-surface-dim border-b border-border">' +
+          th('th_name', 'Name') + th('th_product', 'Product') + th('lbl_priority', 'Priority') +
+          th('lbl_stage', 'Stage') + th('lbl_source', 'Source') + th('th_waiting', 'Waiting') +
+          th('th_follow_up', 'Follow-up') +
+          '<th class="px-4 py-3 text-right text-[11px] font-bold uppercase tracking-widest text-light">' + t18('th_actions', 'Actions') + '</th>' +
+        '</tr></thead><tbody>' + rows + '</tbody></table>';
+      if (window.reapplyDashLang) window.reapplyDashLang();
+    }
+    function th(key, fallback) {
+      return '<th class="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-widest text-light">' + t18(key, fallback) + '</th>';
+    }
+
+    // ── Inline stage change ────────────────────────────────────
+    function changeStage(id, stage) {
+      var l = D.getLead(id); if (!l) return;
+      D.updateLead(id, { stage: stage });
+      D.logAudit('lead_stage', l.name + ': ' + l.stage + ' → ' + stage, id, l.name);
+      render();
+    }
+
+    // ── Add / Edit modal ───────────────────────────────────────
+    function openLeadModal(id) {
+      editingId = id || null;
+      var l = id ? D.getLead(id) : null;
+      document.getElementById('lead-modal-title').setAttribute('data-i18n', l ? 'modal_edit_lead' : 'modal_add_lead');
+      document.getElementById('lf-name').value     = l ? l.name : '';
+      document.getElementById('lf-company').value  = l ? (l.company || '') : '';
+      document.getElementById('lf-phone').value    = l ? (l.phone || '') : '';
+      document.getElementById('lf-email').value    = l ? (l.email || '') : '';
+      document.getElementById('lf-product').value  = l ? (l.productType || 'concrete') : 'concrete';
+      document.getElementById('lf-priority').value = l ? (l.priority || 'Medium') : 'Medium';
+      document.getElementById('lf-source').value   = l ? (l.source || 'phone') : 'phone';
+      document.getElementById('lf-rep').value      = l ? (l.representative || '') : '';
+      document.getElementById('lf-followup').value = l ? (l.followUp || '') : '';
+      document.getElementById('lf-notes').value    = l ? (l.notes || '') : '';
+      // stage select
+      var sel = document.getElementById('lf-stage');
+      sel.innerHTML = D.LEAD_STAGES.map(function (s) {
+        return '<option value="' + s + '" data-i18n="' + STAGE_KEYS[s] + '">' + s + '</option>';
+      }).join('');
+      sel.value = l ? (l.stage || 'New') : 'New';
+      toggleRepField();
+      hideFormError();
+      document.getElementById('dup-warning').classList.add('hidden');
+      document.getElementById('lead-modal').classList.remove('hidden');
+      if (window.reapplyDashLang) window.reapplyDashLang();
+    }
+    function closeLeadModal() { document.getElementById('lead-modal').classList.add('hidden'); editingId = null; }
+    function toggleRepField() {
+      var isRep = document.getElementById('lf-source').value === 'representative';
+      document.getElementById('lf-rep-wrap').classList.toggle('hidden', !isRep);
+    }
+    function showFormError(key, fallback) {
+      var el = document.getElementById('lead-form-error');
+      el.innerHTML = t18(key, fallback);
+      el.classList.remove('hidden');
+      if (window.reapplyDashLang) window.reapplyDashLang();
+    }
+    function hideFormError() { document.getElementById('lead-form-error').classList.add('hidden'); }
+
+    function checkDuplicates() {
+      var name = document.getElementById('lf-name').value;
+      var phone = document.getElementById('lf-phone').value;
+      var email = document.getElementById('lf-email').value;
+      if (!name && !phone && !email) return;
+      var dups = D.findDuplicates(name, phone, email, editingId);
+      var box = document.getElementById('dup-warning');
+      if (!dups.length) { box.classList.add('hidden'); return; }
+      document.getElementById('dup-list').innerHTML = dups.slice(0, 5).map(function (d) {
+        return '<li>' + D.escapeHtml(d.record.name || '') + ' · ' + D.escapeHtml(d.record.phone || d.record.email || '') +
+          ' <span class="opacity-60">(' + (d.type === 'lead' ? t18('nav_leads', 'Lead') : t18('nav_customers', 'Customer')) + ')</span></li>';
+      }).join('');
+      box.classList.remove('hidden');
+      if (window.reapplyDashLang) window.reapplyDashLang();
+    }
+
+    function saveLead() {
+      var name = document.getElementById('lf-name').value.trim();
+      var phone = document.getElementById('lf-phone').value.trim();
+      var followUp = document.getElementById('lf-followup').value;
+      if (!name || !phone) { showFormError('name_required', 'Name and phone are required.'); return; }
+      if (!followUp) { showFormError('fu_required', 'A follow-up date is required before saving.'); return; }
+      var data = {
+        name: name, phone: phone,
+        company: document.getElementById('lf-company').value.trim(),
+        email: document.getElementById('lf-email').value.trim(),
+        productType: document.getElementById('lf-product').value,
+        stage: document.getElementById('lf-stage').value,
+        priority: document.getElementById('lf-priority').value,
+        source: document.getElementById('lf-source').value,
+        representative: document.getElementById('lf-source').value === 'representative'
+          ? document.getElementById('lf-rep').value.trim() : '',
+        followUp: followUp,
+        notes: document.getElementById('lf-notes').value.trim()
+      };
+      if (data.source === 'representative' && !data.representative) {
+        showFormError('name_required', 'Name and phone are required.'); return;
+      }
+      if (editingId) {
+        D.updateLead(editingId, data);
+        D.logAudit('lead_updated', 'Lead details updated', editingId, data.name);
+      } else {
+        var l = D.addLead(data);
+        D.logAudit('lead_created', 'New ' + data.productType + ' lead via ' + data.source, l.id, data.name);
+      }
+      closeLeadModal();
+      render();
+      toast('toast_lead_saved', 'Lead saved');
+    }
+
+    // ── Convert to quote request ───────────────────────────────
+    function convertLead(id) {
+      var l = D.getLead(id); if (!l || l.convertedRequestId != null) return;
+      var req = D.addRequest({
+        project: ({concrete:'Concrete', precast:'Precast', block:'Construction Block'})[l.productType] + ' — ' + (l.company || l.name),
+        client: l.name, email: l.email, phone: l.phone,
+        productType: l.productType, stage: 'Quote',
+        source: l.source, representative: l.representative,
+        followUp: l.followUp
+      });
+      D.updateLead(id, { stage: 'Quoted', convertedRequestId: req.id });
+      D.logAudit('lead_converted', 'Lead converted to quote request ' + req.ref, id, l.name);
+      render();
+      toast('toast_lead_converted', 'Lead converted to a quote request');
+    }
+
+    // ── Delete ─────────────────────────────────────────────────
+    function openDeleteLead(id) {
+      deletingId = id;
+      var l = D.getLead(id); if (!l) return;
+      document.getElementById('del-lead-name').textContent = l.name;
+      document.getElementById('lead-delete-modal').classList.remove('hidden');
+    }
+    function closeDeleteLead() { document.getElementById('lead-delete-modal').classList.add('hidden'); deletingId = null; }
+    function confirmDeleteLead() {
+      if (deletingId == null) return;
+      var l = D.getLead(deletingId);
+      D.deleteLead(deletingId);
+      if (l) D.logAudit('lead_deleted', 'Lead removed', deletingId, l.name);
+      closeDeleteLead();
+      render();
+      toast('toast_lead_deleted', 'Lead deleted');
+    }
+
+    // ── Boot ───────────────────────────────────────────────────
+    render();
+    D.subscribe(render);
+  </script>
+  <script src="js/dash-lang.js?v=5"></script>
+</body>
+</html>
