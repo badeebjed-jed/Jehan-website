@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Approval & Audit System - Jehan Holding Group</title>
+  <!-- Admin-only page -->
+  <script src="js/auth.js?v=6"></script>
+  <script>if (!window.JehanAuth || !window.JehanAuth.enforceAdmin()) { /* halted by redirect */ }</script>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600;700&family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+  <script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          primary:       '#3D5A34',
+          'primary-mid': '#5C7A48',
+          'primary-lt':  '#8CAE78',
+          gold:          '#C49A1A',
+          'gold-hover':  '#A07D10',
+          bg:            '#F2F1EE',
+          surface:       '#FFFFFF',
+          'surface-dim': '#F8F7F4',
+          'surface-mid': '#EEEDE9',
+          'surface-high':'#E4E3DF',
+          dark:          '#1E1E1E',
+          mid:           '#444444',
+          light:         '#888888',
+          border:        '#DCDBD7',
+          error:         '#ba1a1a',
+          'error-bg':    '#ffdad6',
+          'gold-bg':     '#FBF0C4',
+        },
+        fontFamily: {
+          heading: ['"Barlow Condensed"', 'Arial', 'sans-serif'],
+          body:    ['Barlow', 'Arial', 'sans-serif'],
+        },
+        borderRadius: { DEFAULT: '4px', full: '9999px' },
+      }
+    }
+  };
+  </script>
+  <style>
+    body { font-family: 'Barlow', Arial, sans-serif; }
+    h1,h2,h3,h4,h5 { font-family: 'Barlow Condensed', Arial, sans-serif; font-weight: 700; letter-spacing: 0.02em; }
+    .material-symbols-outlined { font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24; }
+  </style>
+</head>
+<body class="bg-bg text-dark h-screen flex overflow-hidden">
+
+  <aside class="w-64 h-full flex flex-col bg-surface border-r border-border flex-shrink-0" data-nav></aside>
+  <script src="js/dash-nav.js?v=1"></script>
+
+  <div class="flex-1 flex flex-col overflow-hidden">
+
+    <header class="bg-surface border-b border-border h-16 flex items-center px-8 flex-shrink-0">
+      <h1 class="font-heading font-bold text-2xl uppercase tracking-wide text-dark" data-i18n="page_approvals">Approval & Audit System</h1>
+    </header>
+
+    <div class="flex-1 overflow-y-auto p-8">
+      <div class="max-w-5xl mx-auto space-y-6">
+
+        <!-- Pending approvals -->
+        <div class="bg-surface border border-border rounded shadow-[0_2px_12px_rgba(0,0,0,0.07)]">
+          <div class="px-6 py-4 border-b border-border">
+            <h2 class="font-heading text-xl font-bold text-dark flex items-center gap-2"><span class="material-symbols-outlined text-gold text-[22px]">gavel</span><span data-i18n="apr_queue">Pending Approvals</span></h2>
+            <p class="text-xs text-light mt-0.5" data-i18n="apr_queue_d">Quotes and bookings waiting for an administrator decision.</p>
+          </div>
+          <div id="apr-queue" class="p-5 space-y-4"></div>
+        </div>
+
+        <!-- Capacity monitor -->
+        <div class="bg-surface border border-border rounded shadow-[0_2px_12px_rgba(0,0,0,0.07)]">
+          <div class="px-6 py-4 border-b border-border">
+            <h2 class="font-heading text-xl font-bold text-dark flex items-center gap-2"><span class="material-symbols-outlined text-primary text-[22px]">speed</span><span data-i18n="apr_capacity">Concrete Capacity — Next 7 Days</span></h2>
+            <p class="text-xs text-light mt-0.5" data-i18n="apr_capacity_d">Daily booked volume vs the 600 m³ capacity. Overbooked days stay allowed but are flagged for manual override.</p>
+          </div>
+          <div id="apr-capacity" class="p-6 space-y-3"></div>
+        </div>
+
+        <!-- Audit log -->
+        <div class="bg-surface border border-border rounded shadow-[0_2px_12px_rgba(0,0,0,0.07)]">
+          <div class="px-6 py-4 border-b border-border flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h2 class="font-heading text-xl font-bold text-dark flex items-center gap-2"><span class="material-symbols-outlined text-primary text-[22px]">history</span><span data-i18n="apr_audit">Audit Log</span></h2>
+              <p class="text-xs text-light mt-0.5" data-i18n="apr_audit_d">Quote revisions, status changes, approvals, and other important actions.</p>
+            </div>
+            <input id="audit-search" type="text" data-i18n-ph="ph_search_audit" placeholder="Search audit log…" oninput="renderAudit()"
+              class="border border-border rounded px-3 py-2 text-sm bg-bg text-dark placeholder-light focus:outline-none focus:border-primary w-64"/>
+          </div>
+          <div id="apr-audit" class="overflow-x-auto"></div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="apr-toast" class="hidden fixed bottom-6 right-6 z-50 bg-primary text-white text-sm font-semibold px-5 py-3 rounded shadow-lg flex items-center gap-2 max-w-md">
+    <span class="material-symbols-outlined text-[18px]">check_circle</span>
+    <span id="apr-toast-msg">Done</span>
+  </div>
+
+  <script src="js/dash-data.js?v=5"></script>
+  <script>
+    var D = window.JehanData;
+    var REASON_I18N = { large_volume: 'apr_large_volume', high_discount: 'apr_high_discount', same_day_dispatch: 'apr_same_day' };
+    var PRODUCT_I18N = { concrete: 'product_concrete', precast: 'product_precast', block: 'product_block' };
+
+    function t18(key, fb) { return '<span data-i18n="' + key + '">' + fb + '</span>'; }
+    function toast(key, fallback) {
+      var el = document.getElementById('apr-toast');
+      document.getElementById('apr-toast-msg').textContent = window.dashT ? window.dashT(key, fallback) : fallback;
+      el.classList.remove('hidden');
+      setTimeout(function () { el.classList.add('hidden'); }, 4000);
+    }
+    function me() {
+      try { var u = window.JehanAuth.currentUser(); return u ? (u.name || u.email) : ''; } catch (e) { return ''; }
+    }
+
+    // ── Pending approvals queue ────────────────────────────────
+    function renderQueue() {
+      var list = D.pendingApprovals();
+      var c = document.getElementById('apr-queue');
+      if (!list.length) {
+        c.innerHTML = '<div class="text-center py-8"><span class="material-symbols-outlined text-[36px] text-primary">verified</span>' +
+          '<p class="text-sm text-light mt-2" data-i18n="apr_none">Nothing waiting for approval.</p></div>';
+        return;
+      }
+      c.innerHTML = list.map(function (r) {
+        var reasons = (r.approval.reasons || []).map(function (x) {
+          return '<span class="inline-block bg-gold-bg border border-gold text-dark text-[11px] font-bold px-2 py-0.5 rounded-full">' + t18(REASON_I18N[x] || x, x) + '</span>';
+        }).join(' ');
+        return '<div class="border border-border rounded p-4">' +
+          '<div class="flex flex-wrap items-start justify-between gap-3">' +
+            '<div class="min-w-0">' +
+              '<div class="flex items-center gap-2 flex-wrap">' +
+                '<p class="text-sm font-bold text-dark">' + D.escapeHtml(r.ref) + ' · ' + D.escapeHtml(r.client) + '</p>' +
+                '<span class="text-[11px] font-bold uppercase text-light">' + t18(PRODUCT_I18N[r.productType || 'concrete'], r.productType || 'concrete') + '</span>' +
+              '</div>' +
+              '<p class="text-xs text-light mt-0.5">' + D.escapeHtml(r.project || '') +
+                (r.quantity ? ' · ' + r.quantity : '') +
+                (r.quote ? ' · <strong class="text-dark">' + Number(r.quote.total).toLocaleString() + ' SAR</strong>' : '') +
+                (r.quote && r.quote.discount ? ' (−' + r.quote.discount + '%)' : '') +
+                (r.deliveryDate ? ' · ' + D.fmtDate(r.deliveryDate) : '') + '</p>' +
+              '<div class="flex flex-wrap gap-1.5 mt-2">' + reasons + '</div>' +
+            '</div>' +
+          '</div>' +
+          '<div class="mt-3 flex flex-wrap items-center gap-2">' +
+            '<input id="note-' + r.id + '" type="text" data-i18n-ph="apr_note_ph" placeholder="Optional note for this decision…" class="flex-1 min-w-[200px] border border-border rounded px-3 py-2 text-xs bg-bg text-dark placeholder-light focus:outline-none focus:border-primary"/>' +
+            '<button onclick="decide(' + r.id + ', true)" class="flex items-center gap-1.5 bg-primary hover:bg-primary-mid text-white text-xs font-bold px-4 py-2 rounded transition-colors"><span class="material-symbols-outlined text-[16px]">check</span>' + t18('apr_approve', 'Approve') + '</button>' +
+            '<button onclick="decide(' + r.id + ', false)" class="flex items-center gap-1.5 border border-error/40 text-error hover:bg-error hover:text-white text-xs font-bold px-4 py-2 rounded transition-colors"><span class="material-symbols-outlined text-[16px]">close</span>' + t18('apr_reject', 'Reject') + '</button>' +
+          '</div>' +
+        '</div>';
+      }).join('');
+    }
+
+    function decide(id, approve) {
+      var r = D.getRequest(id); if (!r || !r.approval) return;
+      var note = (document.getElementById('note-' + id) || {}).value || '';
+      var approval = {
+        required: true, reasons: r.approval.reasons,
+        status: approve ? 'approved' : 'rejected',
+        by: me(), date: new Date().toISOString(), note: note.trim()
+      };
+      if (approve) {
+        D.updateRequest(id, { approval: approval, status: 'Quote Sent' });
+        D.logAudit('approval_granted', (r.ref || '') + (note ? ' — ' + note.trim() : ''), id, r.ref);
+        // Release the held client email (server sends it).
+        if (r.email && r.quote) {
+          var api = (location.pathname.indexOf('/dashboard/') !== -1) ? '../api.php' : 'api.php';
+          fetch(api + '?action=sendquote', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              to: r.email, client: r.client, ref: r.ref, quantity: r.quantity,
+              rate: r.quote.rate, total: r.quote.total, delivery: r.quote.delivery,
+              notes: r.quote.notes, project: r.project
+            })
+          }).catch(function () {});
+          toast('apr_approved_toast', 'Approved — the quote email was released to the client.');
+        } else {
+          toast('apr_approved_noemail', 'Approved. No client email on file, so nothing was sent.');
+        }
+      } else {
+        D.updateRequest(id, { approval: approval, status: 'Pending' });
+        D.logAudit('approval_rejected', (r.ref || '') + (note ? ' — ' + note.trim() : ''), id, r.ref);
+        toast('apr_rejected_toast', 'Rejected — the request was returned to Pending.');
+      }
+      renderAll();
+    }
+
+    // ── Capacity monitor ───────────────────────────────────────
+    function renderCapacity() {
+      var html = '';
+      var d = new Date();
+      var lang = localStorage.getItem('dashLang') === 'ar' ? 'ar' : 'en-GB';
+      for (var i = 0; i < 7; i++) {
+        var key = d.toISOString().slice(0, 10);
+        var vol = D.dayConcreteVolume(key);
+        var pct = Math.min(100, Math.round(vol / D.CONCRETE_DAILY_CAPACITY * 100));
+        var over = vol > D.CONCRETE_DAILY_CAPACITY;
+        var warn = !over && vol >= D.CONCRETE_DAILY_CAPACITY * 0.8;
+        html += '<div class="flex items-center gap-3">' +
+          '<span class="w-24 text-xs font-semibold text-mid">' + d.toLocaleDateString(lang, { weekday: 'short', day: 'numeric', month: 'short' }) + '</span>' +
+          '<div class="flex-1 h-4 bg-surface-dim rounded-full overflow-hidden"><div class="h-full ' +
+            (over ? 'bg-error' : warn ? 'bg-gold' : 'bg-primary') + '" style="width:' + pct + '%"></div></div>' +
+          '<span class="w-28 text-end text-xs font-bold ' + (over ? 'text-error' : 'text-dark') + '">' + vol.toLocaleString() + ' / ' + D.CONCRETE_DAILY_CAPACITY +
+            (over ? ' <span class="material-symbols-outlined text-[14px] align-middle">warning</span>' : '') + '</span>' +
+        '</div>';
+        d.setDate(d.getDate() + 1);
+      }
+      document.getElementById('apr-capacity').innerHTML = html;
+    }
+
+    // ── Audit log ──────────────────────────────────────────────
+    var ACTION_STYLE = {
+      approval_granted: 'bg-primary-lt/20 text-primary border-primary-lt',
+      approval_rejected: 'bg-error-bg text-error border-error/30',
+      quote_sent: 'bg-gold-bg text-dark border-gold',
+      quote_revised: 'bg-gold-bg text-dark border-gold',
+      quote_expired: 'bg-surface-high text-light border-border',
+      status_changed: 'bg-surface-mid text-mid border-border',
+      stage_changed: 'bg-surface-mid text-mid border-border'
+    };
+    function renderAudit() {
+      var q = (document.getElementById('audit-search').value || '').trim().toLowerCase();
+      var list = D.getAudit().filter(function (a) {
+        if (!q) return true;
+        return [a.action, a.detail, a.by, a.refLabel].join(' ').toLowerCase().indexOf(q) !== -1;
+      }).slice(0, 100);
+      var c = document.getElementById('apr-audit');
+      if (!list.length) {
+        c.innerHTML = '<p class="text-sm text-light text-center py-8" data-i18n="apr_no_audit">No audit entries yet.</p>';
+        return;
+      }
+      c.innerHTML = '<table class="w-full min-w-[640px]"><thead><tr class="bg-surface-dim border-b border-border">' +
+        '<th class="text-start px-5 py-2.5 text-[11px] font-bold uppercase tracking-widest text-light">' + t18('th_date', 'Date') + '</th>' +
+        '<th class="text-start px-4 py-2.5 text-[11px] font-bold uppercase tracking-widest text-light">' + t18('th_action', 'Action') + '</th>' +
+        '<th class="text-start px-4 py-2.5 text-[11px] font-bold uppercase tracking-widest text-light">' + t18('th_detail', 'Detail') + '</th>' +
+        '<th class="text-start px-4 py-2.5 text-[11px] font-bold uppercase tracking-widest text-light">' + t18('th_by', 'By') + '</th>' +
+        '</tr></thead><tbody>' +
+        list.map(function (a) {
+          var pill = ACTION_STYLE[a.action] || 'bg-surface-mid text-mid border-border';
+          return '<tr class="border-b border-border last:border-0 hover:bg-surface-dim transition-colors">' +
+            '<td class="px-5 py-2.5 text-xs text-light whitespace-nowrap">' + D.fmtDate(a.date) + ' · ' + new Date(a.date).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) + '</td>' +
+            '<td class="px-4 py-2.5"><span class="inline-block border text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide ' + pill + '">' + D.escapeHtml(a.action.replace(/_/g, ' ')) + '</span></td>' +
+            '<td class="px-4 py-2.5 text-xs text-dark">' + (a.refLabel ? '<strong>' + D.escapeHtml(a.refLabel) + '</strong> · ' : '') + D.escapeHtml(a.detail || '') + '</td>' +
+            '<td class="px-4 py-2.5 text-xs text-mid whitespace-nowrap">' + D.escapeHtml(a.by || '—') + '</td>' +
+          '</tr>';
+        }).join('') + '</tbody></table>';
+    }
+
+    function renderAll() {
+      renderQueue(); renderCapacity(); renderAudit();
+      if (window.reapplyDashLang) window.reapplyDashLang();
+    }
+    renderAll();
+    D.subscribe(renderAll);
+  </script>
+  <script src="js/dash-lang.js?v=5"></script>
+</body>
+</html>
