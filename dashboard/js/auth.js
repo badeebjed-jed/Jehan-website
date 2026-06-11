@@ -43,7 +43,7 @@
   var SESSION_TIMEOUT_MS = 1000 * 60 * 60 * 8; // 8 hours
 
   // Permission modules every account can be granted.
-  var MODULES = ['bookings', 'customers', 'financials', 'settings', 'profile', 'approvals'];
+  var MODULES = ['bookings', 'customers', 'financials', 'settings', 'profile', 'approvals', 'operations'];
 
   // ── Crypto ───────────────────────────────────────────────────
   function sha256Hex(message) {
@@ -389,13 +389,23 @@
         // sales modules ride on the bookings permission; reports on financials
         'leads.html': 'bookings', 'sales-forms.html': 'bookings',
         'calendar.html': 'bookings', 'tasks.html': 'bookings',
-        'reports.html': 'financials'
+        'reports.html': 'financials',
+        // plant operations module
+        'ops-board.html': 'operations', 'ops-orders.html': 'operations',
+        'ops-fleet.html': 'operations', 'ops-reports.html': 'operations'
       };
       document.querySelectorAll('nav a[href]').forEach(function (a) {
         var href = a.getAttribute('href');
         if (map[href] && !can(map[href])) { a.style.display = 'none'; }
         if (href === 'approvals.html' && !canApprove()) { a.style.display = 'none'; }
       });
+      // Hide the whole Plant Operations group when the user has no access.
+      if (!can('operations')) {
+        var ob = document.getElementById('ops-group-btn');
+        var oi = document.getElementById('ops-group-items');
+        if (ob) ob.style.display = 'none';
+        if (oi) oi.style.display = 'none';
+      }
       // Settings → Workspace cards: hide individually based on permission,
       // and hide the whole section if neither card is visible.
       var cardAccess  = document.getElementById('card-access');

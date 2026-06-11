@@ -4,7 +4,7 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Calendar Management - Jehan Holding Group</title>
-  <script src="js/auth.js?v=8"></script>
+  <script src="js/auth.js?v=9"></script>
   <script>if (!window.JehanAuth || !window.JehanAuth.enforce('bookings')) { /* halted by redirect */ }</script>
   <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600;700&family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet"/>
@@ -53,7 +53,7 @@
 <body class="bg-bg text-dark h-screen flex overflow-hidden">
 
   <aside class="w-64 h-full flex flex-col bg-surface border-r border-border flex-shrink-0" data-nav></aside>
-  <script src="js/dash-nav.js?v=1"></script>
+  <script src="js/dash-nav.js?v=2"></script>
 
   <div class="flex-1 flex flex-col overflow-hidden">
 
@@ -207,7 +207,7 @@
     <span id="cal-toast-msg">Done</span>
   </div>
 
-  <script src="js/dash-data.js?v=6"></script>
+  <script src="js/dash-data.js?v=7"></script>
   <script>
     var D = window.JehanData;
     var calProduct = 'concrete';
@@ -597,6 +597,6 @@
     setCalProduct('concrete');
     D.subscribe(renderCal);
   </script>
-  <script src="js/dash-lang.js?v=7"></script>
+  <script src="js/dash-lang.js?v=8"></script>
 </body>
 </html>

@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Operations Board - Jehan Holding Group</title>
+  <script src="js/auth.js?v=9"></script>
+  <script>if (!window.JehanAuth || !window.JehanAuth.enforce('operations')) { /* halted by redirect */ }</script>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600;700&family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+  <script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          primary:       '#3D5A34',
+          'primary-mid': '#5C7A48',
+          'primary-lt':  '#8CAE78',
+          gold:          '#C49A1A',
+          'gold-hover':  '#A07D10',
+          bg:            '#F2F1EE',
+          surface:       '#FFFFFF',
+          'surface-dim': '#F8F7F4',
+          'surface-mid': '#EEEDE9',
+          'surface-high':'#E4E3DF',
+          dark:          '#1E1E1E',
+          mid:           '#444444',
+          light:         '#888888',
+          border:        '#DCDBD7',
+          error:         '#ba1a1a',
+          'error-bg':    '#ffdad6',
+          'gold-bg':     '#FBF0C4',
+        },
+        fontFamily: {
+          heading: ['"Barlow Condensed"', 'Arial', 'sans-serif'],
+          body:    ['Barlow', 'Arial', 'sans-serif'],
+        },
+        borderRadius: { DEFAULT: '4px', full: '9999px' },
+      }
+    }
+  };
+  </script>
+  <style>
+    body { font-family: 'Barlow', Arial, sans-serif; }
+    h1,h2,h3,h4,h5 { font-family: 'Barlow Condensed', Arial, sans-serif; font-weight: 700; letter-spacing: 0.02em; }
+    .material-symbols-outlined { font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24; }
+  </style>
+</head>
+<body class="bg-bg text-dark h-screen flex overflow-hidden">
+
+  <aside class="w-64 h-full flex flex-col bg-surface border-r border-border flex-shrink-0" data-nav></aside>
+  <script src="js/dash-nav.js?v=2"></script>
+
+  <div class="flex-1 flex flex-col overflow-hidden">
+
+    <header class="bg-surface border-b border-border h-16 flex items-center justify-between px-8 flex-shrink-0 gap-4">
+      <h1 class="font-heading font-bold text-2xl uppercase tracking-wide text-dark" data-i18n="page_ops_board">Operations Board</h1>
+      <div class="flex items-center gap-2 flex-shrink-0">
+        <button onclick="moveDay(-1)" class="p-2 rounded border border-border text-mid hover:bg-surface-mid"><span class="material-symbols-outlined text-[18px]">chevron_left</span></button>
+        <input id="board-day" type="date" onchange="render()" class="border border-border rounded px-3 py-2 text-sm font-bold text-dark bg-surface focus:outline-none focus:border-primary"/>
+        <button onclick="moveDay(1)" class="p-2 rounded border border-border text-mid hover:bg-surface-mid"><span class="material-symbols-outlined text-[18px]">chevron_right</span></button>
+        <button onclick="goToday()" class="px-3 py-2 rounded border border-border text-xs font-bold text-mid hover:bg-surface-mid" data-i18n="ob_today">Today</button>
+      </div>
+    </header>
+
+    <div class="flex-1 overflow-y-auto p-8">
+      <div class="max-w-6xl mx-auto space-y-5">
+
+        <!-- Capacity + status lanes -->
+        <div class="grid grid-cols-1 xl:grid-cols-3 gap-4">
+          <div class="bg-surface border border-border rounded shadow-[0_2px_12px_rgba(0,0,0,0.07)] p-5">
+            <p class="text-[11px] font-bold uppercase tracking-widest text-light mb-2 flex items-center gap-1.5"><span class="material-symbols-outlined text-[16px] text-primary">speed</span><span data-i18n="ob_capacity">Daily Capacity</span></p>
+            <div id="ob-capacity"></div>
+          </div>
+          <div class="xl:col-span-2 bg-surface border border-border rounded shadow-[0_2px_12px_rgba(0,0,0,0.07)] p-5">
+            <div id="ob-lanes" class="flex flex-wrap gap-2"></div>
+          </div>
+        </div>
+
+        <!-- Exception alerts -->
+        <div class="bg-surface border border-border rounded shadow-[0_2px_12px_rgba(0,0,0,0.07)]">
+          <div class="px-5 py-3 border-b border-border flex items-center gap-2">
+            <span class="material-symbols-outlined text-error text-[20px]">notification_important</span>
+            <h2 class="text-base uppercase tracking-wide" data-i18n="ob_alerts">Exception Alerts</h2>
+          </div>
+          <div id="ob-alerts" class="p-4 space-y-2"></div>
+        </div>
+
+        <!-- Day orders -->
+        <div id="ob-orders" class="space-y-5"></div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Reason modal (delay / reject) -->
+  <div id="reason-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div class="absolute inset-0 bg-black/40" onclick="closeReason()"></div>
+    <div class="relative bg-surface rounded-lg shadow-xl w-full max-w-sm">
+      <div class="px-6 py-4 border-b border-border">
+        <h3 id="reason-title" class="text-lg font-bold text-dark" data-i18n="ob_delay_reason">Delay Reason</h3>
+      </div>
+      <div class="p-6 space-y-2" id="reason-options"></div>
+      <div class="px-6 py-4 border-t border-border flex gap-3 justify-end">
+        <button onclick="closeReason()" class="px-5 py-2 border border-border rounded text-sm font-semibold text-mid hover:bg-surface-mid transition-colors" data-i18n="btn_cancel">Cancel</button>
+        <button onclick="confirmReason()" class="flex items-center gap-2 bg-error hover:opacity-90 text-white text-sm font-semibold px-5 py-2 rounded transition-colors">
+          <span class="material-symbols-outlined text-[18px]">flag</span><span data-i18n="btn_save">Save</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="ob-toast" class="hidden fixed bottom-6 right-6 z-50 bg-primary text-white text-sm font-semibold px-5 py-3 rounded shadow-lg flex items-center gap-2 max-w-md">
+    <span class="material-symbols-outlined text-[18px]">check_circle</span>
+    <span id="ob-toast-msg">Done</span>
+  </div>
+
+  <script src="js/dash-data.js?v=7"></script>
+  <script>
+    var D = window.JehanData;
+    var STATUS_I18N = { 'Booked':'ops_booked','Authorized':'ops_authorized','On Hold':'ops_on_hold','Scheduled':'ops_scheduled',
+      'Batching':'ops_batching','Loading':'ops_loading','En Route':'ops_en_route','On Site':'ops_on_site',
+      'Discharging':'ops_discharging','Washout':'ops_washout','Returned':'ops_returned','Completed':'ops_completed','Delayed':'ops_delayed' };
+    var DLY_I18N = { 'Traffic':'dly_traffic','Plant Breakdown':'dly_plant','Pump Breakdown':'dly_pump','Truck Breakdown':'dly_truck',
+      'Site Not Ready':'dly_site','Weather':'dly_weather','Quality Issue':'dly_quality','Customer Delay':'dly_customer','Other':'dly_other' };
+    var REJ_I18N = { 'Slump Out of Spec':'rej_slump','Excess Wait Time':'rej_wait','Wrong Mix':'rej_mix','Site Rejection':'rej_site','Other':'rej_other' };
+
+    function t18(key, fb) { return '<span data-i18n="' + key + '">' + fb + '</span>'; }
+    function toast(key, fallback) {
+      var el = document.getElementById('ob-toast');
+      document.getElementById('ob-toast-msg').textContent = window.dashT ? window.dashT(key, fallback) : fallback;
+      el.classList.remove('hidden');
+      setTimeout(function () { el.classList.add('hidden'); }, 2800);
+    }
+    function pad(n) { return (n < 10 ? '0' : '') + n; }
+    function todayKey() { var d = new Date(); return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+    function day() { return document.getElementById('board-day').value || todayKey(); }
+    function moveDay(n) {
+      var d = new Date(day() + 'T00:00:00'); d.setDate(d.getDate() + n);
+      document.getElementById('board-day').value = d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+      render();
+    }
+    function goToday() { document.getElementById('board-day').value = todayKey(); render(); }
+
+    function dayOrders() {
+      return D.getOpsOrders().filter(function (o) { return o.deliveryDate === day(); })
+        .sort(function (a, b) {
+          var P = { 'Urgent': 0, 'High': 1, 'Normal': 2, 'Low': 3 };
+          return (P[a.priority] || 2) - (P[b.priority] || 2);
+        });
+    }
+    function dayTrips() {
+      var ids = {};
+      dayOrders().forEach(function (o) { ids[o.id] = true; });
+      return D.getTrips().filter(function (t) { return t.day === day() && ids[t.orderId]; });
+    }
+
+    // ── Capacity + lanes ───────────────────────────────────────
+    function renderCapacity() {
+      var orders = dayOrders().filter(function (o) { return !o.completed && o.authStatus !== 'On Hold'; });
+      var planned = orders.reduce(function (s, o) { var q = parseFloat(o.quantity); return s + (isNaN(q) ? 0 : q); }, 0);
+      var dispatched = dayTrips().reduce(function (s, t) {
+        if (t.status === 'Cancelled' || t.rejectReason) return s;
+        if (['Discharging', 'Washout', 'Returned'].indexOf(t.status) === -1) return s;
+        var q = parseFloat(t.qty); return s + (isNaN(q) ? 0 : q);
+      }, 0);
+      var cap = D.CONCRETE_DAILY_CAPACITY;
+      var pct = Math.min(100, Math.round(planned / cap * 100));
+      var over = planned > cap;
+      document.getElementById('ob-capacity').innerHTML =
+        '<p class="text-2xl font-bold ' + (over ? 'text-error' : 'text-dark') + '">' + planned.toLocaleString() + ' <span class="text-sm text-light">/ ' + cap + ' m³</span></p>' +
+        '<div class="h-2.5 rounded-full bg-surface-dim overflow-hidden mt-2"><div class="h-full ' + (over ? 'bg-error' : pct >= 80 ? 'bg-gold' : 'bg-primary') + '" style="width:' + pct + '%"></div></div>' +
+        '<p class="text-xs text-light mt-2">' + t18('or_actual', 'Delivered') + ': <strong class="text-dark">' + dispatched.toLocaleString() + ' m³</strong></p>';
+    }
+    function renderLanes() {
+      var counts = {};
+      dayOrders().forEach(function (o) {
+        var st = D.opsOrderStatus(o);
+        counts[st] = (counts[st] || 0) + 1;
+      });
+      var ORDER = ['Booked', 'On Hold', 'Authorized', 'Scheduled', 'Batching', 'En Route', 'On Site', 'Discharging', 'Delayed', 'Completed'];
+      document.getElementById('ob-lanes').innerHTML = ORDER.map(function (st) {
+        var n = counts[st] || 0;
+        return '<div class="' + D.statusPill(st) + ' rounded-full px-3 py-1.5 text-xs font-bold' + (n === 0 ? ' opacity-40' : '') + '">' +
+          t18(STATUS_I18N[st], st) + ' · ' + n + '</div>';
+      }).join('');
+    }
+
+    // ── Exception alerts ───────────────────────────────────────
+    function renderAlerts() {
+      var alerts = [];
+      var orders = dayOrders();
+      var trips = dayTrips();
+      // delayed trips
+      trips.forEach(function (t) {
+        if (t.delayReason) {
+          var o = D.getOpsOrder(t.orderId);
+          alerts.push({ icon: 'schedule', cls: 'border-error/30 bg-error-bg/40 text-error',
+            html: '<strong>' + D.escapeHtml((o ? o.client : '') + ' · ' + t18p('ob_trip', 'Trip') + ' ' + (t.seq || '')) + '</strong> ' +
+              t18('ob_alert_delay', 'delayed') + ' — ' + t18(DLY_I18N[t.delayReason] || 'dly_other', t.delayReason) });
+        }
+      });
+      // capacity
+      var planned = orders.filter(function (o) { return !o.completed && o.authStatus !== 'On Hold'; })
+        .reduce(function (s, o) { var q = parseFloat(o.quantity); return s + (isNaN(q) ? 0 : q); }, 0);
+      if (planned > D.CONCRETE_DAILY_CAPACITY) {
+        alerts.push({ icon: 'speed', cls: 'border-error/30 bg-error-bg/40 text-error',
+          html: '<strong>' + t18('ob_alert_overcap', 'Capacity exceeded') + '</strong> — ' + planned.toLocaleString() + ' / ' + D.CONCRETE_DAILY_CAPACITY + ' m³' });
+      }
+      // asset conflicts: same truck/pump on 2+ active trips
+      var seen = {};
+      trips.forEach(function (t) {
+        if (['Returned', 'Cancelled'].indexOf(t.status) !== -1) return;
+        [t.truckId, t.pumpId].forEach(function (aid) {
+          if (aid == null) return;
+          if (seen[aid]) {
+            var a = D.getAsset(aid);
+            alerts.push({ icon: 'warning', cls: 'border-gold bg-gold-bg/50 text-gold-hover',
+              html: '<strong>' + t18('ob_alert_conflict', 'Asset conflict') + '</strong> — ' + D.escapeHtml(a ? a.name : ('#' + aid)) });
+          }
+          seen[aid] = true;
+        });
+      });
+      // pending authorization with delivery today
+      orders.forEach(function (o) {
+        if (!o.completed && o.authStatus === 'Pending Review') {
+          alerts.push({ icon: 'gavel', cls: 'border-gold bg-gold-bg/50 text-gold-hover',
+            html: '<strong>' + D.escapeHtml(o.ref + ' · ' + o.client) + '</strong> ' + t18('ob_alert_pending', 'awaiting authorization with delivery today') });
+        }
+      });
+      var c = document.getElementById('ob-alerts');
+      c.innerHTML = alerts.length
+        ? alerts.map(function (a) {
+            return '<div class="flex items-center gap-2.5 border rounded p-2.5 text-xs font-semibold ' + a.cls + '">' +
+              '<span class="material-symbols-outlined text-[18px]">' + a.icon + '</span><span>' + a.html + '</span></div>';
+          }).join('')
+        : '<p class="text-xs text-light text-center py-2" data-i18n="ob_no_alerts">No exceptions — operations running clean.</p>';
+    }
+    function t18p(key, fb) { return window.dashT ? window.dashT(key, fb) : fb; }
+
+    // ── Orders + trips ─────────────────────────────────────────
+    function assetOpts(kind, selected, noneKey, noneFb) {
+      var list = D.getAssets(kind).filter(function (a) { return a.status !== 'Maintenance' || a.id === selected; });
+      var html = '<option value=""' + (noneKey ? ' data-i18n="' + noneKey + '"' : '') + '>' + noneFb + '</option>';
+      html += list.map(function (a) {
+        return '<option value="' + a.id + '"' + (selected === a.id ? ' selected' : '') + '>' + D.escapeHtml(a.name) +
+          (a.capacity ? ' · ' + a.capacity : '') + '</option>';
+      }).join('');
+      return html;
+    }
+    function nextMilestone(t) {
+      var i = D.TRIP_MILESTONES.indexOf(t.status);
+      return (i >= 0 && i < D.TRIP_MILESTONES.length - 1) ? D.TRIP_MILESTONES[i + 1] : null;
+    }
+    function tripRow(t) {
+      var nxt = nextMilestone(t);
+      var done = t.status === 'Returned';
+      var rejected = !!t.rejectReason;
+      return '<div class="border ' + (t.delayReason ? 'border-error/40' : 'border-border') + ' rounded p-3 ' + (done ? 'opacity-70' : '') + '">' +
+        '<div class="flex flex-wrap items-center gap-2.5">' +
+          '<span class="text-xs font-bold text-light">#' + (t.seq || 1) + '</span>' +
+          '<select onchange="setTripAsset(' + t.id + ', \'truckId\', this.value)" class="text-xs border border-border rounded px-2 py-1.5 bg-bg max-w-[160px]">' +
+            assetOpts('mixer', t.truckId, null, t18p('ob_truck', 'Mixer Truck') + '…') + '</select>' +
+          '<select onchange="setTripAsset(' + t.id + ', \'pumpId\', this.value)" class="text-xs border border-border rounded px-2 py-1.5 bg-bg max-w-[150px]">' +
+            assetOpts('pump', t.pumpId, 'ob_no_pump', '— No pump —') + '</select>' +
+          '<input type="text" value="' + D.escapeHtml(t.driver || '') + '" onchange="patchTrip(' + t.id + ', { driver: this.value })" data-i18n-ph="ob_driver" placeholder="Driver" class="text-xs border border-border rounded px-2 py-1.5 bg-bg w-28"/>' +
+          '<input type="time" value="' + (t.loadTime || '') + '" onchange="patchTrip(' + t.id + ', { loadTime: this.value })" class="text-xs border border-border rounded px-2 py-1.5 bg-bg"/>' +
+          '<input type="number" min="0" step="any" value="' + (t.qty != null && t.qty !== '' ? t.qty : '') + '" onchange="patchTrip(' + t.id + ', { qty: parseFloat(this.value) || 0 })" data-i18n-ph="ob_qty" placeholder="m³" class="text-xs border border-border rounded px-2 py-1.5 bg-bg w-20"/>' +
+          '<span class="' + D.statusPill(rejected ? 'Rejected' : t.status) + ' text-[11px] font-bold px-2.5 py-1 rounded-full whitespace-nowrap"' +
+            (rejected ? '' : ' data-i18n="' + (STATUS_I18N[t.status] || '') + '"') + '>' + (rejected ? t18p('or_rejected', 'Rejected') : t.status) + '</span>' +
+          (t.delayReason ? '<span class="text-[11px] font-bold text-error">⏱ ' + t18(DLY_I18N[t.delayReason] || 'dly_other', t.delayReason) + '</span>' : '') +
+          '<span class="ms-auto flex items-center gap-1">' +
+            (nxt && !rejected
+              ? '<button onclick="advanceTrip(' + t.id + ')" class="flex items-center gap-1 bg-primary hover:bg-primary-mid text-white text-[11px] font-bold px-2.5 py-1.5 rounded transition-colors"><span class="material-symbols-outlined text-[14px]">arrow_forward</span>' + t18(STATUS_I18N[nxt], nxt) + '</button>'
+              : '') +
+            (!done && !rejected
+              ? '<button onclick="openReason(' + t.id + ', \'delay\')" title="Flag delay" class="p-1.5 rounded text-gold-hover hover:bg-gold-bg transition-colors"><span class="material-symbols-outlined text-[18px]">schedule</span></button>' +
+                '<button onclick="openReason(' + t.id + ', \'reject\')" title="Reject load" class="p-1.5 rounded text-error hover:bg-error-bg transition-colors"><span class="material-symbols-outlined text-[18px]">block</span></button>'
+              : '') +
+            '<button onclick="removeTrip(' + t.id + ')" class="p-1.5 rounded text-light hover:text-error hover:bg-error-bg transition-colors"><span class="material-symbols-outlined text-[18px]">delete</span></button>' +
+          '</span>' +
+        '</div>' +
+      '</div>';
+    }
+    function orderCard(o) {
+      var trips = D.tripsForOrder(o.id).filter(function (t) { return t.day === day(); });
+      var st = D.opsOrderStatus(o);
+      var plant = o.plantId != null ? D.getAsset(o.plantId) : null;
+      var PRI_CLS = { 'Urgent': 'bg-error text-white', 'High': 'bg-error-bg text-error border border-error/30',
+        'Normal': 'bg-surface-mid text-mid border border-border', 'Low': 'bg-surface-dim text-light border border-border' };
+      var canDispatch = o.authStatus === 'Authorized' && !o.completed;
+      return '<div class="bg-surface border border-border rounded shadow-[0_2px_12px_rgba(0,0,0,0.07)] p-5">' +
+        '<div class="flex flex-wrap items-center gap-2.5 mb-3">' +
+          '<span class="' + D.statusPill(st) + ' text-xs font-bold px-3 py-1 rounded-full"' + (STATUS_I18N[st] ? ' data-i18n="' + STATUS_I18N[st] + '"' : '') + '>' + st + '</span>' +
+          '<h2 class="font-heading text-lg font-bold text-dark">' + D.escapeHtml(o.client) + '</h2>' +
+          '<span class="inline-block text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ' + (PRI_CLS[o.priority || 'Normal']) + '">' + D.escapeHtml(o.priority || 'Normal') + '</span>' +
+          '<span class="text-xs text-light">' + D.escapeHtml(o.ref || '') +
+            (o.site ? ' · ' + D.escapeHtml(o.site) : '') +
+            (o.mix ? ' · ' + D.escapeHtml(o.mix) : '') +
+            (o.quantity ? ' · <strong class="text-dark">' + o.quantity + ' m³</strong>' : '') +
+            (o.window && o.window !== 'flexible' ? ' · ' + o.window : '') +
+            (plant ? ' · 🏭 ' + D.escapeHtml(plant.name) : '') + '</span>' +
+          (!o.siteReady && canDispatch ? '<span class="text-[11px] font-bold text-gold-hover">⚠ ' + t18('dly_site', 'Site Not Ready') + '</span>' : '') +
+          '<span class="ms-auto">' +
+            (canDispatch
+              ? '<button onclick="newTrip(' + o.id + ')" class="flex items-center gap-1.5 bg-gold hover:bg-gold-hover text-white text-xs font-bold px-3.5 py-2 rounded transition-colors"><span class="material-symbols-outlined text-[15px]">add</span>' + t18('ob_add_trip', 'Add Trip') + '</button>'
+              : '<a href="ops-orders.html" class="text-xs font-bold text-primary hover:underline">' + t18('oo_auth_status', 'Authorization') + ' →</a>') +
+          '</span>' +
+        '</div>' +
+        (trips.length
+          ? '<div class="space-y-2">' + trips.map(tripRow).join('') + '</div>'
+          : (canDispatch ? '<p class="text-xs text-light" data-i18n="ob_unscheduled">Authorized — awaiting trips</p>' : '')) +
+      '</div>';
+    }
+    function renderOrders() {
+      var orders = dayOrders();
+      var c = document.getElementById('ob-orders');
+      if (!orders.length) {
+        c.innerHTML = '<div class="bg-surface border border-border rounded py-16 text-center">' +
+          '<span class="material-symbols-outlined text-[40px] text-light">event_busy</span>' +
+          '<p class="text-sm text-light mt-2" data-i18n="ob_no_orders">Nothing scheduled for this day.</p></div>';
+        return;
+      }
+      c.innerHTML = orders.map(orderCard).join('');
+    }
+
+    function render() {
+      D.syncOpsFromSales();
+      renderCapacity(); renderLanes(); renderAlerts(); renderOrders();
+      if (window.reapplyDashLang) window.reapplyDashLang();
+    }
+
+    // ── Trip actions ───────────────────────────────────────────
+    function newTrip(orderId) {
+      var existing = D.tripsForOrder(orderId).filter(function (t) { return t.day === day(); });
+      var o = D.getOpsOrder(orderId);
+      D.addTrip({
+        id: undefined, orderId: orderId, day: day(),
+        seq: existing.length + 1, truckId: null, pumpId: null,
+        driver: '', qty: '', loadTime: '',
+        status: 'Scheduled', times: {}, delayReason: '', rejectReason: ''
+      });
+      D.logAudit('trip_created', (o ? o.ref : '') + ' trip #' + (existing.length + 1) + ' on ' + day(), orderId, o ? o.ref : '');
+      render();
+      toast('toast_trip_saved', 'Trip saved');
+    }
+    function patchTrip(id, patch) { D.updateTrip(id, patch); render(); }
+    function setTripAsset(id, field, value) {
+      var t = D.getTrip(id); if (!t) return;
+      var assetId = value ? parseInt(value, 10) : null;
+      // Conflict prevention with manual override: warn, still allow.
+      if (assetId != null && D.assetBusy(assetId, t.day, id)) {
+        toast('ob_busy_warn', 'This asset is already assigned to another active trip on this day.');
+      }
+      var patch = {}; patch[field] = assetId;
+      // default the driver from the mixer's assigned operator
+      if (field === 'truckId' && assetId != null && !t.driver) {
+        var a = D.getAsset(assetId);
+        if (a && a.operator) patch.driver = a.operator;
+      }
+      D.updateTrip(id, patch);
+      render();
+    }
+    function advanceTrip(id) {
+      var t = D.getTrip(id); if (!t) return;
+      var nxt = nextMilestone(t); if (!nxt) return;
+      var times = t.times || {}; times[nxt] = new Date().toISOString();
+      var patch = { status: nxt, times: times };
+      if (nxt !== 'Returned') { /* keep delay flag until resolved */ } else { patch.delayReason = t.delayReason || ''; }
+      D.updateTrip(id, patch);
+      var o = D.getOpsOrder(t.orderId);
+      D.logAudit('trip_status', (o ? o.ref : '') + ' trip #' + (t.seq || '') + ' → ' + nxt, t.orderId, o ? o.ref : '');
+      // mixer status follows the trip
+      if (t.truckId != null) {
+        D.updateAsset(t.truckId, { status: nxt === 'Returned' ? 'Available' : 'On Trip' });
+      }
+      if (t.pumpId != null && nxt === 'Returned') D.updateAsset(t.pumpId, { status: 'Available' });
+      render();
+      if (nxt === 'Returned') toast('ob_trip_done', 'Trip completed');
+    }
+    function removeTrip(id) {
+      var t = D.getTrip(id);
+      D.deleteTrip(id);
+      if (t) {
+        var o = D.getOpsOrder(t.orderId);
+        D.logAudit('trip_deleted', (o ? o.ref : '') + ' trip #' + (t.seq || '') + ' removed', t.orderId, o ? o.ref : '');
+      }
+      render();
+      toast('toast_trip_deleted', 'Trip removed');
+    }
+
+    // ── Delay / reject reasons ─────────────────────────────────
+    var reasonTripId = null, reasonKind = 'delay';
+    function openReason(id, kind) {
+      reasonTripId = id; reasonKind = kind;
+      var list = kind === 'delay' ? D.DELAY_REASONS : D.REJECT_REASONS;
+      var I18N = kind === 'delay' ? DLY_I18N : REJ_I18N;
+      document.getElementById('reason-title').setAttribute('data-i18n', kind === 'delay' ? 'ob_delay_reason' : 'ob_reject_reason');
+      document.getElementById('reason-options').innerHTML = list.map(function (rr, i) {
+        return '<label class="flex items-center gap-2.5 p-2.5 border border-border rounded cursor-pointer hover:bg-surface-dim transition-colors">' +
+          '<input type="radio" name="reason" value="' + rr + '"' + (i === 0 ? ' checked' : '') + ' class="accent-primary"/>' +
+          '<span class="text-sm font-semibold text-dark" data-i18n="' + I18N[rr] + '">' + rr + '</span></label>';
+      }).join('');
+      document.getElementById('reason-modal').classList.remove('hidden');
+      if (window.reapplyDashLang) window.reapplyDashLang();
+    }
+    function closeReason() { document.getElementById('reason-modal').classList.add('hidden'); reasonTripId = null; }
+    function confirmReason() {
+      if (reasonTripId == null) return;
+      var sel = document.querySelector('#reason-options input:checked');
+      var reason = sel ? sel.value : 'Other';
+      var t = D.getTrip(reasonTripId);
+      var o = t ? D.getOpsOrder(t.orderId) : null;
+      if (reasonKind === 'delay') {
+        D.updateTrip(reasonTripId, { delayReason: reason });
+        D.logAudit('trip_delayed', (o ? o.ref : '') + ' trip #' + (t ? t.seq : '') + ' — ' + reason, t ? t.orderId : null, o ? o.ref : '');
+      } else {
+        D.updateTrip(reasonTripId, { rejectReason: reason, status: 'Returned' });
+        if (t && t.truckId != null) D.updateAsset(t.truckId, { status: 'Available' });
+        D.logAudit('load_rejected', (o ? o.ref : '') + ' trip #' + (t ? t.seq : '') + ' — ' + reason, t ? t.orderId : null, o ? o.ref : '');
+      }
+      closeReason();
+      render();
+    }
+
+    // ── Boot ───────────────────────────────────────────────────
+    (function () {
+      var p = new URLSearchParams(location.search).get('day');
+      document.getElementById('board-day').value = (p && /^\d{4}-\d{2}-\d{2}$/.test(p)) ? p : todayKey();
+    })();
+    render();
+    D.subscribe(render);
+  </script>
+  <script src="js/dash-lang.js?v=8"></script>
+</body>
+</html>
