@@ -37,8 +37,17 @@
     ['ops-reports.html', 'insights',        'nav_ops_reports', 'Ops Reports']
   ];
 
+  // Precast Operations group items: [href, material icon, i18n key, fallback EN]
+  var PC_ITEMS = [
+    ['pc-orders.html',     'design_services', 'nav_pc_orders',     'Precast Orders'],
+    ['pc-production.html', 'view_in_ar',      'nav_pc_production', 'Production Queue'],
+    ['pc-delivery.html',   'local_shipping',  'nav_pc_delivery',   'Delivery Planning'],
+    ['pc-reports.html',    'query_stats',     'nav_pc_reports',    'Precast Reports']
+  ];
+
   var open = localStorage.getItem('jehan_nav_sales_open') !== '0';
   var opsOpen = localStorage.getItem('jehan_nav_ops_open') !== '0';
+  var pcOpen = localStorage.getItem('jehan_nav_pc_open') !== '0';
 
   function itemHtml(it) {
     var active = page === it[0];
@@ -75,6 +84,16 @@
       '</button>' +
       '<div id="ops-group-items" class="space-y-0.5 mt-1' + (opsOpen ? '' : ' hidden') + '">' +
         OPS_ITEMS.map(itemHtml).join('') +
+      '</div>' +
+      '<div class="my-3 h-px bg-border"></div>' +
+      // ── Precast Operations group ──
+      '<button id="pc-group-btn" type="button" class="w-full flex items-center gap-2 px-3 py-2 rounded text-[11px] font-bold uppercase tracking-widest text-light hover:text-primary transition-colors select-none">' +
+        '<span class="material-symbols-outlined text-[17px]">view_in_ar</span>' +
+        '<span data-i18n="nav_pc_system">Precast Operations</span>' +
+        '<span id="pc-group-chev" class="material-symbols-outlined text-[18px] ml-auto transition-transform' + (pcOpen ? '' : ' -rotate-90') + '">expand_more</span>' +
+      '</button>' +
+      '<div id="pc-group-items" class="space-y-0.5 mt-1' + (pcOpen ? '' : ' hidden') + '">' +
+        PC_ITEMS.map(itemHtml).join('') +
       '</div>' +
       '<div class="my-3 h-px bg-border"></div>' +
       itemHtml(['settings.html', 'settings', 'nav_settings', 'Settings']) +
@@ -116,4 +135,5 @@
   }
   wireGroup('sales-group-btn', 'sales-group-items', 'sales-group-chev', 'jehan_nav_sales_open');
   wireGroup('ops-group-btn', 'ops-group-items', 'ops-group-chev', 'jehan_nav_ops_open');
+  wireGroup('pc-group-btn', 'pc-group-items', 'pc-group-chev', 'jehan_nav_pc_open');
 })();

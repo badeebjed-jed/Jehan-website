@@ -191,7 +191,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'sendquote') {
 }
 
 
-$ALLOWED = array('requests', 'messages', 'customers', 'leads', 'tasks', 'events', 'audit', 'opsorders', 'trips', 'assets');
+$ALLOWED = array('requests', 'messages', 'customers', 'leads', 'tasks', 'events', 'audit', 'opsorders', 'trips', 'assets', 'pcorders', 'castings', 'deliveries');
 $col = isset($_GET['collection']) ? preg_replace('/[^a-z]/', '', $_GET['collection']) : '';
 if (!in_array($col, $ALLOWED, true)) {
   http_response_code(400);

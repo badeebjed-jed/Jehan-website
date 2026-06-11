@@ -43,7 +43,7 @@
   var SESSION_TIMEOUT_MS = 1000 * 60 * 60 * 8; // 8 hours
 
   // Permission modules every account can be granted.
-  var MODULES = ['bookings', 'customers', 'financials', 'settings', 'profile', 'approvals', 'operations'];
+  var MODULES = ['bookings', 'customers', 'financials', 'settings', 'profile', 'approvals', 'operations', 'precast'];
 
   // ── Crypto ───────────────────────────────────────────────────
   function sha256Hex(message) {
@@ -392,19 +392,28 @@
         'reports.html': 'financials',
         // plant operations module
         'ops-board.html': 'operations', 'ops-orders.html': 'operations',
-        'ops-fleet.html': 'operations', 'ops-reports.html': 'operations'
+        'ops-fleet.html': 'operations', 'ops-reports.html': 'operations',
+        // precast operations module
+        'pc-orders.html': 'precast', 'pc-production.html': 'precast',
+        'pc-delivery.html': 'precast', 'pc-reports.html': 'precast'
       };
       document.querySelectorAll('nav a[href]').forEach(function (a) {
         var href = a.getAttribute('href');
         if (map[href] && !can(map[href])) { a.style.display = 'none'; }
         if (href === 'approvals.html' && !canApprove()) { a.style.display = 'none'; }
       });
-      // Hide the whole Plant Operations group when the user has no access.
+      // Hide whole module groups when the user has no access.
       if (!can('operations')) {
         var ob = document.getElementById('ops-group-btn');
         var oi = document.getElementById('ops-group-items');
         if (ob) ob.style.display = 'none';
         if (oi) oi.style.display = 'none';
+      }
+      if (!can('precast')) {
+        var pb = document.getElementById('pc-group-btn');
+        var pi = document.getElementById('pc-group-items');
+        if (pb) pb.style.display = 'none';
+        if (pi) pi.style.display = 'none';
       }
       // Settings → Workspace cards: hide individually based on permission,
       // and hide the whole section if neither card is visible.
