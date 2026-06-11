@@ -168,6 +168,9 @@
       cust_volume_n:      'Total Volume',
       cust_no_timeline:   'No activity recorded yet.',
       toast_cust_saved:   'Customer saved',
+      toast_cust_deleted: 'Customer deleted',
+      cust_delete:        'Delete Customer',
+      cust_delete_d:      'This permanently removes the customer record. Their quotes and history are not deleted. This cannot be undone.',
       flt_all_segments:   'All Segments',
       // Tasks page
       page_tasks:         'Tasks & Follow-Ups',
@@ -849,6 +852,9 @@
       cust_volume_n:      'إجمالي الكمية',
       cust_no_timeline:   'لا يوجد نشاط مسجل بعد.',
       toast_cust_saved:   'تم حفظ العميل',
+      toast_cust_deleted: 'تم حذف العميل',
+      cust_delete:        'حذف العميل',
+      cust_delete_d:      'سيؤدي هذا إلى حذف سجل العميل نهائياً. لا تُحذف عروض أسعاره وسجله. لا يمكن التراجع.',
       flt_all_segments:   'كل الفئات',
       // Tasks page
       page_tasks:         'المهام والمتابعات',

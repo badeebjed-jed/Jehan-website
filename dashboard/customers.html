@@ -255,16 +255,41 @@
           <div id="pf-timeline" class="space-y-2 max-h-56 overflow-y-auto"></div>
         </div>
       </div>
-      <div class="px-6 py-4 border-t border-border flex gap-3 justify-end sticky bottom-0 bg-surface">
-        <button onclick="closeProfile()" class="px-5 py-2 border border-border rounded text-sm font-semibold text-mid hover:bg-surface-mid transition-colors" data-i18n="btn_cancel">Cancel</button>
-        <button onclick="saveProfile()" class="flex items-center gap-2 bg-gold hover:bg-gold-hover text-white text-sm font-semibold px-5 py-2 rounded transition-colors">
-          <span class="material-symbols-outlined text-[18px]">save</span><span data-i18n="btn_save">Save</span>
+      <div class="px-6 py-4 border-t border-border flex gap-3 justify-between sticky bottom-0 bg-surface">
+        <button id="pf-delete" onclick="openDeleteCustomer()" class="hidden flex items-center gap-2 border border-error/40 text-error text-sm font-semibold px-4 py-2 rounded hover:bg-error hover:text-white transition-colors">
+          <span class="material-symbols-outlined text-[18px]">delete</span><span data-i18n="cust_delete">Delete Customer</span>
+        </button>
+        <div class="flex gap-3 ms-auto">
+          <button onclick="closeProfile()" class="px-5 py-2 border border-border rounded text-sm font-semibold text-mid hover:bg-surface-mid transition-colors" data-i18n="btn_cancel">Cancel</button>
+          <button onclick="saveProfile()" class="flex items-center gap-2 bg-gold hover:bg-gold-hover text-white text-sm font-semibold px-5 py-2 rounded transition-colors">
+            <span class="material-symbols-outlined text-[18px]">save</span><span data-i18n="btn_save">Save</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete customer confirmation (Primary Administrator only) -->
+  <div id="cust-delete-modal" class="hidden fixed inset-0 z-[60] flex items-center justify-center p-4">
+    <div class="absolute inset-0 bg-black/40" onclick="closeDeleteCustomer()"></div>
+    <div class="relative bg-surface rounded-lg shadow-xl w-full max-w-md">
+      <div class="p-6">
+        <div class="flex items-center gap-3 mb-3">
+          <span class="material-symbols-outlined text-error text-[28px]">warning</span>
+          <h3 class="text-lg font-bold text-dark" data-i18n="cust_delete">Delete Customer</h3>
+        </div>
+        <p class="text-sm text-mid leading-relaxed"><strong id="del-cust-name" class="text-dark"></strong> — <span data-i18n="cust_delete_d">This permanently removes the customer record. Their quotes and history are not deleted. This cannot be undone.</span></p>
+      </div>
+      <div class="px-6 py-4 border-t border-border flex gap-3 justify-end">
+        <button onclick="closeDeleteCustomer()" class="px-5 py-2 border border-border rounded text-sm font-semibold text-mid hover:bg-surface-mid transition-colors" data-i18n="btn_cancel">Cancel</button>
+        <button onclick="confirmDeleteCustomer()" class="flex items-center gap-2 bg-error hover:opacity-90 text-white text-sm font-semibold px-5 py-2 rounded transition-colors">
+          <span class="material-symbols-outlined text-[18px]">delete</span><span data-i18n="btn_delete">Delete</span>
         </button>
       </div>
     </div>
   </div>
 
-  <script src="js/dash-lang.js?v=9"></script>
+  <script src="js/dash-lang.js?v=10"></script>
   <script>
     // ── Company Profile Upload ────────────────────────────────────
     function uploadProfile(input) {
@@ -426,10 +451,14 @@
 
     // ── Customer profile drawer ────────────────────────────────
     var profileId = null;
+    var deleteCustId = null;
+    // Only the Primary Administrator may delete customer records.
+    var isPrimaryAdmin = !!(window.JehanAuth && window.JehanAuth.currentUser() && window.JehanAuth.currentUser().primary);
     var TIMELINE_ICON = { request: 'list_alt', quote: 'request_quote', message: 'mail', task: 'task_alt' };
     function openProfile(id) {
       var c = D.getCustomer(id); if (!c) return;
       profileId = id;
+      document.getElementById('pf-delete').classList.toggle('hidden', !isPrimaryAdmin);
       document.getElementById('pf-initials').textContent = D.initials(c.name);
       document.getElementById('pf-title').textContent = c.name;
       document.getElementById('pf-star').classList.toggle('hidden', !c.keyAccount);
@@ -492,6 +521,32 @@
       renderCustomers();
       var toast = document.getElementById('rec-toast');
       toast.textContent = window.dashT ? window.dashT('toast_cust_saved', 'Customer saved') : 'Customer saved';
+      toast.style.display = 'block';
+      setTimeout(function () { toast.style.display = 'none'; }, 2500);
+    }
+
+    // ── Delete customer (Primary Administrator only) ────────────
+    function openDeleteCustomer() {
+      if (!isPrimaryAdmin || profileId == null) return;
+      var c = D.getCustomer(profileId); if (!c) return;
+      deleteCustId = profileId;
+      document.getElementById('del-cust-name').textContent = c.name || '';
+      document.getElementById('cust-delete-modal').classList.remove('hidden');
+    }
+    function closeDeleteCustomer() {
+      document.getElementById('cust-delete-modal').classList.add('hidden');
+      deleteCustId = null;
+    }
+    function confirmDeleteCustomer() {
+      if (!isPrimaryAdmin || deleteCustId == null) { closeDeleteCustomer(); return; }
+      var c = D.getCustomer(deleteCustId);
+      D.deleteCustomer(deleteCustId);
+      if (c) D.logAudit('customer_deleted', 'Customer record removed', deleteCustId, c.name);
+      closeDeleteCustomer();
+      closeProfile();
+      renderCustomers();
+      var toast = document.getElementById('rec-toast');
+      toast.textContent = window.dashT ? window.dashT('toast_cust_deleted', 'Customer deleted') : 'Customer deleted';
       toast.style.display = 'block';
       setTimeout(function () { toast.style.display = 'none'; }, 2500);
     }
