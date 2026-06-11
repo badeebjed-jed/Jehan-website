@@ -3,11 +3,37 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Book Concrete — Jehan Holding Group</title>
+  <title>Get a Quote — Jehan Holding Group</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600;700&family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css?v=12">
+  <style>
+    /* ── Quote form enhancements (scoped) ── */
+    .qf-steplabel { font-family: 'Barlow Condensed', sans-serif; font-size: 0.72rem; font-weight: 700;
+      letter-spacing: 0.12em; text-transform: uppercase; color: var(--green-mid);
+      display: flex; align-items: center; gap: 8px; margin: 28px 0 14px; }
+    .qf-steplabel:first-of-type { margin-top: 8px; }
+    .qf-steplabel .qf-num { display: inline-flex; align-items: center; justify-content: center;
+      width: 22px; height: 22px; border-radius: 50%; background: var(--green-dark); color: #fff;
+      font-size: 0.72rem; flex-shrink: 0; }
+    .product-toggle { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .product-opt { position: relative; }
+    .product-opt input { position: absolute; opacity: 0; inset: 0; cursor: pointer; }
+    .product-opt label { display: flex; flex-direction: column; align-items: center; gap: 8px;
+      text-align: center; padding: 18px 12px; border: 2px solid var(--border); border-radius: 8px;
+      cursor: pointer; transition: border-color 0.15s, background 0.15s; height: 100%; }
+    .product-opt label svg { width: 30px; height: 30px; color: var(--green-mid); }
+    .product-opt label .t { font-weight: 700; font-size: 0.92rem; color: var(--text-dark); }
+    .product-opt label .d { font-size: 0.74rem; color: var(--text-light); line-height: 1.3; }
+    .product-opt input:checked + label { border-color: var(--green-dark); background: #FDF8EC; }
+    .product-opt input:focus-visible + label { box-shadow: 0 0 0 3px rgba(92,122,72,0.25); }
+    .product-opt input:checked + label svg, .product-opt input:checked + label .t { color: var(--green-dark); }
+    .qf-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 20px; }
+    .qf-grid .form-group.span2 { grid-column: 1 / -1; }
+    @media (max-width: 560px) { .qf-grid { grid-template-columns: 1fr; } .product-toggle { grid-template-columns: 1fr; } }
+    .form-card .form-desc { margin-bottom: 8px; }
+  </style>
 </head>
 <body>
 
@@ -53,39 +79,83 @@
   <main class="form-page">
     <div class="container">
       <div class="form-card">
-        <h1 data-i18n="book_title">BOOK CONCRETE</h1>
-        <p class="form-desc" data-i18n="book_desc">Please provide your project details below to initiate your concrete booking and receive a tailored quotation.</p>
+        <h1 data-i18n="book_title">GET A QUOTE</h1>
+        <p class="form-desc" data-i18n="book_desc">Tell us what you need and we'll send you a tailored quotation. It only takes a minute.</p>
 
         <form onsubmit="handleSubmit(event)">
-          <div class="form-group">
-            <label><span data-i18n="book_name">Name</span> <span class="required">*</span></label>
-            <input type="text" name="name" required data-i18n-placeholder="book_name" placeholder="Name">
+
+          <!-- Step 1: What do you need? -->
+          <p class="qf-steplabel"><span class="qf-num">1</span><span data-i18n="qf_step_product">What do you need?</span></p>
+          <div class="product-toggle">
+            <div class="product-opt">
+              <input type="radio" name="product" id="prod-concrete" value="concrete" checked onchange="onProductChange()">
+              <label for="prod-concrete">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 0 1-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 0 0-3.213-9.193 2.056 2.056 0 0 0-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 0 0-10.026 0 1.106 1.106 0 0 0-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12"/></svg>
+                <span class="t" data-i18n="qf_p_concrete">Ready-Mix Concrete</span>
+                <span class="d" data-i18n="qf_p_concrete_d">Poured on site — choose your mix grade</span>
+              </label>
+            </div>
+            <div class="product-opt">
+              <input type="radio" name="product" id="prod-precast" value="precast" onchange="onProductChange()">
+              <label for="prod-precast">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="m21 7.5-9-5.25L3 7.5m18 0-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9"/></svg>
+                <span class="t" data-i18n="qf_p_precast">Precast Elements</span>
+                <span class="d" data-i18n="qf_p_precast_d">Factory-made panels, slabs, beams</span>
+              </label>
+            </div>
+            <div class="product-opt">
+              <input type="radio" name="product" id="prod-block" value="block" onchange="onProductChange()">
+              <label for="prod-block">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 0 1 6 3.75h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6ZM3.75 15.75A2.25 2.25 0 0 1 6 13.5h2.25a2.25 2.25 0 0 1 2.25 2.25V18a2.25 2.25 0 0 1-2.25 2.25H6A2.25 2.25 0 0 1 3.75 18v-2.25ZM13.5 6a2.25 2.25 0 0 1 2.25-2.25H18A2.25 2.25 0 0 1 20.25 6v2.25A2.25 2.25 0 0 1 18 10.5h-2.25a2.25 2.25 0 0 1-2.25-2.25V6ZM13.5 15.75a2.25 2.25 0 0 1 2.25-2.25H18a2.25 2.25 0 0 1 2.25 2.25V18A2.25 2.25 0 0 1 18 20.25h-2.25A2.25 2.25 0 0 1 13.5 18v-2.25Z"/></svg>
+                <span class="t" data-i18n="qf_p_block">Construction Blocks</span>
+                <span class="d" data-i18n="qf_p_block_d">Hollow, solid & insulated blocks</span>
+              </label>
+            </div>
           </div>
-          <div class="form-group">
-            <label><span data-i18n="book_email">E-Mail</span></label>
-            <input type="email" name="email" data-i18n-placeholder="book_email" placeholder="E-Mail">
+
+          <!-- Step 2: Product specifics -->
+          <p class="qf-steplabel"><span class="qf-num">2</span><span id="qf-spec-label" data-i18n="qf_step_specs">Your concrete</span></p>
+          <div class="qf-grid">
+            <div class="form-group">
+              <label><span id="qf-product-label" data-i18n="qf_mix_grade">Mix Grade</span></label>
+              <select name="product_select" id="qf-product-select"></select>
+            </div>
+            <div class="form-group">
+              <label><span id="qf-qty-label" data-i18n="qf_qty_m3">Quantity (m³)</span> <span class="required">*</span></label>
+              <input type="number" name="quantity" min="0" step="any" required data-i18n-placeholder="qf_qty_ph" placeholder="e.g. 50">
+            </div>
+            <div class="form-group">
+              <label><span data-i18n="book_location">Project Location</span> <span class="required">*</span></label>
+              <input type="text" name="location" required data-i18n-placeholder="qf_location_ph" placeholder="City / district">
+            </div>
+            <div class="form-group">
+              <label><span data-i18n="qf_needed_by">Needed By</span></label>
+              <input type="date" name="delivery_date">
+            </div>
+            <div class="form-group span2">
+              <label><span data-i18n="book_details">Details</span></label>
+              <textarea name="details" data-i18n-placeholder="qf_details_ph" placeholder="Anything else we should know? (pumping, access, finish, etc.)"></textarea>
+            </div>
           </div>
-          <div class="form-group">
-            <label><span data-i18n="book_phone">Phone</span> <span class="required">*</span></label>
-            <input type="tel" name="phone" required data-i18n-placeholder="book_phone" placeholder="Phone">
+
+          <!-- Step 3: Your contact -->
+          <p class="qf-steplabel"><span class="qf-num">3</span><span data-i18n="qf_step_contact">Your contact details</span></p>
+          <div class="qf-grid">
+            <div class="form-group">
+              <label><span data-i18n="book_name">Name</span> <span class="required">*</span></label>
+              <input type="text" name="name" required data-i18n-placeholder="book_name" placeholder="Name">
+            </div>
+            <div class="form-group">
+              <label><span data-i18n="book_phone">Phone</span> <span class="required">*</span></label>
+              <input type="tel" name="phone" required data-i18n-placeholder="book_phone" placeholder="05X XXX XXXX">
+            </div>
+            <div class="form-group span2">
+              <label><span data-i18n="book_email">E-Mail</span> <span class="qf-opt" data-i18n="qf_optional">(optional, to receive your quote)</span></label>
+              <input type="email" name="email" data-i18n-placeholder="book_email" placeholder="name@company.com">
+            </div>
           </div>
-          <div class="form-group">
-            <label><span data-i18n="book_qty">Expected Quantity</span> <span class="required">*</span></label>
-            <input type="text" name="quantity" required data-i18n-placeholder="book_qty" placeholder="Expected Quantity">
-          </div>
-          <div class="form-group">
-            <label><span>Delivery Dates</span></label>
-            <input type="date" name="delivery_date" placeholder="Delivery Dates">
-          </div>
-          <div class="form-group">
-            <label><span data-i18n="book_location">Project Location</span> <span class="required">*</span></label>
-            <input type="text" name="location" required data-i18n-placeholder="book_location" placeholder="Project Location">
-          </div>
-          <div class="form-group">
-            <label><span data-i18n="book_details">Details</span></label>
-            <textarea name="details" data-i18n-placeholder="book_details" placeholder="Details"></textarea>
-          </div>
-          <button type="submit" class="btn btn-gold">
+
+          <button type="submit" class="btn btn-gold" style="margin-top:8px;">
             <span data-i18n="book_submit">Send Details</span>
             <span>→</span>
           </button>
@@ -119,7 +189,7 @@
     </div>
   </div>
 
-  <script src="js/lang.js?v=7"></script>
+  <script src="js/lang.js?v=8"></script>
   <script>
     function openConfirmationModal() {
       const modal = document.getElementById('confirmationModal');
@@ -141,20 +211,74 @@
       if (e.target.id === 'confirmationModal') closeConfirmationModal();
     });
 
-    // Build the quote-request object from the form.
+    // ── Product configuration ──────────────────────────────────
+    function L() { return (document.documentElement.lang === 'ar') ? 'ar' : 'en'; }
+    var PRODUCTS = {
+      concrete: {
+        specLabel:    { en: 'Your concrete',          ar: 'الخرسانة المطلوبة' },
+        productLabel: { en: 'Mix Grade',              ar: 'درجة الخلطة' },
+        qtyLabel:     { en: 'Quantity (m³)',          ar: 'الكمية (م³)' },
+        projectName:  { en: 'Concrete Booking',       ar: 'حجز خرسانة' },
+        options: ['C10 MPa','C15 MPa','C20 MPa','C25 MPa','C30 MPa','C35 MPa','C40 MPa','C45 MPa','C50 MPa','C60 MPa'],
+        optionsAr: ['C10 ميجاباسكال','C15 ميجاباسكال','C20 ميجاباسكال','C25 ميجاباسكال','C30 ميجاباسكال','C35 ميجاباسكال','C40 ميجاباسكال','C45 ميجاباسكال','C50 ميجاباسكال','C60 ميجاباسكال']
+      },
+      precast: {
+        specLabel:    { en: 'Your precast elements',  ar: 'عناصر مسبقة الصب المطلوبة' },
+        productLabel: { en: 'Element Type',           ar: 'نوع العنصر' },
+        qtyLabel:     { en: 'Quantity (units)',       ar: 'الكمية (وحدة)' },
+        projectName:  { en: 'Precast Quote',          ar: 'عرض مسبقة الصب' },
+        options:   ['Hollow-core Slabs','Wall Panels','Beams & Columns','Stairs','Boundary Walls','Custom Element'],
+        optionsAr: ['بلاطات مجوفة','ألواح جدارية','كمرات وأعمدة','سلالم','أسوار حدودية','عنصر مخصص']
+      },
+      block: {
+        specLabel:    { en: 'Your blocks',            ar: 'البلوك المطلوب' },
+        productLabel: { en: 'Block Type',             ar: 'نوع البلوك' },
+        qtyLabel:     { en: 'Quantity (pieces)',      ar: 'الكمية (قطعة)' },
+        projectName:  { en: 'Block Quote',            ar: 'عرض بلوك' },
+        options:   ['Normal Hollow Block (20cm)','Normal Solid Block (20cm)','Insulated Block (20cm)','Blue Insulated Block (30cm)','White Insulated Block (30cm)'],
+        optionsAr: ['بلوك مفرغ عادي (20سم)','بلوك مصمت عادي (20سم)','بلوك معزول (20سم)','بلوك معزول أزرق (30سم)','بلوك معزول أبيض (30سم)']
+      }
+    };
+    function currentProduct() {
+      var el = document.querySelector('input[name="product"]:checked');
+      return el ? el.value : 'concrete';
+    }
+    function onProductChange() {
+      var p = currentProduct(), cfg = PRODUCTS[p], lang = L();
+      var sel = document.getElementById('qf-product-select');
+      var opts = lang === 'ar' ? cfg.optionsAr : cfg.options;
+      var prevIdx = sel.selectedIndex;
+      sel.innerHTML = cfg.options.map(function (val, i) {
+        return '<option value="' + val + '">' + opts[i] + '</option>';
+      }).join('');
+      if (prevIdx >= 0 && prevIdx < sel.options.length) sel.selectedIndex = prevIdx;
+      // Swap section + field labels (these aren't data-i18n driven once chosen)
+      document.getElementById('qf-spec-label').textContent = cfg.specLabel[lang];
+      document.getElementById('qf-product-label').textContent = cfg.productLabel[lang];
+      document.getElementById('qf-qty-label').textContent = cfg.qtyLabel[lang];
+    }
+
+    // Build the quote-request object from the form, tagged with productType
+    // so it lands in Quote Requests and flows to the right operations system.
     function buildQuoteRequest(form) {
       var g = function (n) { var el = form.querySelector('[name="' + n + '"]'); return el ? el.value.trim() : ''; };
+      var p = currentProduct(), cfg = PRODUCTS[p];
       var rawQty = g('quantity');
       var numQty = parseFloat((rawQty.match(/[\d.]+/) || [''])[0]);
       var id = Date.now() * 1000 + Math.floor(Math.random() * 1000);
+      var loc = g('location');
+      // Store the canonical (English) product choice for the dashboard.
+      var sel = document.getElementById('qf-product-select');
+      var productChoice = cfg.options[sel ? sel.selectedIndex : 0] || '';
       return {
         id: id, ref: 'REQ-' + String(id).slice(-6),
-        project: g('location') ? ('Concrete Booking · ' + g('location')) : 'Concrete Booking',
+        project: cfg.projectName.en + (loc ? ' · ' + loc : ''),
         client: g('name') || 'Website Visitor',
         email: g('email'), phone: g('phone'),
         quantity: isNaN(numQty) ? rawQty : numQty,
-        mix: '', location: g('location'),
+        mix: productChoice, location: loc,
         message: g('details'), deliveryDate: g('delivery_date'),
+        productType: p, source: 'website', stage: 'Inquiry',
         status: 'Pending', date: new Date().toISOString(),
         quote: null, addedToCustomers: false
       };
@@ -173,10 +297,16 @@
       } catch (e) {}
     }
 
-    // Delivery date can only be today or later.
+    // Delivery date can only be today or later; build the product fields.
     (function () {
       var dd = document.querySelector('input[name="delivery_date"]');
       if (dd) dd.min = new Date().toISOString().slice(0, 10);
+      onProductChange();
+      // Re-localize the product options + labels when language is toggled.
+      var origToggle = window.toggleLanguage;
+      if (typeof origToggle === 'function') {
+        window.toggleLanguage = function () { origToggle(); setTimeout(onProductChange, 30); };
+      }
     })();
 
     function handleSubmit(e) {
