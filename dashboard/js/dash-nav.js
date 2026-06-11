@@ -29,7 +29,16 @@
     ['approvals.html',   'fact_check',     'nav_approvals',      'Approvals & Audit']
   ];
 
+  // Plant Operations group items: [href, material icon, i18n key, fallback EN]
+  var OPS_ITEMS = [
+    ['ops-board.html',   'browse_activity', 'nav_ops_board',   'Operations Board'],
+    ['ops-orders.html',  'fact_check',      'nav_ops_orders',  'Orders from Sales'],
+    ['ops-fleet.html',   'local_shipping',  'nav_ops_fleet',   'Fleet & Master Data'],
+    ['ops-reports.html', 'insights',        'nav_ops_reports', 'Ops Reports']
+  ];
+
   var open = localStorage.getItem('jehan_nav_sales_open') !== '0';
+  var opsOpen = localStorage.getItem('jehan_nav_ops_open') !== '0';
 
   function itemHtml(it) {
     var active = page === it[0];
@@ -58,6 +67,16 @@
         SALES_ITEMS.map(itemHtml).join('') +
       '</div>' +
       '<div class="my-3 h-px bg-border"></div>' +
+      // ── Plant Operations group ──
+      '<button id="ops-group-btn" type="button" class="w-full flex items-center gap-2 px-3 py-2 rounded text-[11px] font-bold uppercase tracking-widest text-light hover:text-primary transition-colors select-none">' +
+        '<span class="material-symbols-outlined text-[17px]">factory</span>' +
+        '<span data-i18n="nav_ops_system">Plant Operations</span>' +
+        '<span id="ops-group-chev" class="material-symbols-outlined text-[18px] ml-auto transition-transform' + (opsOpen ? '' : ' -rotate-90') + '">expand_more</span>' +
+      '</button>' +
+      '<div id="ops-group-items" class="space-y-0.5 mt-1' + (opsOpen ? '' : ' hidden') + '">' +
+        OPS_ITEMS.map(itemHtml).join('') +
+      '</div>' +
+      '<div class="my-3 h-px bg-border"></div>' +
       itemHtml(['settings.html', 'settings', 'nav_settings', 'Settings']) +
     '</nav>' +
     '<div class="px-4 py-4 border-t border-border">' +
@@ -82,14 +101,19 @@
 
   aside.innerHTML = html;
 
-  // Collapse / expand the Sales System group
-  var btn = document.getElementById('sales-group-btn');
-  if (btn) btn.addEventListener('click', function () {
-    var items = document.getElementById('sales-group-items');
-    var chev = document.getElementById('sales-group-chev');
-    var nowOpen = items.classList.contains('hidden');
-    items.classList.toggle('hidden', !nowOpen);
-    if (chev) chev.classList.toggle('-rotate-90', !nowOpen);
-    localStorage.setItem('jehan_nav_sales_open', nowOpen ? '1' : '0');
-  });
+  // Collapse / expand groups
+  function wireGroup(btnId, itemsId, chevId, storeKey) {
+    var btn = document.getElementById(btnId);
+    if (!btn) return;
+    btn.addEventListener('click', function () {
+      var items = document.getElementById(itemsId);
+      var chev = document.getElementById(chevId);
+      var nowOpen = items.classList.contains('hidden');
+      items.classList.toggle('hidden', !nowOpen);
+      if (chev) chev.classList.toggle('-rotate-90', !nowOpen);
+      localStorage.setItem(storeKey, nowOpen ? '1' : '0');
+    });
+  }
+  wireGroup('sales-group-btn', 'sales-group-items', 'sales-group-chev', 'jehan_nav_sales_open');
+  wireGroup('ops-group-btn', 'ops-group-items', 'ops-group-chev', 'jehan_nav_ops_open');
 })();

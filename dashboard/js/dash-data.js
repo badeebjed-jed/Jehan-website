@@ -32,8 +32,11 @@
   var K_TASK = 'jehan_tasks';
   var K_EVT  = 'jehan_events';
   var K_AUD  = 'jehan_audit';
+  var K_OPS  = 'jehan_opsorders';
+  var K_TRIP = 'jehan_trips';
+  var K_AST  = 'jehan_assets';
   var K_VER  = 'jehan_data_version';
-  var VERSION = '4';
+  var VERSION = '5';
 
   // Sales-system constants
   var CONCRETE_DAILY_CAPACITY = 600; // m³ per day
@@ -56,6 +59,16 @@
   COLLECTION[K_TASK] = 'tasks';
   COLLECTION[K_EVT]  = 'events';
   COLLECTION[K_AUD]  = 'audit';
+  COLLECTION[K_OPS]  = 'opsorders';
+  COLLECTION[K_TRIP] = 'trips';
+  COLLECTION[K_AST]  = 'assets';
+
+  // ── Plant Operations constants ───────────────────────────────
+  var TRIP_MILESTONES = ['Scheduled', 'Loading', 'En Route', 'On Site', 'Discharging', 'Washout', 'Returned'];
+  var DELAY_REASONS = ['Traffic', 'Plant Breakdown', 'Pump Breakdown', 'Truck Breakdown', 'Site Not Ready', 'Weather', 'Quality Issue', 'Customer Delay', 'Other'];
+  var REJECT_REASONS = ['Slump Out of Spec', 'Excess Wait Time', 'Wrong Mix', 'Site Rejection', 'Other'];
+  var OPS_SHIFTS = ['Morning', 'Evening', 'Night'];
+  var AUTH_STATUSES = ['Pending Review', 'Authorized', 'On Hold'];
 
   // api.php lives at the site root. Dashboard pages are one level deeper.
   var API = (location.pathname.indexOf('/dashboard/') !== -1) ? '../api.php' : 'api.php';
@@ -64,7 +77,7 @@
   // ── One-time cache reset on version bump ─────────────────────
   try {
     if (localStorage.getItem(K_VER) !== VERSION) {
-      [K_REQ, K_CUST, K_MSG, K_LEAD, K_TASK, K_EVT, K_AUD].forEach(function (k) {
+      [K_REQ, K_CUST, K_MSG, K_LEAD, K_TASK, K_EVT, K_AUD, K_OPS, K_TRIP, K_AST].forEach(function (k) {
         localStorage.setItem(k, '[]');
       });
       localStorage.setItem(K_VER, VERSION);
@@ -118,7 +131,7 @@
   function pull() {
     if (pulling) return;
     pulling = true;
-    var keys = [K_REQ, K_CUST, K_MSG, K_LEAD, K_TASK, K_EVT, K_AUD];
+    var keys = [K_REQ, K_CUST, K_MSG, K_LEAD, K_TASK, K_EVT, K_AUD, K_OPS, K_TRIP, K_AST];
     Promise.all(keys.map(function (k) { return serverGet(COLLECTION[k]); }))
       .then(function (res) {
         var changed = false;
@@ -495,6 +508,110 @@
     });
   }
 
+  // ── Plant Operations: orders / trips / assets ────────────────
+  // opsorder = { id, requestId, ref, client, phone, email, project, site,
+  //              mix, quantity, deliveryDate, window, authStatus, siteReady,
+  //              plantId, priority, notes, completed, date }
+  // trip     = { id, orderId, day, seq, truckId, pumpId, driver, qty,
+  //              loadTime, status, times{}, delayReason, rejectReason, date }
+  // asset    = { id, kind: plant|mixer|pump|staff, name, capacity, boom,
+  //              operator, role, phone, shift, status, notes, date }
+  function getOpsOrders() { return listOf(K_OPS); }
+  function getOpsOrder(id) { return getById(K_OPS, id); }
+  function addOpsOrder(data) { return createIn(K_OPS, data); }
+  function updateOpsOrder(id, patch) { return updateIn(K_OPS, id, patch); }
+  function deleteOpsOrder(id) { deleteIn(K_OPS, id); }
+
+  function getTrips() { return listOf(K_TRIP); }
+  function getTrip(id) { return getById(K_TRIP, id); }
+  function addTrip(data) { return createIn(K_TRIP, data); }
+  function updateTrip(id, patch) { return updateIn(K_TRIP, id, patch); }
+  function deleteTrip(id) { deleteIn(K_TRIP, id); }
+  function tripsForOrder(orderId) {
+    return read(K_TRIP).filter(function (t) { return t.orderId === orderId; })
+      .sort(function (a, b) { return (a.seq || 0) - (b.seq || 0); });
+  }
+
+  function getAssets(kind) {
+    var list = listOf(K_AST, 'date');
+    return kind ? list.filter(function (a) { return a.kind === kind; }) : list;
+  }
+  function getAsset(id) { return getById(K_AST, id); }
+  function addAsset(data) { return createIn(K_AST, data); }
+  function updateAsset(id, patch) { return updateIn(K_AST, id, patch); }
+  function deleteAsset(id) { deleteIn(K_AST, id); }
+
+  // Sync from sales: create an ops order for every eligible concrete
+  // booking that doesn't have one yet. Sales data is consumed read-only;
+  // execution data lives entirely on the ops record.
+  function syncOpsFromSales() {
+    var have = {};
+    read(K_OPS).forEach(function (o) { if (o.requestId != null) have[o.requestId] = true; });
+    var created = 0;
+    read(K_REQ).forEach(function (r) {
+      if ((r.productType || 'concrete') !== 'concrete') return;
+      if (have[r.id]) return;
+      if (['Cancelled', 'Rejected', 'Expired'].indexOf(r.status) !== -1) return;
+      if (r.approval && r.approval.required && r.approval.status !== 'approved') return;
+      // commercially meaningful: it has a quote or a confirmed/booked status
+      var released = ['Booked', 'Paid', 'Approved'].indexOf(r.status) !== -1;
+      if (!released && !r.quote) return;
+      addOpsOrder({
+        id: uid(), requestId: r.id, ref: r.ref,
+        client: r.client, phone: r.phone || '', email: r.email || '',
+        project: r.project || '', site: r.location || '',
+        mix: r.mix || '', quantity: r.quantity,
+        deliveryDate: r.deliveryDate || '', window: r.dispatchWindow || 'flexible',
+        commerciallyReleased: released,
+        authStatus: 'Pending Review', siteReady: false,
+        plantId: null, priority: 'Normal', notes: '',
+        completed: false, date: nowISO()
+      });
+      created++;
+    });
+    return created;
+  }
+
+  // Derived operational status for the live board.
+  function opsOrderStatus(o) {
+    if (o.completed) return 'Completed';
+    var trips = tripsForOrder(o.id);
+    var active = trips.filter(function (t) { return ['Cancelled'].indexOf(t.status) === -1; });
+    var delayed = active.some(function (t) { return t.delayReason; });
+    var rank = { 'Discharging': 5, 'On Site': 4, 'En Route': 3, 'Loading': 2, 'Washout': 1 };
+    var best = null, bestRank = -1;
+    active.forEach(function (t) {
+      var rk = rank[t.status] || 0;
+      if (rk > bestRank) { bestRank = rk; best = t.status; }
+    });
+    if (delayed) return 'Delayed';
+    if (bestRank > 0 && best !== 'Washout') return best === 'Loading' ? 'Batching' : best;
+    if (active.length) return 'Scheduled';
+    if (o.authStatus === 'Authorized') return 'Authorized';
+    if (o.authStatus === 'On Hold') return 'On Hold';
+    return 'Booked';
+  }
+
+  // Is an asset already assigned to an active trip on a given day?
+  function assetBusy(assetId, day, excludeTripId) {
+    if (assetId == null) return false;
+    return read(K_TRIP).some(function (t) {
+      if (t.id === excludeTripId) return false;
+      if (t.day !== day) return false;
+      if (['Returned', 'Cancelled'].indexOf(t.status) !== -1) return false;
+      return t.truckId === assetId || t.pumpId === assetId;
+    });
+  }
+
+  // Minutes between leaving the plant and returning (turnaround).
+  function tripTurnaround(t) {
+    var ts = t.times || {};
+    var start = ts['Loading'] || ts['En Route'];
+    var end = ts['Returned'];
+    if (!start || !end) return null;
+    return Math.round((new Date(end) - new Date(start)) / 60000);
+  }
+
   // ── Quote expiry auto-marking ────────────────────────────────
   function maybeExpireQuotes() {
     var today = new Date().toISOString().slice(0, 10);
@@ -573,6 +690,18 @@
       case 'Cancelled':             return 'bg-error-bg text-error border border-error/30';
       case 'Rejected':              return 'bg-error-bg text-error border border-error/30';
       case 'Expired':               return 'bg-surface-high text-light border border-border';
+      // ops board + trip milestones
+      case 'Scheduled':             return 'bg-surface-mid text-mid border border-border';
+      case 'Authorized':            return 'bg-primary-lt/20 text-primary border border-primary-lt';
+      case 'On Hold':               return 'bg-gold-bg text-gold-hover border border-gold';
+      case 'Batching':              return 'bg-gold-bg text-dark border border-gold';
+      case 'Loading':               return 'bg-gold-bg text-dark border border-gold';
+      case 'En Route':              return 'bg-primary-lt/20 text-primary border border-primary-lt';
+      case 'On Site':               return 'bg-primary-lt/30 text-primary border border-primary-lt';
+      case 'Discharging':           return 'bg-primary text-white border border-primary';
+      case 'Washout':               return 'bg-surface-mid text-mid border border-border';
+      case 'Returned':              return 'bg-surface-high text-light border border-border';
+      case 'Completed':             return 'bg-primary text-white border border-primary';
       // lead stages
       case 'New':                   return 'bg-gold-bg text-dark border border-gold';
       case 'Qualified':             return 'bg-primary-lt/20 text-primary border border-primary-lt';
@@ -642,6 +771,17 @@
     approvalReasons: approvalReasons, pendingApprovals: pendingApprovals,
     approvalRejected: approvalRejected,
     maybeExpireQuotes: maybeExpireQuotes,
+    // plant operations
+    getOpsOrders: getOpsOrders, getOpsOrder: getOpsOrder, addOpsOrder: addOpsOrder,
+    updateOpsOrder: updateOpsOrder, deleteOpsOrder: deleteOpsOrder,
+    getTrips: getTrips, getTrip: getTrip, addTrip: addTrip,
+    updateTrip: updateTrip, deleteTrip: deleteTrip, tripsForOrder: tripsForOrder,
+    getAssets: getAssets, getAsset: getAsset, addAsset: addAsset,
+    updateAsset: updateAsset, deleteAsset: deleteAsset,
+    syncOpsFromSales: syncOpsFromSales, opsOrderStatus: opsOrderStatus,
+    assetBusy: assetBusy, tripTurnaround: tripTurnaround,
+    TRIP_MILESTONES: TRIP_MILESTONES, DELAY_REASONS: DELAY_REASONS,
+    REJECT_REASONS: REJECT_REASONS, OPS_SHIFTS: OPS_SHIFTS, AUTH_STATUSES: AUTH_STATUSES,
     // constants
     LEAD_STAGES: LEAD_STAGES, WORKFLOW_STAGES: WORKFLOW_STAGES,
     BOOKING_STATUSES: BOOKING_STATUSES,

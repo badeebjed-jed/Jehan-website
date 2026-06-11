@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Dashboard Overview - Jehan Holding Group</title>
   <!-- Auth guard: redirects to login if no valid session -->
-  <script src="js/auth.js?v=8"></script>
+  <script src="js/auth.js?v=9"></script>
   <script>if (!window.JehanAuth || !window.JehanAuth.requireAuth()) { /* halted by redirect */ }</script>
   <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600;700&family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet"/>
@@ -55,7 +55,7 @@
 
   <!-- Sidebar -->
   <aside class="w-64 h-full flex flex-col bg-surface border-r border-border flex-shrink-0" data-nav></aside>
-  <script src="js/dash-nav.js?v=1"></script>
+  <script src="js/dash-nav.js?v=2"></script>
 
   <!-- Main -->
   <div class="flex-1 flex flex-col overflow-hidden">
@@ -135,7 +135,7 @@
     </main>
   </div>
 
-  <script src="js/dash-lang.js?v=7"></script>
+  <script src="js/dash-lang.js?v=8"></script>
   <script>
     // ── Company Profile Upload ────────────────────────────────────
     function uploadProfile(input) {
@@ -175,7 +175,7 @@
     })();
     updateProfileDateUI();
   </script>
-  <script src="js/dash-data.js?v=6"></script>
+  <script src="js/dash-data.js?v=7"></script>
   <script>
     var D = window.JehanData;
 

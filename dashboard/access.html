@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Access Management - Jehan Holding Group</title>
   <!-- Auth guard: redirects to login if no valid session -->
-  <script src="js/auth.js?v=8"></script>
+  <script src="js/auth.js?v=9"></script>
   <script>if (!window.JehanAuth || !window.JehanAuth.enforceAdmin()) { /* halted by redirect */ }</script>
   <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600;700&family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet"/>
@@ -55,7 +55,7 @@
 
   <!-- Sidebar -->
   <aside class="w-64 h-full flex flex-col bg-surface border-r border-border flex-shrink-0" data-nav></aside>
-  <script src="js/dash-nav.js?v=1"></script>
+  <script src="js/dash-nav.js?v=2"></script>
 
   <!-- Main -->
   <div class="flex-1 flex flex-col overflow-hidden">
@@ -174,6 +174,10 @@
                   <div><p class="text-sm font-semibold text-dark" data-i18n="access_approvals">Approvals &amp; Audit</p><p class="text-xs text-light" data-i18n="access_approvals_d">Approve or reject quotes that trip approval rules</p></div>
                   <button onclick="toggleSwitch(this)" data-perm="approvals" class="toggle-btn w-12 h-6 rounded-full relative transition-colors flex-shrink-0" data-state="off"><span class="absolute top-0.5 w-5 h-5 rounded-full shadow transition-all toggle-thumb"></span></button>
                 </div>
+                <div class="flex items-center justify-between">
+                  <div><p class="text-sm font-semibold text-dark" data-i18n="access_operations">Plant Operations</p><p class="text-xs text-light" data-i18n="access_operations_d">Dispatch board, orders intake, fleet and ops reports</p></div>
+                  <button onclick="toggleSwitch(this)" data-perm="operations" class="toggle-btn w-12 h-6 rounded-full relative transition-colors flex-shrink-0" data-state="off"><span class="absolute top-0.5 w-5 h-5 rounded-full shadow transition-all toggle-thumb"></span></button>
+                </div>
               </div>
             </div>
 
@@ -248,6 +252,7 @@
             <label class="flex items-center gap-2 text-sm text-dark cursor-pointer"><input id="au-perm-settings" type="checkbox" class="accent-primary"/> System Settings</label>
             <label class="flex items-center gap-2 text-sm text-dark cursor-pointer"><input id="au-perm-profile" type="checkbox" class="accent-primary"/> Company Profile</label>
             <label class="flex items-center gap-2 text-sm text-dark cursor-pointer"><input id="au-perm-approvals" type="checkbox" class="accent-primary"/> <span data-i18n="access_approvals">Approvals &amp; Audit</span></label>
+            <label class="flex items-center gap-2 text-sm text-dark cursor-pointer"><input id="au-perm-operations" type="checkbox" class="accent-primary"/> <span data-i18n="access_operations">Plant Operations</span></label>
           </div>
         </div>
       </div>
@@ -267,7 +272,7 @@
     <span id="add-user-toast-msg">User created successfully!</span>
   </div>
 
-  <script src="js/dash-data.js?v=6"></script>
+  <script src="js/dash-data.js?v=7"></script>
   <script>
     var A = window.JehanAuth;
     var selectedUserId = null;
@@ -437,10 +442,10 @@
       // Convenience: presets pre-tick sensible module access.
       var role = document.getElementById('au-role').value;
       var presets = {
-        'Administrator':      { bookings:true, customers:true, financials:true, settings:true, profile:true, approvals:true },
-        'Operations Manager': { bookings:true, customers:true, financials:false, settings:false, profile:false, approvals:false },
-        'Data Editor':        { bookings:true, customers:true, financials:false, settings:false, profile:false, approvals:false },
-        'Viewer':             { bookings:true, customers:false, financials:false, settings:false, profile:false, approvals:false }
+        'Administrator':      { bookings:true, customers:true, financials:true, settings:true, profile:true, approvals:true, operations:true },
+        'Operations Manager': { bookings:true, customers:true, financials:false, settings:false, profile:false, approvals:false, operations:true },
+        'Data Editor':        { bookings:true, customers:true, financials:false, settings:false, profile:false, approvals:false, operations:false },
+        'Viewer':             { bookings:true, customers:false, financials:false, settings:false, profile:false, approvals:false, operations:false }
       };
       var p = presets[role] || presets['Viewer'];
       document.getElementById('au-perm-bookings').checked = p.bookings;
@@ -449,6 +454,7 @@
       document.getElementById('au-perm-settings').checked = p.settings;
       document.getElementById('au-perm-profile').checked = p.profile;
       document.getElementById('au-perm-approvals').checked = !!p.approvals;
+      document.getElementById('au-perm-operations').checked = !!p.operations;
     }
     function saveNewUser() {
       document.getElementById('au-error').classList.add('hidden');
@@ -458,7 +464,8 @@
         financials: document.getElementById('au-perm-financials').checked,
         settings:   document.getElementById('au-perm-settings').checked,
         profile:    document.getElementById('au-perm-profile').checked,
-        approvals:  document.getElementById('au-perm-approvals').checked
+        approvals:  document.getElementById('au-perm-approvals').checked,
+        operations: document.getElementById('au-perm-operations').checked
       };
       A.addUser({
         name: document.getElementById('au-name').value,
@@ -496,7 +503,7 @@
       });
     })();
   </script>
-  <script src="js/dash-lang.js?v=7"></script>
+  <script src="js/dash-lang.js?v=8"></script>
   <script>
     // ── Company Profile Upload ────────────────────────────────────
     function uploadProfile(input) {
