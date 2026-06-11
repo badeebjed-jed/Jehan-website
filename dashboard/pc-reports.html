@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Precast Reports - Jehan Holding Group</title>
+  <script src="js/auth.js?v=10"></script>
+  <script>if (!window.JehanAuth || !window.JehanAuth.enforce('precast')) { /* halted by redirect */ }</script>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600;700&family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+  <script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          primary:       '#3D5A34',
+          'primary-mid': '#5C7A48',
+          'primary-lt':  '#8CAE78',
+          gold:          '#C49A1A',
+          'gold-hover':  '#A07D10',
+          bg:            '#F2F1EE',
+          surface:       '#FFFFFF',
+          'surface-dim': '#F8F7F4',
+          'surface-mid': '#EEEDE9',
+          'surface-high':'#E4E3DF',
+          dark:          '#1E1E1E',
+          mid:           '#444444',
+          light:         '#888888',
+          border:        '#DCDBD7',
+          error:         '#ba1a1a',
+          'error-bg':    '#ffdad6',
+          'gold-bg':     '#FBF0C4',
+        },
+        fontFamily: {
+          heading: ['"Barlow Condensed"', 'Arial', 'sans-serif'],
+          body:    ['Barlow', 'Arial', 'sans-serif'],
+        },
+        borderRadius: { DEFAULT: '4px', full: '9999px' },
+      }
+    }
+  };
+  </script>
+  <style>
+    body { font-family: 'Barlow', Arial, sans-serif; }
+    h1,h2,h3,h4,h5 { font-family: 'Barlow Condensed', Arial, sans-serif; font-weight: 700; letter-spacing: 0.02em; }
+    .material-symbols-outlined { font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24; }
+    @media print {
+      aside, .print-hide { display: none !important; }
+      body { height: auto !important; overflow: visible !important; display: block !important; background: #fff !important; }
+      body > div.flex-1 { overflow: visible !important; height: auto !important; }
+      body > div.flex-1 > div.flex-1 { overflow: visible !important; padding: 0 !important; }
+      .bg-surface { box-shadow: none !important; break-inside: avoid; }
+    }
+  </style>
+</head>
+<body class="bg-bg text-dark h-screen flex overflow-hidden">
+
+  <aside class="w-64 h-full flex flex-col bg-surface border-r border-border flex-shrink-0" data-nav></aside>
+  <script src="js/dash-nav.js?v=3"></script>
+
+  <div class="flex-1 flex flex-col overflow-hidden">
+
+    <header class="bg-surface border-b border-border h-16 flex items-center justify-between px-8 flex-shrink-0 gap-4 print-hide">
+      <h1 class="font-heading font-bold text-2xl uppercase tracking-wide text-dark" data-i18n="page_pc_reports">Precast Reports & Analytics</h1>
+      <div class="flex items-center gap-2 flex-shrink-0">
+        <button onclick="exportPcCsv()" class="flex items-center gap-2 px-4 py-2 border border-primary text-primary rounded text-sm font-semibold hover:bg-primary hover:text-white transition-colors">
+          <span class="material-symbols-outlined text-[18px]">download</span>
+          <span data-i18n="rpt_export_csv">Export CSV</span>
+        </button>
+        <button onclick="window.print()" class="flex items-center gap-2 px-4 py-2 bg-gold hover:bg-gold-hover text-white rounded text-sm font-semibold transition-colors">
+          <span class="material-symbols-outlined text-[18px]">print</span>
+          <span data-i18n="rpt_print">Print / PDF</span>
+        </button>
+      </div>
+    </header>
+
+    <div class="flex-1 overflow-y-auto p-8">
+      <div class="max-w-6xl mx-auto space-y-6">
+
+        <!-- KPI tiles -->
+        <div id="pr-tiles" class="grid grid-cols-2 md:grid-cols-4 gap-4"></div>
+
+        <!-- Output cast vs delivered -->
+        <div class="bg-surface border border-border rounded shadow-[0_2px_12px_rgba(0,0,0,0.07)]">
+          <div class="px-6 py-4 border-b border-border"><h2 class="font-heading text-xl font-bold text-dark" data-i18n="pr_output">Production Output — Cast vs Delivered (7 days)</h2></div>
+          <div id="pr-output" class="p-6 space-y-3"></div>
+        </div>
+
+        <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+          <!-- QC failures -->
+          <div class="bg-surface border border-border rounded shadow-[0_2px_12px_rgba(0,0,0,0.07)]">
+            <div class="px-6 py-4 border-b border-border"><h2 class="font-heading text-xl font-bold text-dark" data-i18n="pr_qc_fails">QC Failures by Reason</h2></div>
+            <div id="pr-qc" class="p-6 space-y-2.5"></div>
+          </div>
+          <!-- Output by element -->
+          <div class="bg-surface border border-border rounded shadow-[0_2px_12px_rgba(0,0,0,0.07)]">
+            <div class="px-6 py-4 border-b border-border"><h2 class="font-heading text-xl font-bold text-dark" data-i18n="pr_elements">Output by Element</h2></div>
+            <div id="pr-elements" class="p-6 space-y-2.5"></div>
+          </div>
+        </div>
+
+        <!-- Client service performance -->
+        <div class="bg-surface border border-border rounded shadow-[0_2px_12px_rgba(0,0,0,0.07)]">
+          <div class="px-6 py-4 border-b border-border"><h2 class="font-heading text-xl font-bold text-dark" data-i18n="or_clients">Client Service Performance</h2></div>
+          <div id="pr-clients" class="p-6 overflow-x-auto"></div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <script src="js/dash-data.js?v=8"></script>
+  <script>
+    var D = window.JehanData;
+    var QC_I18N = { 'Surface Defect':'qc_surface','Dimensional Error':'qc_dimension','Cracking':'qc_crack',
+      'Reinforcement Issue':'qc_rebar','Curing Problem':'qc_curing','Other':'qc_other' };
+    function t18(key, fb) { return '<span data-i18n="' + key + '">' + fb + '</span>'; }
+    function T(key, fb) { return window.dashT ? window.dashT(key, fb) : fb; }
+    function pad(n) { return (n < 10 ? '0' : '') + n; }
+    function dayKey(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+
+    function castUnits(c) { var u = parseFloat(c.units); return isNaN(u) ? 0 : u; }
+
+    // ── KPI tiles ──────────────────────────────────────────────
+    function renderTiles() {
+      var casts = D.getCastings();
+      var judged = casts.filter(function (c) { return c.status === 'In Yard' || c.qcFail; });
+      var qcRate = judged.length
+        ? Math.round(judged.filter(function (c) { return !c.qcFail; }).length / judged.length * 100) : 100;
+      var dels = D.getDeliveries();
+      var finished = dels.filter(function (d) { return d.status === 'Delivered'; });
+      var onTime = finished.length
+        ? Math.round(finished.filter(function (d) { return !d.delayReason; }).length / finished.length * 100) : 100;
+      var weekAgo = dayKey(new Date(Date.now() - 6 * 86400000));
+      var usedL = {}, usedT = {};
+      casts.forEach(function (c) { if (c.day >= weekAgo && c.lineId != null) usedL[c.lineId] = true; });
+      dels.forEach(function (d) { if (d.day >= weekAgo && d.trailerId != null) usedT[d.trailerId] = true; });
+      var lines = D.getAssets('mold').length;
+      var trailers = D.getAssets('trailer').length;
+      var utilL = lines ? Math.round(Object.keys(usedL).length / lines * 100) : 0;
+      var utilT = trailers ? Math.round(Object.keys(usedT).length / trailers * 100) : 0;
+      var tiles = [
+        ['verified', qcRate + '%', 'pr_qc_rate', 'QC Pass Rate', qcRate < 90 ? 'text-error' : 'text-primary'],
+        ['schedule', onTime + '%', 'pr_ontime', 'On-Time Delivery', onTime < 80 ? 'text-error' : 'text-primary'],
+        ['conveyor_belt', utilL + '%', 'pr_line_util', 'Line Utilization', 'text-dark'],
+        ['rv_hookup', utilT + '%', 'pr_trailer_util', 'Trailer Utilization', 'text-dark']
+      ];
+      document.getElementById('pr-tiles').innerHTML = tiles.map(function (t) {
+        return '<div class="bg-surface border border-border rounded p-4 flex items-center gap-3">' +
+          '<span class="material-symbols-outlined text-primary text-[24px]">' + t[0] + '</span>' +
+          '<div><p class="text-xl font-bold ' + t[4] + '">' + t[1] + '</p>' +
+          '<p class="text-[11px] font-semibold uppercase tracking-wide text-light" data-i18n="' + t[2] + '">' + t[3] + '</p></div></div>';
+      }).join('');
+    }
+
+    // ── Output: cast vs delivered (7 days) ─────────────────────
+    function outputRows() {
+      var rows = [];
+      for (var i = 6; i >= 0; i--) {
+        var k = dayKey(new Date(Date.now() - i * 86400000));
+        var cast = D.getCastings().filter(function (c) { return c.day === k && c.status === 'In Yard' && !c.qcFail; })
+          .reduce(function (s, c) { return s + castUnits(c); }, 0);
+        var del = D.getDeliveries().filter(function (d) { return d.day === k && d.status === 'Delivered'; })
+          .reduce(function (s, d) { var u = parseFloat(d.units); return s + (isNaN(u) ? 0 : u); }, 0);
+        rows.push({ day: k, cast: cast, del: del });
+      }
+      return rows;
+    }
+    function renderOutput() {
+      var rows = outputRows();
+      var max = Math.max(1, Math.max.apply(null, rows.map(function (r) { return Math.max(r.cast, r.del); })));
+      var any = rows.some(function (r) { return r.cast > 0 || r.del > 0; });
+      var c = document.getElementById('pr-output');
+      if (!any) { c.innerHTML = '<p class="text-sm text-light text-center py-4" data-i18n="or_no_data">No operational data yet.</p>'; return; }
+      c.innerHTML = rows.map(function (r) {
+        var p1 = Math.round(r.cast / max * 100), p2 = Math.round(r.del / max * 100);
+        return '<div class="flex items-center gap-3">' +
+          '<span class="w-20 text-xs font-semibold text-mid">' + D.fmtDate(r.day) + '</span>' +
+          '<div class="flex-1 space-y-1">' +
+            '<div class="h-3 bg-surface-dim rounded-full overflow-hidden"><div class="h-full bg-primary-lt" style="width:' + p1 + '%"></div></div>' +
+            '<div class="h-3 bg-surface-dim rounded-full overflow-hidden"><div class="h-full bg-primary" style="width:' + p2 + '%"></div></div>' +
+          '</div>' +
+          '<span class="w-32 text-end text-xs"><span class="text-light">' + t18('pr_cast', 'Cast') + ' <strong class="text-dark">' + r.cast + '</strong></span><br>' +
+          '<span class="text-light">' + t18('pr_delivered', 'Delivered') + ' <strong class="text-primary">' + r.del + '</strong></span></span>' +
+        '</div>';
+      }).join('');
+    }
+
+    // ── QC failures by reason ──────────────────────────────────
+    function qcCounts() {
+      var counts = {};
+      D.getCastings().forEach(function (c) {
+        if (c.qcFail) counts[c.qcFail] = (counts[c.qcFail] || 0) + 1;
+      });
+      return counts;
+    }
+    function renderQc() {
+      var counts = qcCounts();
+      var keys = Object.keys(counts);
+      var c = document.getElementById('pr-qc');
+      if (!keys.length) { c.innerHTML = '<p class="text-sm text-light text-center py-4" data-i18n="pr_no_qc">No QC failures recorded.</p>'; return; }
+      var max = Math.max.apply(null, keys.map(function (k) { return counts[k]; }));
+      keys.sort(function (a, b) { return counts[b] - counts[a]; });
+      c.innerHTML = keys.map(function (k) {
+        var pct = Math.round(counts[k] / max * 100);
+        return '<div class="flex items-center gap-3">' +
+          '<span class="w-36 text-xs font-semibold text-mid truncate" data-i18n="' + (QC_I18N[k] || '') + '">' + k + '</span>' +
+          '<div class="flex-1 h-3.5 bg-surface-dim rounded-full overflow-hidden"><div class="h-full bg-error/70" style="width:' + pct + '%"></div></div>' +
+          '<span class="w-6 text-end text-xs font-bold text-dark">' + counts[k] + '</span>' +
+        '</div>';
+      }).join('');
+    }
+
+    // ── Output by element ──────────────────────────────────────
+    function elementCounts() {
+      var counts = {};
+      D.getCastings().forEach(function (c) {
+        if (c.status === 'In Yard' && !c.qcFail) {
+          var k = c.element || '—';
+          counts[k] = (counts[k] || 0) + castUnits(c);
+        }
+      });
+      return counts;
+    }
+    function renderElements() {
+      var counts = elementCounts();
+      var keys = Object.keys(counts);
+      var c = document.getElementById('pr-elements');
+      if (!keys.length) { c.innerHTML = '<p class="text-sm text-light text-center py-4" data-i18n="or_no_data">No operational data yet.</p>'; return; }
+      var max = Math.max.apply(null, keys.map(function (k) { return counts[k]; }));
+      keys.sort(function (a, b) { return counts[b] - counts[a]; });
+      c.innerHTML = keys.map(function (k) {
+        var pct = Math.round(counts[k] / max * 100);
+        return '<div class="flex items-center gap-3">' +
+          '<span class="w-36 text-xs font-semibold text-mid truncate">' + D.escapeHtml(k) + '</span>' +
+          '<div class="flex-1 h-3.5 bg-surface-dim rounded-full overflow-hidden"><div class="h-full bg-primary" style="width:' + pct + '%"></div></div>' +
+          '<span class="w-10 text-end text-xs font-bold text-dark">' + counts[k] + '</span>' +
+        '</div>';
+      }).join('');
+    }
+
+    // ── Client service performance ─────────────────────────────
+    function clientRows() {
+      var map = {};
+      D.getPcOrders().forEach(function (o) {
+        var k = o.client || '—';
+        var b = map[k] = map[k] || { jobs: 0, cast: 0, delivered: 0, delays: 0, finished: 0, onTime: 0 };
+        b.jobs++;
+        D.castingsForOrder(o.id).forEach(function (c) {
+          if (c.status === 'In Yard' && !c.qcFail) b.cast += castUnits(c);
+        });
+        D.deliveriesForOrder(o.id).forEach(function (d) {
+          if (d.delayReason) b.delays++;
+          if (d.status === 'Delivered') {
+            b.finished++;
+            var u = parseFloat(d.units); b.delivered += (isNaN(u) ? 0 : u);
+            if (!d.delayReason) b.onTime++;
+          }
+        });
+      });
+      return map;
+    }
+    function renderClients() {
+      var map = clientRows();
+      var names = Object.keys(map);
+      var c = document.getElementById('pr-clients');
+      if (!names.length) { c.innerHTML = '<p class="text-sm text-light text-center py-4" data-i18n="or_no_data">No operational data yet.</p>'; return; }
+      names.sort(function (a, b) { return map[b].delivered - map[a].delivered; });
+      c.innerHTML = '<table class="w-full min-w-[560px]"><thead><tr class="border-b border-border">' +
+        '<th class="text-start pb-2 text-[11px] font-bold uppercase tracking-widest text-light">' + t18('or_client', 'Client') + '</th>' +
+        '<th class="text-start pb-2 text-[11px] font-bold uppercase tracking-widest text-light">' + t18('or_jobs', 'Jobs') + '</th>' +
+        '<th class="text-start pb-2 text-[11px] font-bold uppercase tracking-widest text-light">' + t18('pr_cast', 'Cast') + '</th>' +
+        '<th class="text-start pb-2 text-[11px] font-bold uppercase tracking-widest text-light">' + t18('pr_delivered', 'Delivered') + '</th>' +
+        '<th class="text-start pb-2 text-[11px] font-bold uppercase tracking-widest text-light">' + t18('or_delays_n', 'Delays') + '</th>' +
+        '<th class="text-start pb-2 text-[11px] font-bold uppercase tracking-widest text-light">' + t18('pr_ontime', 'On-Time Delivery') + '</th>' +
+        '</tr></thead><tbody>' +
+        names.map(function (n) {
+          var b = map[n];
+          var ot = b.finished ? Math.round(b.onTime / b.finished * 100) : 100;
+          return '<tr class="border-b border-border last:border-0">' +
+            '<td class="py-3 text-sm font-semibold text-dark">' + D.escapeHtml(n) + '</td>' +
+            '<td class="py-3 text-sm text-mid">' + b.jobs + '</td>' +
+            '<td class="py-3 text-sm text-mid">' + Math.round(b.cast).toLocaleString() + '</td>' +
+            '<td class="py-3 text-sm text-mid">' + Math.round(b.delivered).toLocaleString() + '</td>' +
+            '<td class="py-3 text-sm ' + (b.delays ? 'text-error font-bold' : 'text-mid') + '">' + b.delays + '</td>' +
+            '<td class="py-3"><span class="text-xs font-bold ' + (ot >= 80 ? 'text-primary' : 'text-error') + '">' + ot + '%</span></td>' +
+          '</tr>';
+        }).join('') + '</tbody></table>';
+    }
+
+    function renderAll() {
+      renderTiles(); renderOutput(); renderQc(); renderElements(); renderClients();
+      if (window.reapplyDashLang) window.reapplyDashLang();
+    }
+    renderAll();
+    D.subscribe(renderAll);
+
+    // ── Export CSV ─────────────────────────────────────────────
+    function csvEsc(v) { var s = String(v == null ? '' : v); return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; }
+    function exportPcCsv() {
+      var tk = new Date().toISOString().slice(0, 10);
+      var rows = [[T('page_pc_reports', 'Precast Reports & Analytics'), tk]];
+      function section(k, fb) { rows.push([]); rows.push(['=== ' + T(k, fb) + ' ===']); }
+
+      section('pr_output', 'Production Output — Cast vs Delivered (7 days)');
+      rows.push([T('th_date', 'Date'), T('pr_cast', 'Cast'), T('pr_delivered', 'Delivered')]);
+      outputRows().forEach(function (r) { rows.push([r.day, r.cast, r.del]); });
+
+      section('pr_qc_fails', 'QC Failures by Reason');
+      var qc = qcCounts();
+      Object.keys(qc).forEach(function (k) { rows.push([T(QC_I18N[k] || '', k), qc[k]]); });
+
+      section('pr_elements', 'Output by Element');
+      var el = elementCounts();
+      Object.keys(el).forEach(function (k) { rows.push([k, el[k]]); });
+
+      section('or_clients', 'Client Service Performance');
+      rows.push([T('or_client', 'Client'), T('or_jobs', 'Jobs'), T('pr_cast', 'Cast'), T('pr_delivered', 'Delivered'), T('or_delays_n', 'Delays'), T('pr_ontime', 'On-Time Delivery')]);
+      var map = clientRows();
+      Object.keys(map).forEach(function (n) {
+        var b = map[n];
+        rows.push([n, b.jobs, Math.round(b.cast), Math.round(b.delivered), b.delays,
+          (b.finished ? Math.round(b.onTime / b.finished * 100) : 100) + '%']);
+      });
+
+      var csv = rows.map(function (r) { return r.map(csvEsc).join(','); }).join('\r\n');
+      var blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url; a.download = 'jehan-precast-report-' + tk + '.csv';
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+  </script>
+  <script src="js/dash-lang.js?v=9"></script>
+</body>
+</html>

@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Production Queue - Jehan Holding Group</title>
+  <script src="js/auth.js?v=10"></script>
+  <script>if (!window.JehanAuth || !window.JehanAuth.enforce('precast')) { /* halted by redirect */ }</script>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600;700&family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+  <script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          primary:       '#3D5A34',
+          'primary-mid': '#5C7A48',
+          'primary-lt':  '#8CAE78',
+          gold:          '#C49A1A',
+          'gold-hover':  '#A07D10',
+          bg:            '#F2F1EE',
+          surface:       '#FFFFFF',
+          'surface-dim': '#F8F7F4',
+          'surface-mid': '#EEEDE9',
+          'surface-high':'#E4E3DF',
+          dark:          '#1E1E1E',
+          mid:           '#444444',
+          light:         '#888888',
+          border:        '#DCDBD7',
+          error:         '#ba1a1a',
+          'error-bg':    '#ffdad6',
+          'gold-bg':     '#FBF0C4',
+        },
+        fontFamily: {
+          heading: ['"Barlow Condensed"', 'Arial', 'sans-serif'],
+          body:    ['Barlow', 'Arial', 'sans-serif'],
+        },
+        borderRadius: { DEFAULT: '4px', full: '9999px' },
+      }
+    }
+  };
+  </script>
+  <style>
+    body { font-family: 'Barlow', Arial, sans-serif; }
+    h1,h2,h3,h4,h5 { font-family: 'Barlow Condensed', Arial, sans-serif; font-weight: 700; letter-spacing: 0.02em; }
+    .material-symbols-outlined { font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24; }
+  </style>
+</head>
+<body class="bg-bg text-dark h-screen flex overflow-hidden">
+
+  <aside class="w-64 h-full flex flex-col bg-surface border-r border-border flex-shrink-0" data-nav></aside>
+  <script src="js/dash-nav.js?v=3"></script>
+
+  <div class="flex-1 flex flex-col overflow-hidden">
+
+    <header class="bg-surface border-b border-border h-16 flex items-center justify-between px-8 flex-shrink-0 gap-4">
+      <h1 class="font-heading font-bold text-2xl uppercase tracking-wide text-dark" data-i18n="page_pc_production">Production Queue</h1>
+      <div class="flex items-center gap-2 flex-shrink-0">
+        <button onclick="moveDay(-1)" class="p-2 rounded border border-border text-mid hover:bg-surface-mid"><span class="material-symbols-outlined text-[18px]">chevron_left</span></button>
+        <input id="pp-day" type="date" onchange="render()" class="border border-border rounded px-3 py-2 text-sm font-bold text-dark bg-surface focus:outline-none focus:border-primary"/>
+        <button onclick="moveDay(1)" class="p-2 rounded border border-border text-mid hover:bg-surface-mid"><span class="material-symbols-outlined text-[18px]">chevron_right</span></button>
+        <button onclick="goToday()" class="px-3 py-2 rounded border border-border text-xs font-bold text-mid hover:bg-surface-mid" data-i18n="ob_today">Today</button>
+      </div>
+    </header>
+
+    <div class="flex-1 overflow-y-auto p-8">
+      <div class="max-w-6xl mx-auto space-y-5">
+
+        <!-- Line capacity + lanes -->
+        <div class="grid grid-cols-1 xl:grid-cols-3 gap-4">
+          <div class="bg-surface border border-border rounded shadow-[0_2px_12px_rgba(0,0,0,0.07)] p-5">
+            <p class="text-[11px] font-bold uppercase tracking-widest text-light mb-2 flex items-center gap-1.5"><span class="material-symbols-outlined text-[16px] text-primary">conveyor_belt</span><span data-i18n="pp_line_capacity">Line Capacity</span></p>
+            <div id="pp-capacity" class="space-y-2.5"></div>
+          </div>
+          <div class="xl:col-span-2 bg-surface border border-border rounded shadow-[0_2px_12px_rgba(0,0,0,0.07)] p-5">
+            <div id="pp-lanes" class="flex flex-wrap gap-2"></div>
+          </div>
+        </div>
+
+        <!-- Exception alerts -->
+        <div class="bg-surface border border-border rounded shadow-[0_2px_12px_rgba(0,0,0,0.07)]">
+          <div class="px-5 py-3 border-b border-border flex items-center gap-2">
+            <span class="material-symbols-outlined text-error text-[20px]">notification_important</span>
+            <h2 class="text-base uppercase tracking-wide" data-i18n="ob_alerts">Exception Alerts</h2>
+          </div>
+          <div id="pp-alerts" class="p-4 space-y-2"></div>
+        </div>
+
+        <!-- Orders + castings -->
+        <div id="pp-orders" class="space-y-5"></div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- QC fail reason modal -->
+  <div id="qc-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div class="absolute inset-0 bg-black/40" onclick="closeQc()"></div>
+    <div class="relative bg-surface rounded-lg shadow-xl w-full max-w-sm">
+      <div class="px-6 py-4 border-b border-border">
+        <h3 class="text-lg font-bold text-dark" data-i18n="pp_qc_reason">QC Failure Reason</h3>
+      </div>
+      <div class="p-6 space-y-2" id="qc-options"></div>
+      <div class="px-6 py-4 border-t border-border flex gap-3 justify-end">
+        <button onclick="closeQc()" class="px-5 py-2 border border-border rounded text-sm font-semibold text-mid hover:bg-surface-mid transition-colors" data-i18n="btn_cancel">Cancel</button>
+        <button onclick="confirmQc()" class="flex items-center gap-2 bg-error hover:opacity-90 text-white text-sm font-semibold px-5 py-2 rounded transition-colors">
+          <span class="material-symbols-outlined text-[18px]">block</span><span data-i18n="btn_save">Save</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="pp-toast" class="hidden fixed bottom-6 right-6 z-50 bg-primary text-white text-sm font-semibold px-5 py-3 rounded shadow-lg flex items-center gap-2 max-w-md">
+    <span class="material-symbols-outlined text-[18px]">check_circle</span>
+    <span id="pp-toast-msg">Done</span>
+  </div>
+
+  <script src="js/dash-data.js?v=8"></script>
+  <script>
+    var D = window.JehanData;
+    var CAST_I18N = { 'Queued':'pc_queued','Mold Prep':'pc_mold_prep','Casting':'pc_casting','Curing':'pc_curing',
+      'Demolding':'pc_demolding','QC':'pc_qc','In Yard':'pc_in_yard' };
+    var QC_I18N = { 'Surface Defect':'qc_surface','Dimensional Error':'qc_dimension','Cracking':'qc_crack',
+      'Reinforcement Issue':'qc_rebar','Curing Problem':'qc_curing','Other':'qc_other' };
+    var PC_I18N = { 'Booked':'ops_booked','Design Review':'pc_design_review','Authorized':'ops_authorized','On Hold':'ops_on_hold',
+      'In Production':'pc_in_production','Ready in Yard':'pc_ready_yard','Delivering':'pc_delivering',
+      'Delayed':'ops_delayed','Completed':'ops_completed' };
+
+    function t18(key, fb) { return '<span data-i18n="' + key + '">' + fb + '</span>'; }
+    function toast(key, fb) {
+      var el = document.getElementById('pp-toast');
+      document.getElementById('pp-toast-msg').textContent = window.dashT ? window.dashT(key, fb) : fb;
+      el.classList.remove('hidden');
+      setTimeout(function () { el.classList.add('hidden'); }, 2800);
+    }
+    function pad(n) { return (n < 10 ? '0' : '') + n; }
+    function todayKey() { var d = new Date(); return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+    function day() { return document.getElementById('pp-day').value || todayKey(); }
+    function moveDay(n) {
+      var d = new Date(day() + 'T00:00:00'); d.setDate(d.getDate() + n);
+      document.getElementById('pp-day').value = d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+      render();
+    }
+    function goToday() { document.getElementById('pp-day').value = todayKey(); render(); }
+
+    function openOrders() {
+      return D.getPcOrders().filter(function (o) { return !o.completed; })
+        .sort(function (a, b) {
+          var P = { 'Urgent': 0, 'High': 1, 'Normal': 2, 'Low': 3 };
+          return (P[a.priority] || 2) - (P[b.priority] || 2);
+        });
+    }
+
+    // ── Line capacity for the selected day ─────────────────────
+    function renderCapacity() {
+      var lines = D.getAssets('mold');
+      var c = document.getElementById('pp-capacity');
+      if (!lines.length) {
+        c.innerHTML = '<p class="text-xs text-light" data-i18n="pp_no_lines">No production lines yet — add Molds & Lines in Fleet & Master Data.</p>';
+        return;
+      }
+      c.innerHTML = lines.map(function (l) {
+        var cap = parseFloat(l.capacity) || 0;
+        var load = D.lineLoad(l.id, day());
+        var pct = cap ? Math.min(100, Math.round(load / cap * 100)) : (load > 0 ? 100 : 0);
+        var over = cap && load > cap;
+        return '<div>' +
+          '<div class="flex items-center justify-between"><span class="text-xs font-semibold text-mid truncate">' + D.escapeHtml(l.name) + '</span>' +
+          '<span class="text-xs font-bold ' + (over ? 'text-error' : 'text-dark') + '">' + load + (cap ? ' / ' + cap : '') + '</span></div>' +
+          '<div class="h-2 rounded-full bg-surface-dim overflow-hidden mt-1"><div class="h-full ' + (over ? 'bg-error' : pct >= 80 ? 'bg-gold' : 'bg-primary') + '" style="width:' + pct + '%"></div></div>' +
+        '</div>';
+      }).join('');
+    }
+    function renderLanes() {
+      var counts = {};
+      openOrders().forEach(function (o) {
+        var st = D.pcOrderStatus(o);
+        counts[st] = (counts[st] || 0) + 1;
+      });
+      var ORDER = ['Design Review', 'Booked', 'On Hold', 'Authorized', 'In Production', 'Ready in Yard', 'Delivering', 'Delayed'];
+      document.getElementById('pp-lanes').innerHTML = ORDER.map(function (st) {
+        var n = counts[st] || 0;
+        return '<div class="' + D.statusPill(st) + ' rounded-full px-3 py-1.5 text-xs font-bold' + (n === 0 ? ' opacity-40' : '') + '"' +
+          (PC_I18N[st] ? ' ' : '') + '>' + t18(PC_I18N[st], st) + ' · ' + n + '</div>';
+      }).join('');
+    }
+    function renderAlerts() {
+      var alerts = [];
+      // QC failures
+      D.getCastings().forEach(function (cst) {
+        if (cst.qcFail) {
+          var o = D.getPcOrder(cst.orderId);
+          alerts.push({ icon: 'block', cls: 'border-error/30 bg-error-bg/40 text-error',
+            html: '<strong>' + D.escapeHtml((o ? o.client : '')) + '</strong> — ' + t18('pp_alert_qc', 'QC failure') + ': ' + t18(QC_I18N[cst.qcFail] || 'qc_other', cst.qcFail) });
+        }
+      });
+      // line over capacity (selected day)
+      D.getAssets('mold').forEach(function (l) {
+        var cap = parseFloat(l.capacity) || 0;
+        if (cap && D.lineLoad(l.id, day()) > cap) {
+          alerts.push({ icon: 'conveyor_belt', cls: 'border-gold bg-gold-bg/50 text-gold-hover',
+            html: '<strong>' + t18('pp_over_line', 'Line capacity exceeded') + '</strong> — ' + D.escapeHtml(l.name) });
+        }
+      });
+      // authorized but design not approved
+      openOrders().forEach(function (o) {
+        if (o.authStatus === 'Authorized' && o.designStatus !== 'Design Approved') {
+          alerts.push({ icon: 'design_services', cls: 'border-gold bg-gold-bg/50 text-gold-hover',
+            html: '<strong>' + D.escapeHtml(o.ref + ' · ' + o.client) + '</strong> — ' + t18('pp_awaiting_design', 'Awaiting design approval') });
+        }
+      });
+      var c = document.getElementById('pp-alerts');
+      c.innerHTML = alerts.length
+        ? alerts.map(function (a) {
+            return '<div class="flex items-center gap-2.5 border rounded p-2.5 text-xs font-semibold ' + a.cls + '">' +
+              '<span class="material-symbols-outlined text-[18px]">' + a.icon + '</span><span>' + a.html + '</span></div>';
+          }).join('')
+        : '<p class="text-xs text-light text-center py-2" data-i18n="ob_no_alerts">No exceptions — operations running clean.</p>';
+    }
+
+    // ── Castings ───────────────────────────────────────────────
+    function lineOpts(selected) {
+      var lines = D.getAssets('mold').filter(function (l) { return l.status !== 'Maintenance' || l.id === selected; });
+      var html = '<option value="">' + (window.dashT ? window.dashT('pp_line', 'Line / Mold') : 'Line / Mold') + '…</option>';
+      html += lines.map(function (l) {
+        return '<option value="' + l.id + '"' + (selected === l.id ? ' selected' : '') + '>' + D.escapeHtml(l.name) + '</option>';
+      }).join('');
+      return html;
+    }
+    function nextMilestone(cst) {
+      var i = D.CAST_MILESTONES.indexOf(cst.status);
+      return (i >= 0 && i < D.CAST_MILESTONES.length - 1) ? D.CAST_MILESTONES[i + 1] : null;
+    }
+    function castRow(cst) {
+      var atQc = cst.status === 'QC' && !cst.qcFail;
+      var done = cst.status === 'In Yard';
+      var nxt = nextMilestone(cst);
+      return '<div class="border ' + (cst.qcFail ? 'border-error/40' : 'border-border') + ' rounded p-3 ' + (done && !cst.qcFail ? 'opacity-75' : '') + '">' +
+        '<div class="flex flex-wrap items-center gap-2.5">' +
+          '<input type="date" value="' + (cst.day || '') + '" onchange="patchCast(' + cst.id + ', { day: this.value })" class="text-xs border border-border rounded px-2 py-1.5 bg-bg"/>' +
+          '<select onchange="setCastLine(' + cst.id + ', this.value)" class="text-xs border border-border rounded px-2 py-1.5 bg-bg max-w-[170px]">' + lineOpts(cst.lineId) + '</select>' +
+          '<input type="text" value="' + D.escapeHtml(cst.element || '') + '" onchange="patchCast(' + cst.id + ', { element: this.value })" data-i18n-ph="pp_element" placeholder="Element" class="text-xs border border-border rounded px-2 py-1.5 bg-bg w-32"/>' +
+          '<input type="number" min="0" step="any" value="' + (cst.units != null && cst.units !== '' ? cst.units : '') + '" onchange="patchCast(' + cst.id + ', { units: parseFloat(this.value) || 0 })" data-i18n-ph="pp_units" placeholder="Units" class="text-xs border border-border rounded px-2 py-1.5 bg-bg w-20"/>' +
+          '<span class="' + D.statusPill(cst.qcFail ? 'Rejected' : cst.status) + ' text-[11px] font-bold px-2.5 py-1 rounded-full whitespace-nowrap"' +
+            (cst.qcFail ? '' : ' data-i18n="' + (CAST_I18N[cst.status] || '') + '"') + '>' + (cst.qcFail ? (window.dashT ? window.dashT('pp_qc_fail', 'QC Fail') : 'QC Fail') : cst.status) + '</span>' +
+          (cst.qcFail ? '<span class="text-[11px] font-bold text-error">' + t18(QC_I18N[cst.qcFail] || 'qc_other', cst.qcFail) + '</span>' : '') +
+          '<span class="ms-auto flex items-center gap-1">' +
+            (atQc
+              ? '<button onclick="qcPass(' + cst.id + ')" class="flex items-center gap-1 bg-primary hover:bg-primary-mid text-white text-[11px] font-bold px-2.5 py-1.5 rounded transition-colors"><span class="material-symbols-outlined text-[14px]">check</span>' + t18('pp_qc_pass', 'QC Pass') + '</button>' +
+                '<button onclick="openQc(' + cst.id + ')" class="flex items-center gap-1 border border-error/40 text-error hover:bg-error hover:text-white text-[11px] font-bold px-2.5 py-1.5 rounded transition-colors"><span class="material-symbols-outlined text-[14px]">close</span>' + t18('pp_qc_fail', 'QC Fail') + '</button>'
+              : (nxt && !cst.qcFail && !done
+                  ? '<button onclick="advanceCast(' + cst.id + ')" class="flex items-center gap-1 bg-primary hover:bg-primary-mid text-white text-[11px] font-bold px-2.5 py-1.5 rounded transition-colors"><span class="material-symbols-outlined text-[14px]">arrow_forward</span>' + t18(CAST_I18N[nxt], nxt) + '</button>'
+                  : '')) +
+            (cst.qcFail
+              ? '<button onclick="recast(' + cst.id + ')" title="Re-cast" class="p-1.5 rounded text-primary hover:bg-primary-lt/20 transition-colors"><span class="material-symbols-outlined text-[18px]">replay</span></button>'
+              : '') +
+            '<button onclick="removeCast(' + cst.id + ')" class="p-1.5 rounded text-light hover:text-error hover:bg-error-bg transition-colors"><span class="material-symbols-outlined text-[18px]">delete</span></button>' +
+          '</span>' +
+        '</div>' +
+      '</div>';
+    }
+    function orderCard(o) {
+      var casts = D.castingsForOrder(o.id);
+      var st = D.pcOrderStatus(o);
+      var yard = D.unitsInYard(o.id);
+      var target = parseFloat(o.quantity) || 0;
+      var PRI_CLS = { 'Urgent': 'bg-error text-white', 'High': 'bg-error-bg text-error border border-error/30',
+        'Normal': 'bg-surface-mid text-mid border border-border', 'Low': 'bg-surface-dim text-light border border-border' };
+      var canProduce = o.authStatus === 'Authorized' && o.designStatus === 'Design Approved';
+      return '<div class="bg-surface border border-border rounded shadow-[0_2px_12px_rgba(0,0,0,0.07)] p-5">' +
+        '<div class="flex flex-wrap items-center gap-2.5 mb-3">' +
+          '<span class="' + D.statusPill(st) + ' text-xs font-bold px-3 py-1 rounded-full"' + (PC_I18N[st] ? ' data-i18n="' + PC_I18N[st] + '"' : '') + '>' + st + '</span>' +
+          '<h2 class="font-heading text-lg font-bold text-dark">' + D.escapeHtml(o.client) + '</h2>' +
+          '<span class="inline-block text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ' + (PRI_CLS[o.priority || 'Normal']) + '">' + D.escapeHtml(o.priority || 'Normal') + '</span>' +
+          '<span class="text-xs text-light">' + D.escapeHtml(o.ref || '') +
+            (o.element ? ' · ' + D.escapeHtml(o.element) : '') +
+            (target ? ' · <strong class="text-dark">' + yard + ' / ' + target + '</strong> ' + t18('po_yard', 'In yard') : '') +
+            (o.deliveryDate ? ' · ' + D.fmtDate(o.deliveryDate) : '') + '</span>' +
+          '<span class="ms-auto">' +
+            (canProduce
+              ? '<button onclick="newCast(' + o.id + ')" class="flex items-center gap-1.5 bg-gold hover:bg-gold-hover text-white text-xs font-bold px-3.5 py-2 rounded transition-colors"><span class="material-symbols-outlined text-[15px]">add</span>' + t18('pp_add_casting', 'Add Casting') + '</button>'
+              : '<a href="pc-orders.html" class="text-xs font-bold text-primary hover:underline">' + t18(o.designStatus !== 'Design Approved' ? 'pp_awaiting_design' : 'oo_auth_status', o.designStatus !== 'Design Approved' ? 'Awaiting design approval' : 'Authorization') + ' →</a>') +
+          '</span>' +
+        '</div>' +
+        (casts.length ? '<div class="space-y-2">' + casts.map(castRow).join('') + '</div>' : '') +
+      '</div>';
+    }
+    function renderOrders() {
+      var orders = openOrders();
+      var c = document.getElementById('pp-orders');
+      c.innerHTML = orders.length
+        ? orders.map(orderCard).join('')
+        : '<div class="bg-surface border border-border rounded py-16 text-center">' +
+            '<span class="material-symbols-outlined text-[40px] text-light">view_in_ar</span>' +
+            '<p class="text-sm text-light mt-2" data-i18n="pp_no_orders">No authorized precast orders in production.</p></div>';
+    }
+
+    function render() {
+      D.syncPcFromSales();
+      renderCapacity(); renderLanes(); renderAlerts(); renderOrders();
+      if (window.reapplyDashLang) window.reapplyDashLang();
+    }
+
+    // ── Casting actions ────────────────────────────────────────
+    function newCast(orderId) {
+      var o = D.getPcOrder(orderId);
+      D.addCasting({
+        id: undefined, orderId: orderId, day: day(),
+        lineId: null, element: o ? (o.element || '') : '', units: '',
+        status: 'Queued', qcFail: '', times: {}
+      });
+      D.logAudit('casting_created', (o ? o.ref : '') + ' casting on ' + day(), orderId, o ? o.ref : '');
+      render();
+      toast('toast_cast_saved', 'Casting saved');
+    }
+    function patchCast(id, patch) { D.updateCasting(id, patch); render(); }
+    function setCastLine(id, value) {
+      var cst = D.getCasting(id); if (!cst) return;
+      var lineId = value ? parseInt(value, 10) : null;
+      if (lineId != null) {
+        var line = D.getAsset(lineId);
+        var cap = line ? (parseFloat(line.capacity) || 0) : 0;
+        if (cap && D.lineLoad(lineId, cst.day, id) + (parseFloat(cst.units) || 0) > cap) {
+          toast('pp_over_line', 'Line capacity exceeded');
+        }
+      }
+      D.updateCasting(id, { lineId: lineId });
+      render();
+    }
+    function advanceCast(id) {
+      var cst = D.getCasting(id); if (!cst) return;
+      var nxt = nextMilestone(cst); if (!nxt) return;
+      var times = cst.times || {}; times[nxt] = new Date().toISOString();
+      D.updateCasting(id, { status: nxt, times: times });
+      var o = D.getPcOrder(cst.orderId);
+      D.logAudit('casting_status', (o ? o.ref : '') + ' casting → ' + nxt, cst.orderId, o ? o.ref : '');
+      render();
+    }
+    function qcPass(id) {
+      var cst = D.getCasting(id); if (!cst) return;
+      var times = cst.times || {}; times['In Yard'] = new Date().toISOString();
+      D.updateCasting(id, { status: 'In Yard', qcFail: '', times: times });
+      var o = D.getPcOrder(cst.orderId);
+      D.logAudit('qc_passed', (o ? o.ref : '') + ' casting passed QC → In Yard', cst.orderId, o ? o.ref : '');
+      render();
+    }
+    function recast(id) {
+      var cst = D.getCasting(id); if (!cst) return;
+      D.updateCasting(id, { status: 'Queued', qcFail: '', times: {} });
+      var o = D.getPcOrder(cst.orderId);
+      D.logAudit('recast', (o ? o.ref : '') + ' failed casting re-queued', cst.orderId, o ? o.ref : '');
+      render();
+    }
+    function removeCast(id) {
+      var cst = D.getCasting(id);
+      D.deleteCasting(id);
+      if (cst) {
+        var o = D.getPcOrder(cst.orderId);
+        D.logAudit('casting_deleted', (o ? o.ref : '') + ' casting removed', cst.orderId, o ? o.ref : '');
+      }
+      render();
+      toast('toast_cast_deleted', 'Casting removed');
+    }
+
+    // ── QC fail modal ──────────────────────────────────────────
+    var qcCastingId = null;
+    function openQc(id) {
+      qcCastingId = id;
+      document.getElementById('qc-options').innerHTML = D.QC_REASONS.map(function (rr, i) {
+        return '<label class="flex items-center gap-2.5 p-2.5 border border-border rounded cursor-pointer hover:bg-surface-dim transition-colors">' +
+          '<input type="radio" name="qcr" value="' + rr + '"' + (i === 0 ? ' checked' : '') + ' class="accent-primary"/>' +
+          '<span class="text-sm font-semibold text-dark" data-i18n="' + QC_I18N[rr] + '">' + rr + '</span></label>';
+      }).join('');
+      document.getElementById('qc-modal').classList.remove('hidden');
+      if (window.reapplyDashLang) window.reapplyDashLang();
+    }
+    function closeQc() { document.getElementById('qc-modal').classList.add('hidden'); qcCastingId = null; }
+    function confirmQc() {
+      if (qcCastingId == null) return;
+      var sel = document.querySelector('#qc-options input:checked');
+      var reason = sel ? sel.value : 'Other';
+      var cst = D.getCasting(qcCastingId);
+      var o = cst ? D.getPcOrder(cst.orderId) : null;
+      D.updateCasting(qcCastingId, { qcFail: reason });
+      D.logAudit('qc_failed', (o ? o.ref : '') + ' casting failed QC — ' + reason, cst ? cst.orderId : null, o ? o.ref : '');
+      closeQc();
+      render();
+    }
+
+    document.getElementById('pp-day').value = todayKey();
+    render();
+    D.subscribe(render);
+  </script>
+  <script src="js/dash-lang.js?v=9"></script>
+</body>
+</html>

@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Precast Orders - Jehan Holding Group</title>
+  <script src="js/auth.js?v=10"></script>
+  <script>if (!window.JehanAuth || !window.JehanAuth.enforce('precast')) { /* halted by redirect */ }</script>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600;700&family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+  <script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          primary:       '#3D5A34',
+          'primary-mid': '#5C7A48',
+          'primary-lt':  '#8CAE78',
+          gold:          '#C49A1A',
+          'gold-hover':  '#A07D10',
+          bg:            '#F2F1EE',
+          surface:       '#FFFFFF',
+          'surface-dim': '#F8F7F4',
+          'surface-mid': '#EEEDE9',
+          'surface-high':'#E4E3DF',
+          dark:          '#1E1E1E',
+          mid:           '#444444',
+          light:         '#888888',
+          border:        '#DCDBD7',
+          error:         '#ba1a1a',
+          'error-bg':    '#ffdad6',
+          'gold-bg':     '#FBF0C4',
+        },
+        fontFamily: {
+          heading: ['"Barlow Condensed"', 'Arial', 'sans-serif'],
+          body:    ['Barlow', 'Arial', 'sans-serif'],
+        },
+        borderRadius: { DEFAULT: '4px', full: '9999px' },
+      }
+    }
+  };
+  </script>
+  <style>
+    body { font-family: 'Barlow', Arial, sans-serif; }
+    h1,h2,h3,h4,h5 { font-family: 'Barlow Condensed', Arial, sans-serif; font-weight: 700; letter-spacing: 0.02em; }
+    .material-symbols-outlined { font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24; }
+  </style>
+</head>
+<body class="bg-bg text-dark h-screen flex overflow-hidden">
+
+  <aside class="w-64 h-full flex flex-col bg-surface border-r border-border flex-shrink-0" data-nav></aside>
+  <script src="js/dash-nav.js?v=3"></script>
+
+  <div class="flex-1 flex flex-col overflow-hidden">
+
+    <header class="bg-surface border-b border-border h-16 flex items-center justify-between px-8 flex-shrink-0 gap-4">
+      <h1 class="font-heading font-bold text-2xl uppercase tracking-wide text-dark" data-i18n="page_pc_orders">Precast Orders</h1>
+      <button onclick="manualSync()" class="flex items-center gap-2 bg-gold hover:bg-gold-hover text-white text-sm font-semibold tracking-wide px-5 py-2 rounded transition-colors flex-shrink-0">
+        <span class="material-symbols-outlined text-[18px]">sync</span>
+        <span data-i18n="oo_sync">Sync from Sales</span>
+      </button>
+    </header>
+
+    <div class="flex-1 overflow-y-auto p-8">
+      <div class="max-w-5xl mx-auto space-y-5">
+
+        <p class="text-sm text-light" data-i18n="po_intro">Precast orders synced from the Sales System. Sales owns the commercial data — precast operations adds design, production and delivery execution.</p>
+
+        <div class="flex flex-wrap items-center gap-3">
+          <div class="flex flex-wrap gap-2" id="po-chips"></div>
+          <div class="relative flex-1 min-w-[200px] max-w-sm ms-auto">
+            <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-light text-[20px] rtl-icon-r">search</span>
+            <input id="po-search" type="text" data-i18n-ph="ph_search_req" placeholder="Search requests…" oninput="render()"
+              class="rtl-search w-full pl-10 pr-4 py-2 bg-surface border border-border rounded text-sm text-dark placeholder-light focus:outline-none focus:border-primary"/>
+          </div>
+        </div>
+
+        <div id="po-container" class="space-y-5"></div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="po-toast" class="hidden fixed bottom-6 right-6 z-50 bg-primary text-white text-sm font-semibold px-5 py-3 rounded shadow-lg flex items-center gap-2 max-w-md">
+    <span class="material-symbols-outlined text-[18px]">check_circle</span>
+    <span id="po-toast-msg">Done</span>
+  </div>
+
+  <script src="js/dash-data.js?v=8"></script>
+  <script>
+    var D = window.JehanData;
+    var activeFilter = 'open';
+
+    var AUTH_I18N = { 'Pending Review': 'ops_pending_review', 'Authorized': 'ops_authorized', 'On Hold': 'ops_on_hold' };
+    var DS_I18N = { 'Awaiting Drawings': 'ds_awaiting', 'Design Approved': 'ds_approved' };
+    var PC_I18N = { 'Booked':'ops_booked','Design Review':'pc_design_review','Authorized':'ops_authorized','On Hold':'ops_on_hold',
+      'In Production':'pc_in_production','Ready in Yard':'pc_ready_yard','Delivering':'pc_delivering',
+      'Delayed':'ops_delayed','Completed':'ops_completed' };
+    function t18(key, fb) { return '<span data-i18n="' + key + '">' + fb + '</span>'; }
+    function toast(key, fallback, extra) {
+      var el = document.getElementById('po-toast');
+      document.getElementById('po-toast-msg').textContent =
+        (extra != null ? extra + ' ' : '') + (window.dashT ? window.dashT(key, fallback) : fallback);
+      el.classList.remove('hidden');
+      setTimeout(function () { el.classList.add('hidden'); }, 3000);
+    }
+
+    function renderChips() {
+      var orders = D.getPcOrders();
+      var defs = [
+        ['open',      'task_open',          'Open',           orders.filter(function (o) { return !o.completed; }).length],
+        ['design',    'pc_design_review',   'Design Review',  orders.filter(function (o) { return !o.completed && o.designStatus !== 'Design Approved'; }).length],
+        ['authorized','ops_authorized',     'Authorized',     orders.filter(function (o) { return !o.completed && o.authStatus === 'Authorized'; }).length],
+        ['hold',      'ops_on_hold',        'On Hold',        orders.filter(function (o) { return !o.completed && o.authStatus === 'On Hold'; }).length],
+        ['completed', 'ops_completed',      'Completed',      orders.filter(function (o) { return o.completed; }).length],
+        ['all',       'task_all',           'All',            orders.length]
+      ];
+      document.getElementById('po-chips').innerHTML = defs.map(function (d) {
+        var active = activeFilter === d[0];
+        return '<button onclick="setFilter(\'' + d[0] + '\')" class="px-3 py-1.5 rounded-full border text-xs font-bold transition-colors ' +
+          (active ? 'bg-primary text-white border-primary' : 'bg-surface text-mid border-border hover:border-primary hover:text-primary') + '">' +
+          t18(d[1], d[2]) + ' <span class="opacity-70">(' + d[3] + ')</span></button>';
+      }).join('');
+    }
+    function setFilter(f) { activeFilter = f; render(); }
+
+    function commercialPanel(o) {
+      var released = o.commerciallyReleased
+        ? '<span class="inline-block bg-primary-lt/20 text-primary border border-primary-lt text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">✓</span>' : '';
+      function row(label, val) {
+        if (val === '' || val == null) return '';
+        return '<div><p class="text-[10px] font-bold uppercase tracking-widest text-light">' + label + '</p>' +
+          '<p class="text-sm font-semibold text-dark">' + D.escapeHtml(String(val)) + '</p></div>';
+      }
+      return '<div class="flex-1 p-5 bg-surface-dim/60">' +
+        '<p class="text-[11px] font-bold uppercase tracking-widest text-light mb-3 flex items-center gap-2">' +
+          '<span class="material-symbols-outlined text-[15px]">lock</span>' + t18('oo_commercial', 'Commercial (from Sales — read only)') + ' ' + released + '</p>' +
+        '<div class="flex items-center gap-2 mb-3"><p class="text-xs font-semibold text-light uppercase tracking-widest">' + D.escapeHtml(o.ref || '') + '</p></div>' +
+        '<h2 class="font-heading text-xl font-bold text-dark mb-3">' + D.escapeHtml(o.client) + '</h2>' +
+        '<div class="grid grid-cols-2 gap-3">' +
+          row('Project', o.project) + row('Site', o.site) +
+          row(window.dashT ? window.dashT('pp_element', 'Element') : 'Element', o.element) +
+          row(window.dashT ? window.dashT('po_units', 'units') : 'units', o.quantity) +
+          row('Delivery', o.deliveryDate ? D.fmtDate(o.deliveryDate) : '') +
+          row('Phone', o.phone) +
+        '</div>' +
+      '</div>';
+    }
+
+    function executionPanel(o) {
+      var casts = D.castingsForOrder(o.id);
+      var dels = D.deliveriesForOrder(o.id);
+      var st = D.pcOrderStatus(o);
+      var yard = D.unitsInYard(o.id);
+      var delivered = D.unitsDelivered(o.id);
+      var authOpts = D.AUTH_STATUSES.map(function (s) {
+        return '<option value="' + s + '"' + (o.authStatus === s ? ' selected' : '') + ' data-i18n="' + AUTH_I18N[s] + '">' + s + '</option>';
+      }).join('');
+      var dsOpts = D.DESIGN_STATUSES.map(function (s) {
+        return '<option value="' + s + '"' + (o.designStatus === s ? ' selected' : '') + ' data-i18n="' + DS_I18N[s] + '">' + s + '</option>';
+      }).join('');
+      var PRI = [['Urgent','pri_urgent'],['High','pri_high'],['Normal','pri_normal'],['Low','pri_low']];
+      var priOpts = PRI.map(function (p) {
+        return '<option value="' + p[0] + '"' + ((o.priority || 'Normal') === p[0] ? ' selected' : '') + ' data-i18n="' + p[1] + '">' + p[0] + '</option>';
+      }).join('');
+
+      if (o.completed) {
+        return '<div class="lg:w-80 border-t lg:border-t-0 lg:border-s border-border p-5 flex flex-col gap-3 flex-shrink-0">' +
+          '<p class="text-[11px] font-bold uppercase tracking-widest text-light">' + t18('oo_execution', 'Execution (operations)') + '</p>' +
+          '<span class="' + D.statusPill('Completed') + ' text-xs font-semibold px-3 py-1 rounded-full self-start" data-i18n="ops_completed">Completed</span>' +
+          '<p class="text-xs text-light">' + casts.length + ' ' + t18('po_castings', 'castings') + ' · ' + dels.length + ' ' + t18('po_deliveries', 'deliveries') + '</p>' +
+        '</div>';
+      }
+
+      return '<div class="lg:w-80 border-t lg:border-t-0 lg:border-s border-border p-5 flex flex-col gap-3 flex-shrink-0">' +
+        '<div class="flex items-center justify-between">' +
+          '<p class="text-[11px] font-bold uppercase tracking-widest text-light">' + t18('oo_execution', 'Execution (operations)') + '</p>' +
+          '<span class="' + D.statusPill(st) + ' text-[11px] font-semibold px-2.5 py-0.5 rounded-full"' + (PC_I18N[st] ? ' data-i18n="' + PC_I18N[st] + '"' : '') + '>' + st + '</span>' +
+        '</div>' +
+        '<div class="grid grid-cols-2 gap-2">' +
+          '<div><label class="block text-[10px] font-bold uppercase tracking-widest text-light mb-1">' + t18('po_design', 'Design Status') + '</label>' +
+            '<select id="ds-' + o.id + '" class="w-full text-xs font-semibold border border-border rounded px-2 py-2 bg-bg text-dark focus:outline-none focus:border-primary">' + dsOpts + '</select></div>' +
+          '<div><label class="block text-[10px] font-bold uppercase tracking-widest text-light mb-1">' + t18('oo_auth_status', 'Authorization') + '</label>' +
+            '<select id="auth-' + o.id + '" class="w-full text-xs font-semibold border border-border rounded px-2 py-2 bg-bg text-dark focus:outline-none focus:border-primary">' + authOpts + '</select></div>' +
+        '</div>' +
+        '<div><label class="block text-[10px] font-bold uppercase tracking-widest text-light mb-1">' + t18('oo_priority', 'Job Priority') + '</label>' +
+          '<select id="pri-' + o.id + '" class="w-full text-xs border border-border rounded px-2 py-2 bg-bg text-dark focus:outline-none focus:border-primary">' + priOpts + '</select></div>' +
+        '<textarea id="notes-' + o.id + '" rows="2" data-i18n-ph="oo_notes" placeholder="Operational Notes" class="w-full text-xs border border-border rounded px-2 py-2 bg-bg text-dark focus:outline-none focus:border-primary resize-none">' + D.escapeHtml(o.notes || '') + '</textarea>' +
+        '<div class="bg-surface-dim rounded p-2.5 grid grid-cols-2 gap-2 text-center">' +
+          '<div><p class="text-base font-bold text-primary">' + yard + '</p><p class="text-[10px] uppercase tracking-wide text-light">' + t18('po_yard', 'In yard') + '</p></div>' +
+          '<div><p class="text-base font-bold text-dark">' + delivered + '</p><p class="text-[10px] uppercase tracking-wide text-light">' + t18('po_delivered_n', 'Delivered') + '</p></div>' +
+        '</div>' +
+        '<div class="flex items-center justify-between gap-2">' +
+          '<span class="text-xs">' +
+            '<a href="pc-production.html" class="font-bold text-primary hover:underline">' + casts.length + ' ' + t18('po_castings', 'castings') + '</a>' +
+            ' · <a href="pc-delivery.html" class="font-bold text-primary hover:underline">' + dels.length + ' ' + t18('po_deliveries', 'deliveries') + '</a>' +
+          '</span>' +
+          '<button onclick="saveOrder(' + o.id + ')" class="flex items-center gap-1.5 bg-primary hover:bg-primary-mid text-white text-xs font-bold px-3.5 py-2 rounded transition-colors"><span class="material-symbols-outlined text-[15px]">save</span>' + t18('btn_save', 'Save') + '</button>' +
+        '</div>' +
+        (o.authStatus === 'Authorized'
+          ? '<button onclick="completeOrder(' + o.id + ')" class="w-full border border-primary text-primary hover:bg-primary hover:text-white text-xs font-bold px-3 py-2 rounded transition-colors flex items-center justify-center gap-1.5">' +
+              '<span class="material-symbols-outlined text-[15px]">task_alt</span>' + t18('oo_mark_complete', 'Mark Job Completed') + '</button>' +
+            '<p class="text-[10px] text-light">' + t18('oo_completed_note', 'Completion is shared back to the Sales System (stage: Delivered).') + '</p>'
+          : '') +
+      '</div>';
+    }
+
+    function render() {
+      renderChips();
+      var q = (document.getElementById('po-search').value || '').trim().toLowerCase();
+      var orders = D.getPcOrders().filter(function (o) {
+        if (activeFilter === 'open' && o.completed) return false;
+        if (activeFilter === 'design' && (o.completed || o.designStatus === 'Design Approved')) return false;
+        if (activeFilter === 'authorized' && (o.completed || o.authStatus !== 'Authorized')) return false;
+        if (activeFilter === 'hold' && (o.completed || o.authStatus !== 'On Hold')) return false;
+        if (activeFilter === 'completed' && !o.completed) return false;
+        if (q && [o.ref, o.client, o.project, o.site, o.element].join(' ').toLowerCase().indexOf(q) === -1) return false;
+        return true;
+      });
+      var c = document.getElementById('po-container');
+      if (!orders.length) {
+        c.innerHTML = '<div class="bg-surface border border-border rounded py-16 text-center">' +
+          '<span class="material-symbols-outlined text-[40px] text-light">view_in_ar</span>' +
+          '<p class="font-bold text-dark mt-2">' + t18('po_none', 'No precast orders yet') + '</p>' +
+          '<p class="text-sm text-light mt-1">' + t18('po_none_d', 'Confirmed precast quotes from the Sales System will appear here automatically.') + '</p>' +
+        '</div>';
+      } else {
+        c.innerHTML = orders.map(function (o) {
+          return '<div class="bg-surface border border-border rounded shadow-[0_2px_12px_rgba(0,0,0,0.07)] overflow-hidden">' +
+            '<div class="flex flex-col lg:flex-row">' + commercialPanel(o) + executionPanel(o) + '</div></div>';
+        }).join('');
+      }
+      if (window.reapplyDashLang) window.reapplyDashLang();
+    }
+
+    function saveOrder(id) {
+      var o = D.getPcOrder(id); if (!o) return;
+      var newAuth = document.getElementById('auth-' + id).value;
+      var newDs = document.getElementById('ds-' + id).value;
+      D.updatePcOrder(id, {
+        authStatus: newAuth, designStatus: newDs,
+        priority: document.getElementById('pri-' + id).value,
+        notes: document.getElementById('notes-' + id).value.trim()
+      });
+      if (o.authStatus !== newAuth) D.logAudit('pc_auth_changed', (o.ref || '') + ': ' + o.authStatus + ' → ' + newAuth, id, o.ref);
+      if (o.designStatus !== newDs) D.logAudit('pc_design_changed', (o.ref || '') + ': ' + o.designStatus + ' → ' + newDs, id, o.ref);
+      render();
+      toast('toast_po_saved', 'Order updated');
+    }
+
+    function completeOrder(id) {
+      var o = D.getPcOrder(id); if (!o) return;
+      D.updatePcOrder(id, { completed: true, completedAt: new Date().toISOString() });
+      if (o.requestId != null && D.getRequest(o.requestId)) {
+        D.updateRequest(o.requestId, { stage: 'Closed' });
+      }
+      D.logAudit('pc_completed', (o.ref || '') + ' precast job completed — shared back to Sales as Closed', id, o.ref);
+      render();
+      toast('toast_po_completed', 'Job completed — Sales updated to Delivered');
+    }
+
+    function manualSync() {
+      var n = D.syncPcFromSales();
+      render();
+      toast('oo_synced_n', 'new order(s) synced', n);
+    }
+
+    var created = D.syncPcFromSales();
+    render();
+    if (created > 0) toast('oo_synced_n', 'new order(s) synced', created);
+    D.subscribe(function () { D.syncPcFromSales(); render(); });
+  </script>
+  <script src="js/dash-lang.js?v=9"></script>
+</body>
+</html>
