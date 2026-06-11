@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Delivery Planning - Jehan Holding Group</title>
+  <script src="js/auth.js?v=10"></script>
+  <script>if (!window.JehanAuth || !window.JehanAuth.enforce('precast')) { /* halted by redirect */ }</script>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600;700&family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+  <script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          primary:       '#3D5A34',
+          'primary-mid': '#5C7A48',
+          'primary-lt':  '#8CAE78',
+          gold:          '#C49A1A',
+          'gold-hover':  '#A07D10',
+          bg:            '#F2F1EE',
+          surface:       '#FFFFFF',
+          'surface-dim': '#F8F7F4',
+          'surface-mid': '#EEEDE9',
+          'surface-high':'#E4E3DF',
+          dark:          '#1E1E1E',
+          mid:           '#444444',
+          light:         '#888888',
+          border:        '#DCDBD7',
+          error:         '#ba1a1a',
+          'error-bg':    '#ffdad6',
+          'gold-bg':     '#FBF0C4',
+        },
+        fontFamily: {
+          heading: ['"Barlow Condensed"', 'Arial', 'sans-serif'],
+          body:    ['Barlow', 'Arial', 'sans-serif'],
+        },
+        borderRadius: { DEFAULT: '4px', full: '9999px' },
+      }
+    }
+  };
+  </script>
+  <style>
+    body { font-family: 'Barlow', Arial, sans-serif; }
+    h1,h2,h3,h4,h5 { font-family: 'Barlow Condensed', Arial, sans-serif; font-weight: 700; letter-spacing: 0.02em; }
+    .material-symbols-outlined { font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24; }
+  </style>
+</head>
+<body class="bg-bg text-dark h-screen flex overflow-hidden">
+
+  <aside class="w-64 h-full flex flex-col bg-surface border-r border-border flex-shrink-0" data-nav></aside>
+  <script src="js/dash-nav.js?v=3"></script>
+
+  <div class="flex-1 flex flex-col overflow-hidden">
+
+    <header class="bg-surface border-b border-border h-16 flex items-center justify-between px-8 flex-shrink-0 gap-4">
+      <h1 class="font-heading font-bold text-2xl uppercase tracking-wide text-dark" data-i18n="page_pc_delivery">Delivery Planning</h1>
+    </header>
+
+    <div class="flex-1 overflow-y-auto p-8">
+      <div class="max-w-6xl mx-auto space-y-5">
+
+        <!-- Status lanes -->
+        <div class="bg-surface border border-border rounded shadow-[0_2px_12px_rgba(0,0,0,0.07)] p-5">
+          <div id="pd-lanes" class="flex flex-wrap gap-2"></div>
+        </div>
+
+        <!-- Exception alerts -->
+        <div class="bg-surface border border-border rounded shadow-[0_2px_12px_rgba(0,0,0,0.07)]">
+          <div class="px-5 py-3 border-b border-border flex items-center gap-2">
+            <span class="material-symbols-outlined text-error text-[20px]">notification_important</span>
+            <h2 class="text-base uppercase tracking-wide" data-i18n="ob_alerts">Exception Alerts</h2>
+          </div>
+          <div id="pd-alerts" class="p-4 space-y-2"></div>
+        </div>
+
+        <!-- Orders + deliveries -->
+        <div id="pd-orders" class="space-y-5"></div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Delay reason modal -->
+  <div id="pd-reason-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div class="absolute inset-0 bg-black/40" onclick="closeReason()"></div>
+    <div class="relative bg-surface rounded-lg shadow-xl w-full max-w-sm">
+      <div class="px-6 py-4 border-b border-border">
+        <h3 class="text-lg font-bold text-dark" data-i18n="ob_delay_reason">Delay Reason</h3>
+      </div>
+      <div class="p-6 space-y-2" id="pd-reason-options"></div>
+      <div class="px-6 py-4 border-t border-border flex gap-3 justify-end">
+        <button onclick="closeReason()" class="px-5 py-2 border border-border rounded text-sm font-semibold text-mid hover:bg-surface-mid transition-colors" data-i18n="btn_cancel">Cancel</button>
+        <button onclick="confirmReason()" class="flex items-center gap-2 bg-error hover:opacity-90 text-white text-sm font-semibold px-5 py-2 rounded transition-colors">
+          <span class="material-symbols-outlined text-[18px]">flag</span><span data-i18n="btn_save">Save</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="pd-toast" class="hidden fixed bottom-6 right-6 z-50 bg-primary text-white text-sm font-semibold px-5 py-3 rounded shadow-lg flex items-center gap-2 max-w-md">
+    <span class="material-symbols-outlined text-[18px]">check_circle</span>
+    <span id="pd-toast-msg">Done</span>
+  </div>
+
+  <script src="js/dash-data.js?v=8"></script>
+  <script>
+    var D = window.JehanData;
+    var DEL_I18N = { 'Planned':'pc_planned','Loading':'ops_loading','En Route':'ops_en_route','Delivered':'pc_delivered' };
+    var DLY_I18N = { 'Traffic':'dly_traffic','Plant Breakdown':'dly_plant','Pump Breakdown':'dly_pump','Truck Breakdown':'dly_truck',
+      'Site Not Ready':'dly_site','Weather':'dly_weather','Quality Issue':'dly_quality','Customer Delay':'dly_customer','Other':'dly_other' };
+    var PC_I18N = { 'Booked':'ops_booked','Design Review':'pc_design_review','Authorized':'ops_authorized','On Hold':'ops_on_hold',
+      'In Production':'pc_in_production','Ready in Yard':'pc_ready_yard','Delivering':'pc_delivering',
+      'Delayed':'ops_delayed','Completed':'ops_completed' };
+
+    function t18(key, fb) { return '<span data-i18n="' + key + '">' + fb + '</span>'; }
+    function toast(key, fb) {
+      var el = document.getElementById('pd-toast');
+      document.getElementById('pd-toast-msg').textContent = window.dashT ? window.dashT(key, fb) : fb;
+      el.classList.remove('hidden');
+      setTimeout(function () { el.classList.add('hidden'); }, 2800);
+    }
+    function todayKey() { return new Date().toISOString().slice(0, 10); }
+
+    function openOrders() {
+      return D.getPcOrders().filter(function (o) { return !o.completed && o.authStatus === 'Authorized'; })
+        .sort(function (a, b) {
+          var P = { 'Urgent': 0, 'High': 1, 'Normal': 2, 'Low': 3 };
+          return (P[a.priority] || 2) - (P[b.priority] || 2);
+        });
+    }
+
+    function renderLanes() {
+      var counts = {};
+      D.getDeliveries().forEach(function (d) {
+        var key = d.delayReason && d.status !== 'Delivered' ? 'Delayed' : d.status;
+        counts[key] = (counts[key] || 0) + 1;
+      });
+      var ORDER = ['Planned', 'Loading', 'En Route', 'Delayed', 'Delivered'];
+      var I18N = { 'Planned':'pc_planned','Loading':'ops_loading','En Route':'ops_en_route','Delayed':'ops_delayed','Delivered':'pc_delivered' };
+      document.getElementById('pd-lanes').innerHTML = ORDER.map(function (st) {
+        var n = counts[st] || 0;
+        return '<div class="' + D.statusPill(st) + ' rounded-full px-3 py-1.5 text-xs font-bold' + (n === 0 ? ' opacity-40' : '') + '">' +
+          t18(I18N[st], st) + ' · ' + n + '</div>';
+      }).join('');
+    }
+    function renderAlerts() {
+      var alerts = [];
+      D.getDeliveries().forEach(function (d) {
+        var o = D.getPcOrder(d.orderId);
+        if (d.delayReason && d.status !== 'Delivered') {
+          alerts.push({ icon: 'schedule', cls: 'border-error/30 bg-error-bg/40 text-error',
+            html: '<strong>' + D.escapeHtml(o ? o.client : '') + '</strong> — ' + t18('pd_alert_delay', 'Delivery delayed') + ': ' + t18(DLY_I18N[d.delayReason] || 'dly_other', d.delayReason) });
+        }
+        // yard-short: planned load exceeds what's in the yard
+        if (o && d.status === 'Planned') {
+          var u = parseFloat(d.units) || 0;
+          if (u > D.unitsInYard(o.id)) {
+            alerts.push({ icon: 'warehouse', cls: 'border-gold bg-gold-bg/50 text-gold-hover',
+              html: '<strong>' + D.escapeHtml(o.client) + '</strong> — ' + t18('pd_yard_short', 'Units in yard are less than this load') });
+          }
+        }
+      });
+      var c = document.getElementById('pd-alerts');
+      c.innerHTML = alerts.length
+        ? alerts.map(function (a) {
+            return '<div class="flex items-center gap-2.5 border rounded p-2.5 text-xs font-semibold ' + a.cls + '">' +
+              '<span class="material-symbols-outlined text-[18px]">' + a.icon + '</span><span>' + a.html + '</span></div>';
+          }).join('')
+        : '<p class="text-xs text-light text-center py-2" data-i18n="ob_no_alerts">No exceptions — operations running clean.</p>';
+    }
+
+    function trailerOpts(selected) {
+      var list = D.getAssets('trailer').filter(function (a) { return a.status !== 'Maintenance' || a.id === selected; });
+      var html = '<option value="" data-i18n="pd_no_trailer">— No trailer —</option>';
+      html += list.map(function (a) {
+        return '<option value="' + a.id + '"' + (selected === a.id ? ' selected' : '') + '>' + D.escapeHtml(a.name) + '</option>';
+      }).join('');
+      return html;
+    }
+    function nextMilestone(d) {
+      var i = D.DELIVERY_MILESTONES.indexOf(d.status);
+      return (i >= 0 && i < D.DELIVERY_MILESTONES.length - 1) ? D.DELIVERY_MILESTONES[i + 1] : null;
+    }
+    function delRow(d) {
+      var nxt = nextMilestone(d);
+      var done = d.status === 'Delivered';
+      return '<div class="border ' + (d.delayReason && !done ? 'border-error/40' : 'border-border') + ' rounded p-3 ' + (done ? 'opacity-75' : '') + '">' +
+        '<div class="flex flex-wrap items-center gap-2.5">' +
+          '<input type="date" value="' + (d.day || '') + '" onchange="patchDel(' + d.id + ', { day: this.value })" class="text-xs border border-border rounded px-2 py-1.5 bg-bg"/>' +
+          '<select onchange="setTrailer(' + d.id + ', this.value)" class="text-xs border border-border rounded px-2 py-1.5 bg-bg max-w-[150px]">' + trailerOpts(d.trailerId) + '</select>' +
+          '<input type="text" value="' + D.escapeHtml(d.driver || '') + '" onchange="patchDel(' + d.id + ', { driver: this.value })" data-i18n-ph="ob_driver" placeholder="Driver" class="text-xs border border-border rounded px-2 py-1.5 bg-bg w-28"/>' +
+          '<input type="number" min="0" step="any" value="' + (d.units != null && d.units !== '' ? d.units : '') + '" onchange="patchDel(' + d.id + ', { units: parseFloat(this.value) || 0 })" data-i18n-ph="pp_units" placeholder="Units" class="text-xs border border-border rounded px-2 py-1.5 bg-bg w-20"/>' +
+          '<input type="text" value="' + D.escapeHtml(d.items || '') + '" onchange="patchDel(' + d.id + ', { items: this.value })" data-i18n-ph="pd_items" placeholder="Load List" class="text-xs border border-border rounded px-2 py-1.5 bg-bg flex-1 min-w-[140px]"/>' +
+          '<span class="' + D.statusPill(d.status) + ' text-[11px] font-bold px-2.5 py-1 rounded-full whitespace-nowrap" data-i18n="' + (DEL_I18N[d.status] || '') + '">' + d.status + '</span>' +
+          (d.delayReason ? '<span class="text-[11px] font-bold text-error">⏱ ' + t18(DLY_I18N[d.delayReason] || 'dly_other', d.delayReason) + '</span>' : '') +
+          '<span class="ms-auto flex items-center gap-1">' +
+            (nxt
+              ? '<button onclick="advanceDel(' + d.id + ')" class="flex items-center gap-1 bg-primary hover:bg-primary-mid text-white text-[11px] font-bold px-2.5 py-1.5 rounded transition-colors"><span class="material-symbols-outlined text-[14px]">arrow_forward</span>' + t18(DEL_I18N[nxt], nxt) + '</button>'
+              : '') +
+            (!done
+              ? '<button onclick="openReason(' + d.id + ')" title="Flag delay" class="p-1.5 rounded text-gold-hover hover:bg-gold-bg transition-colors"><span class="material-symbols-outlined text-[18px]">schedule</span></button>'
+              : '') +
+            '<button onclick="removeDel(' + d.id + ')" class="p-1.5 rounded text-light hover:text-error hover:bg-error-bg transition-colors"><span class="material-symbols-outlined text-[18px]">delete</span></button>' +
+          '</span>' +
+        '</div>' +
+      '</div>';
+    }
+    function orderCard(o) {
+      var dels = D.deliveriesForOrder(o.id);
+      var st = D.pcOrderStatus(o);
+      var yard = D.unitsInYard(o.id);
+      var delivered = D.unitsDelivered(o.id);
+      var target = parseFloat(o.quantity) || 0;
+      return '<div class="bg-surface border border-border rounded shadow-[0_2px_12px_rgba(0,0,0,0.07)] p-5">' +
+        '<div class="flex flex-wrap items-center gap-2.5 mb-3">' +
+          '<span class="' + D.statusPill(st) + ' text-xs font-bold px-3 py-1 rounded-full"' + (PC_I18N[st] ? ' data-i18n="' + PC_I18N[st] + '"' : '') + '>' + st + '</span>' +
+          '<h2 class="font-heading text-lg font-bold text-dark">' + D.escapeHtml(o.client) + '</h2>' +
+          '<span class="text-xs text-light">' + D.escapeHtml(o.ref || '') +
+            (o.site ? ' · ' + D.escapeHtml(o.site) : '') +
+            (o.element ? ' · ' + D.escapeHtml(o.element) : '') + '</span>' +
+          '<span class="text-xs"><span class="font-bold text-primary">' + yard + '</span> ' + t18('pd_yard_ready', 'Ready in yard') +
+            (target ? ' · <span class="font-bold text-dark">' + delivered + ' / ' + target + '</span> ' + t18('po_delivered_n', 'Delivered') : '') + '</span>' +
+          '<span class="ms-auto">' +
+            '<button onclick="newDel(' + o.id + ')" class="flex items-center gap-1.5 bg-gold hover:bg-gold-hover text-white text-xs font-bold px-3.5 py-2 rounded transition-colors"><span class="material-symbols-outlined text-[15px]">add</span>' + t18('pd_add', 'Add Delivery') + '</button>' +
+          '</span>' +
+        '</div>' +
+        (dels.length ? '<div class="space-y-2">' + dels.map(delRow).join('') + '</div>'
+          : '<p class="text-xs text-light" data-i18n="pd_none">No deliveries planned.</p>') +
+      '</div>';
+    }
+
+    function render() {
+      D.syncPcFromSales();
+      renderLanes(); renderAlerts();
+      var orders = openOrders();
+      var c = document.getElementById('pd-orders');
+      c.innerHTML = orders.length
+        ? orders.map(orderCard).join('')
+        : '<div class="bg-surface border border-border rounded py-16 text-center">' +
+            '<span class="material-symbols-outlined text-[40px] text-light">local_shipping</span>' +
+            '<p class="text-sm text-light mt-2" data-i18n="pp_no_orders">No authorized precast orders in production.</p></div>';
+      if (window.reapplyDashLang) window.reapplyDashLang();
+    }
+
+    // ── Delivery actions ───────────────────────────────────────
+    function newDel(orderId) {
+      var o = D.getPcOrder(orderId);
+      D.addDelivery({
+        id: undefined, orderId: orderId, day: o && o.deliveryDate && o.deliveryDate >= todayKey() ? o.deliveryDate : todayKey(),
+        trailerId: null, driver: '', units: '', items: '',
+        status: 'Planned', delayReason: '', times: {}
+      });
+      D.logAudit('delivery_created', (o ? o.ref : '') + ' delivery planned', orderId, o ? o.ref : '');
+      render();
+      toast('toast_del_saved', 'Delivery saved');
+    }
+    function patchDel(id, patch) { D.updateDelivery(id, patch); render(); }
+    function setTrailer(id, value) {
+      var d = D.getDelivery(id); if (!d) return;
+      var trailerId = value ? parseInt(value, 10) : null;
+      if (trailerId != null) {
+        var busy = D.getDeliveries().some(function (x) {
+          return x.id !== id && x.trailerId === trailerId && x.day === d.day &&
+            ['Delivered'].indexOf(x.status) === -1;
+        });
+        if (busy) toast('ob_busy_warn', 'This asset is already assigned to another active trip on this day.');
+        var a = D.getAsset(trailerId);
+        var patch = { trailerId: trailerId };
+        if (a && a.operator && !d.driver) patch.driver = a.operator;
+        D.updateDelivery(id, patch);
+      } else {
+        D.updateDelivery(id, { trailerId: null });
+      }
+      render();
+    }
+    function advanceDel(id) {
+      var d = D.getDelivery(id); if (!d) return;
+      var nxt = nextMilestone(d); if (!nxt) return;
+      var times = d.times || {}; times[nxt] = new Date().toISOString();
+      D.updateDelivery(id, { status: nxt, times: times });
+      var o = D.getPcOrder(d.orderId);
+      D.logAudit('delivery_status', (o ? o.ref : '') + ' delivery → ' + nxt, d.orderId, o ? o.ref : '');
+      if (d.trailerId != null) {
+        D.updateAsset(d.trailerId, { status: nxt === 'Delivered' ? 'Available' : 'On Trip' });
+      }
+      render();
+    }
+    function removeDel(id) {
+      var d = D.getDelivery(id);
+      D.deleteDelivery(id);
+      if (d) {
+        var o = D.getPcOrder(d.orderId);
+        D.logAudit('delivery_deleted', (o ? o.ref : '') + ' delivery removed', d.orderId, o ? o.ref : '');
+      }
+      render();
+      toast('toast_del_deleted', 'Delivery removed');
+    }
+
+    // ── Delay reason ───────────────────────────────────────────
+    var reasonDelId = null;
+    function openReason(id) {
+      reasonDelId = id;
+      document.getElementById('pd-reason-options').innerHTML = D.DELAY_REASONS.map(function (rr, i) {
+        return '<label class="flex items-center gap-2.5 p-2.5 border border-border rounded cursor-pointer hover:bg-surface-dim transition-colors">' +
+          '<input type="radio" name="pdr" value="' + rr + '"' + (i === 0 ? ' checked' : '') + ' class="accent-primary"/>' +
+          '<span class="text-sm font-semibold text-dark" data-i18n="' + DLY_I18N[rr] + '">' + rr + '</span></label>';
+      }).join('');
+      document.getElementById('pd-reason-modal').classList.remove('hidden');
+      if (window.reapplyDashLang) window.reapplyDashLang();
+    }
+    function closeReason() { document.getElementById('pd-reason-modal').classList.add('hidden'); reasonDelId = null; }
+    function confirmReason() {
+      if (reasonDelId == null) return;
+      var sel = document.querySelector('#pd-reason-options input:checked');
+      var reason = sel ? sel.value : 'Other';
+      var d = D.getDelivery(reasonDelId);
+      var o = d ? D.getPcOrder(d.orderId) : null;
+      D.updateDelivery(reasonDelId, { delayReason: reason });
+      D.logAudit('delivery_delayed', (o ? o.ref : '') + ' — ' + reason, d ? d.orderId : null, o ? o.ref : '');
+      closeReason();
+      render();
+    }
+
+    render();
+    D.subscribe(render);
+  </script>
+  <script src="js/dash-lang.js?v=9"></script>
+</body>
+</html>

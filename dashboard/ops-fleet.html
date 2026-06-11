@@ -4,7 +4,7 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Fleet & Master Data - Jehan Holding Group</title>
-  <script src="js/auth.js?v=9"></script>
+  <script src="js/auth.js?v=10"></script>
   <script>if (!window.JehanAuth || !window.JehanAuth.enforce('operations')) { /* halted by redirect */ }</script>
   <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600;700&family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet"/>
@@ -50,7 +50,7 @@
 <body class="bg-bg text-dark h-screen flex overflow-hidden">
 
   <aside class="w-64 h-full flex flex-col bg-surface border-r border-border flex-shrink-0" data-nav></aside>
-  <script src="js/dash-nav.js?v=2"></script>
+  <script src="js/dash-nav.js?v=3"></script>
 
   <div class="flex-1 flex flex-col overflow-hidden">
 
@@ -156,17 +156,19 @@
     <span id="fl-toast-msg">Done</span>
   </div>
 
-  <script src="js/dash-data.js?v=7"></script>
+  <script src="js/dash-data.js?v=8"></script>
   <script>
     var D = window.JehanData;
     var activeKind = 'mixer';
     var editingId = null;
 
     var KINDS = [
-      ['plant', 'fl_plants', 'Plants', 'factory'],
-      ['mixer', 'fl_mixers', 'Mixer Trucks', 'local_shipping'],
-      ['pump',  'fl_pumps',  'Pump Trucks', 'precision_manufacturing'],
-      ['staff', 'fl_staff',  'Plant Staff', 'engineering']
+      ['plant',   'fl_plants',   'Plants', 'factory'],
+      ['mixer',   'fl_mixers',   'Mixer Trucks', 'local_shipping'],
+      ['pump',    'fl_pumps',    'Pump Trucks', 'precision_manufacturing'],
+      ['mold',    'fl_molds',    'Molds & Lines', 'view_in_ar'],
+      ['trailer', 'fl_trailers', 'Trailers', 'rv_hookup'],
+      ['staff',   'fl_staff',    'Plant Staff', 'engineering']
     ];
     var ST_I18N = { 'Available': 'ast_available', 'On Trip': 'ast_on_trip', 'Maintenance': 'ast_maintenance' };
     function t18(key, fb) { return '<span data-i18n="' + key + '">' + fb + '</span>'; }
@@ -184,6 +186,12 @@
     }
     function tripsToday(assetId) {
       var tk = new Date().toISOString().slice(0, 10);
+      if (activeKind === 'mold') {
+        return D.getCastings().filter(function (c) { return c.day === tk && c.lineId === assetId; }).length;
+      }
+      if (activeKind === 'trailer') {
+        return D.getDeliveries().filter(function (d) { return d.day === tk && d.trailerId === assetId; }).length;
+      }
       return D.getTrips().filter(function (t) {
         return t.day === tk && (t.truckId === assetId || t.pumpId === assetId);
       }).length;
@@ -303,6 +311,6 @@
     render();
     D.subscribe(render);
   </script>
-  <script src="js/dash-lang.js?v=8"></script>
+  <script src="js/dash-lang.js?v=9"></script>
 </body>
 </html>

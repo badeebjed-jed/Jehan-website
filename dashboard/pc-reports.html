@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Operations Reports - Jehan Holding Group</title>
+  <title>Precast Reports - Jehan Holding Group</title>
   <script src="js/auth.js?v=10"></script>
-  <script>if (!window.JehanAuth || !window.JehanAuth.enforce('operations')) { /* halted by redirect */ }</script>
+  <script>if (!window.JehanAuth || !window.JehanAuth.enforce('precast')) { /* halted by redirect */ }</script>
   <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600;700&family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet"/>
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
@@ -62,9 +62,9 @@
   <div class="flex-1 flex flex-col overflow-hidden">
 
     <header class="bg-surface border-b border-border h-16 flex items-center justify-between px-8 flex-shrink-0 gap-4 print-hide">
-      <h1 class="font-heading font-bold text-2xl uppercase tracking-wide text-dark" data-i18n="page_ops_reports">Operations Reports & Analytics</h1>
+      <h1 class="font-heading font-bold text-2xl uppercase tracking-wide text-dark" data-i18n="page_pc_reports">Precast Reports & Analytics</h1>
       <div class="flex items-center gap-2 flex-shrink-0">
-        <button onclick="exportOpsCsv()" class="flex items-center gap-2 px-4 py-2 border border-primary text-primary rounded text-sm font-semibold hover:bg-primary hover:text-white transition-colors">
+        <button onclick="exportPcCsv()" class="flex items-center gap-2 px-4 py-2 border border-primary text-primary rounded text-sm font-semibold hover:bg-primary hover:text-white transition-colors">
           <span class="material-symbols-outlined text-[18px]">download</span>
           <span data-i18n="rpt_export_csv">Export CSV</span>
         </button>
@@ -79,31 +79,31 @@
       <div class="max-w-6xl mx-auto space-y-6">
 
         <!-- KPI tiles -->
-        <div id="or-tiles" class="grid grid-cols-2 md:grid-cols-4 gap-4"></div>
+        <div id="pr-tiles" class="grid grid-cols-2 md:grid-cols-4 gap-4"></div>
 
-        <!-- Production planned vs actual -->
+        <!-- Output cast vs delivered -->
         <div class="bg-surface border border-border rounded shadow-[0_2px_12px_rgba(0,0,0,0.07)]">
-          <div class="px-6 py-4 border-b border-border"><h2 class="font-heading text-xl font-bold text-dark" data-i18n="or_production">Production — Planned vs Actual (7 days)</h2></div>
-          <div id="or-production" class="p-6 space-y-3"></div>
+          <div class="px-6 py-4 border-b border-border"><h2 class="font-heading text-xl font-bold text-dark" data-i18n="pr_output">Production Output — Cast vs Delivered (7 days)</h2></div>
+          <div id="pr-output" class="p-6 space-y-3"></div>
         </div>
 
         <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
-          <!-- Delays by reason -->
+          <!-- QC failures -->
           <div class="bg-surface border border-border rounded shadow-[0_2px_12px_rgba(0,0,0,0.07)]">
-            <div class="px-6 py-4 border-b border-border"><h2 class="font-heading text-xl font-bold text-dark" data-i18n="or_delays">Delays by Reason</h2></div>
-            <div id="or-delays" class="p-6 space-y-2.5"></div>
+            <div class="px-6 py-4 border-b border-border"><h2 class="font-heading text-xl font-bold text-dark" data-i18n="pr_qc_fails">QC Failures by Reason</h2></div>
+            <div id="pr-qc" class="p-6 space-y-2.5"></div>
           </div>
-          <!-- Rejected loads -->
+          <!-- Output by element -->
           <div class="bg-surface border border-border rounded shadow-[0_2px_12px_rgba(0,0,0,0.07)]">
-            <div class="px-6 py-4 border-b border-border"><h2 class="font-heading text-xl font-bold text-dark" data-i18n="or_rejected">Rejected Loads</h2></div>
-            <div id="or-rejected" class="p-6 space-y-2.5"></div>
+            <div class="px-6 py-4 border-b border-border"><h2 class="font-heading text-xl font-bold text-dark" data-i18n="pr_elements">Output by Element</h2></div>
+            <div id="pr-elements" class="p-6 space-y-2.5"></div>
           </div>
         </div>
 
         <!-- Client service performance -->
         <div class="bg-surface border border-border rounded shadow-[0_2px_12px_rgba(0,0,0,0.07)]">
           <div class="px-6 py-4 border-b border-border"><h2 class="font-heading text-xl font-bold text-dark" data-i18n="or_clients">Client Service Performance</h2></div>
-          <div id="or-clients" class="p-6 overflow-x-auto"></div>
+          <div id="pr-clients" class="p-6 overflow-x-auto"></div>
         </div>
 
       </div>
@@ -113,51 +113,40 @@
   <script src="js/dash-data.js?v=8"></script>
   <script>
     var D = window.JehanData;
-    var DLY_I18N = { 'Traffic':'dly_traffic','Plant Breakdown':'dly_plant','Pump Breakdown':'dly_pump','Truck Breakdown':'dly_truck',
-      'Site Not Ready':'dly_site','Weather':'dly_weather','Quality Issue':'dly_quality','Customer Delay':'dly_customer','Other':'dly_other' };
-    var REJ_I18N = { 'Slump Out of Spec':'rej_slump','Excess Wait Time':'rej_wait','Wrong Mix':'rej_mix','Site Rejection':'rej_site','Other':'rej_other' };
+    var QC_I18N = { 'Surface Defect':'qc_surface','Dimensional Error':'qc_dimension','Cracking':'qc_crack',
+      'Reinforcement Issue':'qc_rebar','Curing Problem':'qc_curing','Other':'qc_other' };
     function t18(key, fb) { return '<span data-i18n="' + key + '">' + fb + '</span>'; }
     function T(key, fb) { return window.dashT ? window.dashT(key, fb) : fb; }
     function pad(n) { return (n < 10 ? '0' : '') + n; }
     function dayKey(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
 
-    function activeTrips() {
-      return D.getTrips().filter(function (t) { return t.status !== 'Cancelled'; });
-    }
-    function deliveredQty(t) {
-      if (t.rejectReason) return 0;
-      if (['Discharging', 'Washout', 'Returned'].indexOf(t.status) === -1) return 0;
-      var q = parseFloat(t.qty); return isNaN(q) ? 0 : q;
-    }
+    function castUnits(c) { var u = parseFloat(c.units); return isNaN(u) ? 0 : u; }
 
     // ── KPI tiles ──────────────────────────────────────────────
     function renderTiles() {
-      var trips = activeTrips();
-      var finished = trips.filter(function (t) { return t.status === 'Returned'; });
+      var casts = D.getCastings();
+      var judged = casts.filter(function (c) { return c.status === 'In Yard' || c.qcFail; });
+      var qcRate = judged.length
+        ? Math.round(judged.filter(function (c) { return !c.qcFail; }).length / judged.length * 100) : 100;
+      var dels = D.getDeliveries();
+      var finished = dels.filter(function (d) { return d.status === 'Delivered'; });
       var onTime = finished.length
-        ? Math.round(finished.filter(function (t) { return !t.delayReason && !t.rejectReason; }).length / finished.length * 100) : 100;
-      var tas = finished.map(D.tripTurnaround).filter(function (m) { return m != null && m > 0; });
-      var avgTa = tas.length ? Math.round(tas.reduce(function (a, b) { return a + b; }, 0) / tas.length) : 0;
-      // utilization over the last 7 days: assets with >=1 trip / total
+        ? Math.round(finished.filter(function (d) { return !d.delayReason; }).length / finished.length * 100) : 100;
       var weekAgo = dayKey(new Date(Date.now() - 6 * 86400000));
-      var usedM = {}, usedP = {};
-      trips.forEach(function (t) {
-        if (t.day >= weekAgo) {
-          if (t.truckId != null) usedM[t.truckId] = true;
-          if (t.pumpId != null) usedP[t.pumpId] = true;
-        }
-      });
-      var mixers = D.getAssets('mixer').length;
-      var pumps = D.getAssets('pump').length;
-      var utilM = mixers ? Math.round(Object.keys(usedM).length / mixers * 100) : 0;
-      var utilP = pumps ? Math.round(Object.keys(usedP).length / pumps * 100) : 0;
+      var usedL = {}, usedT = {};
+      casts.forEach(function (c) { if (c.day >= weekAgo && c.lineId != null) usedL[c.lineId] = true; });
+      dels.forEach(function (d) { if (d.day >= weekAgo && d.trailerId != null) usedT[d.trailerId] = true; });
+      var lines = D.getAssets('mold').length;
+      var trailers = D.getAssets('trailer').length;
+      var utilL = lines ? Math.round(Object.keys(usedL).length / lines * 100) : 0;
+      var utilT = trailers ? Math.round(Object.keys(usedT).length / trailers * 100) : 0;
       var tiles = [
-        ['schedule', onTime + '%', 'or_ontime', 'On-Time Dispatch', onTime < 80 ? 'text-error' : 'text-primary'],
-        ['timer', avgTa + ' ' + T('or_mins', 'min'), 'or_turnaround', 'Avg Truck Turnaround', 'text-dark'],
-        ['local_shipping', utilM + '%', 'or_truck_util', 'Mixer Utilization', 'text-dark'],
-        ['precision_manufacturing', utilP + '%', 'or_pump_util', 'Pump Utilization', 'text-dark']
+        ['verified', qcRate + '%', 'pr_qc_rate', 'QC Pass Rate', qcRate < 90 ? 'text-error' : 'text-primary'],
+        ['schedule', onTime + '%', 'pr_ontime', 'On-Time Delivery', onTime < 80 ? 'text-error' : 'text-primary'],
+        ['conveyor_belt', utilL + '%', 'pr_line_util', 'Line Utilization', 'text-dark'],
+        ['rv_hookup', utilT + '%', 'pr_trailer_util', 'Trailer Utilization', 'text-dark']
       ];
-      document.getElementById('or-tiles').innerHTML = tiles.map(function (t) {
+      document.getElementById('pr-tiles').innerHTML = tiles.map(function (t) {
         return '<div class="bg-surface border border-border rounded p-4 flex items-center gap-3">' +
           '<span class="material-symbols-outlined text-primary text-[24px]">' + t[0] + '</span>' +
           '<div><p class="text-xl font-bold ' + t[4] + '">' + t[1] + '</p>' +
@@ -165,80 +154,108 @@
       }).join('');
     }
 
-    // ── Production planned vs actual (7 days) ──────────────────
-    function productionRows() {
+    // ── Output: cast vs delivered (7 days) ─────────────────────
+    function outputRows() {
       var rows = [];
       for (var i = 6; i >= 0; i--) {
         var k = dayKey(new Date(Date.now() - i * 86400000));
-        var planned = D.getOpsOrders().filter(function (o) { return o.deliveryDate === k && o.authStatus !== 'On Hold'; })
-          .reduce(function (s, o) { var q = parseFloat(o.quantity); return s + (isNaN(q) ? 0 : q); }, 0);
-        var actual = activeTrips().filter(function (t) { return t.day === k; })
-          .reduce(function (s, t) { return s + deliveredQty(t); }, 0);
-        rows.push({ day: k, planned: planned, actual: actual });
+        var cast = D.getCastings().filter(function (c) { return c.day === k && c.status === 'In Yard' && !c.qcFail; })
+          .reduce(function (s, c) { return s + castUnits(c); }, 0);
+        var del = D.getDeliveries().filter(function (d) { return d.day === k && d.status === 'Delivered'; })
+          .reduce(function (s, d) { var u = parseFloat(d.units); return s + (isNaN(u) ? 0 : u); }, 0);
+        rows.push({ day: k, cast: cast, del: del });
       }
       return rows;
     }
-    function renderProduction() {
-      var rows = productionRows();
-      var max = Math.max(1, Math.max.apply(null, rows.map(function (r) { return Math.max(r.planned, r.actual); })));
-      var any = rows.some(function (r) { return r.planned > 0 || r.actual > 0; });
-      var c = document.getElementById('or-production');
+    function renderOutput() {
+      var rows = outputRows();
+      var max = Math.max(1, Math.max.apply(null, rows.map(function (r) { return Math.max(r.cast, r.del); })));
+      var any = rows.some(function (r) { return r.cast > 0 || r.del > 0; });
+      var c = document.getElementById('pr-output');
       if (!any) { c.innerHTML = '<p class="text-sm text-light text-center py-4" data-i18n="or_no_data">No operational data yet.</p>'; return; }
       c.innerHTML = rows.map(function (r) {
-        var p1 = Math.round(r.planned / max * 100), p2 = Math.round(r.actual / max * 100);
+        var p1 = Math.round(r.cast / max * 100), p2 = Math.round(r.del / max * 100);
         return '<div class="flex items-center gap-3">' +
           '<span class="w-20 text-xs font-semibold text-mid">' + D.fmtDate(r.day) + '</span>' +
           '<div class="flex-1 space-y-1">' +
             '<div class="h-3 bg-surface-dim rounded-full overflow-hidden"><div class="h-full bg-primary-lt" style="width:' + p1 + '%"></div></div>' +
             '<div class="h-3 bg-surface-dim rounded-full overflow-hidden"><div class="h-full bg-primary" style="width:' + p2 + '%"></div></div>' +
           '</div>' +
-          '<span class="w-32 text-end text-xs"><span class="text-light">' + t18('or_planned', 'Planned') + ' <strong class="text-dark">' + r.planned + '</strong></span><br>' +
-          '<span class="text-light">' + t18('or_actual', 'Delivered') + ' <strong class="text-primary">' + r.actual + '</strong></span></span>' +
+          '<span class="w-32 text-end text-xs"><span class="text-light">' + t18('pr_cast', 'Cast') + ' <strong class="text-dark">' + r.cast + '</strong></span><br>' +
+          '<span class="text-light">' + t18('pr_delivered', 'Delivered') + ' <strong class="text-primary">' + r.del + '</strong></span></span>' +
         '</div>';
       }).join('');
     }
 
-    // ── Delay / reject breakdowns ──────────────────────────────
-    function reasonBars(containerId, counts, I18N, emptyKey, emptyFb) {
+    // ── QC failures by reason ──────────────────────────────────
+    function qcCounts() {
+      var counts = {};
+      D.getCastings().forEach(function (c) {
+        if (c.qcFail) counts[c.qcFail] = (counts[c.qcFail] || 0) + 1;
+      });
+      return counts;
+    }
+    function renderQc() {
+      var counts = qcCounts();
       var keys = Object.keys(counts);
-      var c = document.getElementById(containerId);
-      if (!keys.length) { c.innerHTML = '<p class="text-sm text-light text-center py-4" data-i18n="' + emptyKey + '">' + emptyFb + '</p>'; return; }
+      var c = document.getElementById('pr-qc');
+      if (!keys.length) { c.innerHTML = '<p class="text-sm text-light text-center py-4" data-i18n="pr_no_qc">No QC failures recorded.</p>'; return; }
       var max = Math.max.apply(null, keys.map(function (k) { return counts[k]; }));
       keys.sort(function (a, b) { return counts[b] - counts[a]; });
       c.innerHTML = keys.map(function (k) {
         var pct = Math.round(counts[k] / max * 100);
         return '<div class="flex items-center gap-3">' +
-          '<span class="w-36 text-xs font-semibold text-mid truncate" data-i18n="' + (I18N[k] || '') + '">' + k + '</span>' +
+          '<span class="w-36 text-xs font-semibold text-mid truncate" data-i18n="' + (QC_I18N[k] || '') + '">' + k + '</span>' +
           '<div class="flex-1 h-3.5 bg-surface-dim rounded-full overflow-hidden"><div class="h-full bg-error/70" style="width:' + pct + '%"></div></div>' +
           '<span class="w-6 text-end text-xs font-bold text-dark">' + counts[k] + '</span>' +
         '</div>';
       }).join('');
     }
-    function renderReasons() {
-      var delays = {}, rejects = {};
-      activeTrips().forEach(function (t) {
-        if (t.delayReason) delays[t.delayReason] = (delays[t.delayReason] || 0) + 1;
-        if (t.rejectReason) rejects[t.rejectReason] = (rejects[t.rejectReason] || 0) + 1;
+
+    // ── Output by element ──────────────────────────────────────
+    function elementCounts() {
+      var counts = {};
+      D.getCastings().forEach(function (c) {
+        if (c.status === 'In Yard' && !c.qcFail) {
+          var k = c.element || '—';
+          counts[k] = (counts[k] || 0) + castUnits(c);
+        }
       });
-      reasonBars('or-delays', delays, DLY_I18N, 'or_no_delays', 'No delays recorded.');
-      reasonBars('or-rejected', rejects, REJ_I18N, 'or_no_delays', 'No delays recorded.');
+      return counts;
+    }
+    function renderElements() {
+      var counts = elementCounts();
+      var keys = Object.keys(counts);
+      var c = document.getElementById('pr-elements');
+      if (!keys.length) { c.innerHTML = '<p class="text-sm text-light text-center py-4" data-i18n="or_no_data">No operational data yet.</p>'; return; }
+      var max = Math.max.apply(null, keys.map(function (k) { return counts[k]; }));
+      keys.sort(function (a, b) { return counts[b] - counts[a]; });
+      c.innerHTML = keys.map(function (k) {
+        var pct = Math.round(counts[k] / max * 100);
+        return '<div class="flex items-center gap-3">' +
+          '<span class="w-36 text-xs font-semibold text-mid truncate">' + D.escapeHtml(k) + '</span>' +
+          '<div class="flex-1 h-3.5 bg-surface-dim rounded-full overflow-hidden"><div class="h-full bg-primary" style="width:' + pct + '%"></div></div>' +
+          '<span class="w-10 text-end text-xs font-bold text-dark">' + counts[k] + '</span>' +
+        '</div>';
+      }).join('');
     }
 
     // ── Client service performance ─────────────────────────────
     function clientRows() {
       var map = {};
-      D.getOpsOrders().forEach(function (o) {
+      D.getPcOrders().forEach(function (o) {
         var k = o.client || '—';
-        var b = map[k] = map[k] || { jobs: 0, volume: 0, trips: 0, delays: 0, finished: 0, onTime: 0 };
+        var b = map[k] = map[k] || { jobs: 0, cast: 0, delivered: 0, delays: 0, finished: 0, onTime: 0 };
         b.jobs++;
-        D.tripsForOrder(o.id).forEach(function (t) {
-          if (t.status === 'Cancelled') return;
-          b.trips++;
-          b.volume += deliveredQty(t);
-          if (t.delayReason) b.delays++;
-          if (t.status === 'Returned') {
+        D.castingsForOrder(o.id).forEach(function (c) {
+          if (c.status === 'In Yard' && !c.qcFail) b.cast += castUnits(c);
+        });
+        D.deliveriesForOrder(o.id).forEach(function (d) {
+          if (d.delayReason) b.delays++;
+          if (d.status === 'Delivered') {
             b.finished++;
-            if (!t.delayReason && !t.rejectReason) b.onTime++;
+            var u = parseFloat(d.units); b.delivered += (isNaN(u) ? 0 : u);
+            if (!d.delayReason) b.onTime++;
           }
         });
       });
@@ -247,16 +264,16 @@
     function renderClients() {
       var map = clientRows();
       var names = Object.keys(map);
-      var c = document.getElementById('or-clients');
+      var c = document.getElementById('pr-clients');
       if (!names.length) { c.innerHTML = '<p class="text-sm text-light text-center py-4" data-i18n="or_no_data">No operational data yet.</p>'; return; }
-      names.sort(function (a, b) { return map[b].volume - map[a].volume; });
+      names.sort(function (a, b) { return map[b].delivered - map[a].delivered; });
       c.innerHTML = '<table class="w-full min-w-[560px]"><thead><tr class="border-b border-border">' +
         '<th class="text-start pb-2 text-[11px] font-bold uppercase tracking-widest text-light">' + t18('or_client', 'Client') + '</th>' +
         '<th class="text-start pb-2 text-[11px] font-bold uppercase tracking-widest text-light">' + t18('or_jobs', 'Jobs') + '</th>' +
-        '<th class="text-start pb-2 text-[11px] font-bold uppercase tracking-widest text-light">' + t18('or_trips', 'Trips') + '</th>' +
-        '<th class="text-start pb-2 text-[11px] font-bold uppercase tracking-widest text-light">' + t18('or_volume', 'Delivered (m³)') + '</th>' +
+        '<th class="text-start pb-2 text-[11px] font-bold uppercase tracking-widest text-light">' + t18('pr_cast', 'Cast') + '</th>' +
+        '<th class="text-start pb-2 text-[11px] font-bold uppercase tracking-widest text-light">' + t18('pr_delivered', 'Delivered') + '</th>' +
         '<th class="text-start pb-2 text-[11px] font-bold uppercase tracking-widest text-light">' + t18('or_delays_n', 'Delays') + '</th>' +
-        '<th class="text-start pb-2 text-[11px] font-bold uppercase tracking-widest text-light">' + t18('or_ontime', 'On-Time Dispatch') + '</th>' +
+        '<th class="text-start pb-2 text-[11px] font-bold uppercase tracking-widest text-light">' + t18('pr_ontime', 'On-Time Delivery') + '</th>' +
         '</tr></thead><tbody>' +
         names.map(function (n) {
           var b = map[n];
@@ -264,8 +281,8 @@
           return '<tr class="border-b border-border last:border-0">' +
             '<td class="py-3 text-sm font-semibold text-dark">' + D.escapeHtml(n) + '</td>' +
             '<td class="py-3 text-sm text-mid">' + b.jobs + '</td>' +
-            '<td class="py-3 text-sm text-mid">' + b.trips + '</td>' +
-            '<td class="py-3 text-sm text-mid">' + Math.round(b.volume).toLocaleString() + '</td>' +
+            '<td class="py-3 text-sm text-mid">' + Math.round(b.cast).toLocaleString() + '</td>' +
+            '<td class="py-3 text-sm text-mid">' + Math.round(b.delivered).toLocaleString() + '</td>' +
             '<td class="py-3 text-sm ' + (b.delays ? 'text-error font-bold' : 'text-mid') + '">' + b.delays + '</td>' +
             '<td class="py-3"><span class="text-xs font-bold ' + (ot >= 80 ? 'text-primary' : 'text-error') + '">' + ot + '%</span></td>' +
           '</tr>';
@@ -273,7 +290,7 @@
     }
 
     function renderAll() {
-      renderTiles(); renderProduction(); renderReasons(); renderClients();
+      renderTiles(); renderOutput(); renderQc(); renderElements(); renderClients();
       if (window.reapplyDashLang) window.reapplyDashLang();
     }
     renderAll();
@@ -281,38 +298,37 @@
 
     // ── Export CSV ─────────────────────────────────────────────
     function csvEsc(v) { var s = String(v == null ? '' : v); return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; }
-    function exportOpsCsv() {
+    function exportPcCsv() {
       var tk = new Date().toISOString().slice(0, 10);
-      var rows = [[T('page_ops_reports', 'Operations Reports & Analytics'), tk]];
+      var rows = [[T('page_pc_reports', 'Precast Reports & Analytics'), tk]];
       function section(k, fb) { rows.push([]); rows.push(['=== ' + T(k, fb) + ' ===']); }
 
-      section('or_production', 'Production — Planned vs Actual (7 days)');
-      rows.push([T('th_date', 'Date'), T('or_planned', 'Planned'), T('or_actual', 'Delivered')]);
-      productionRows().forEach(function (r) { rows.push([r.day, r.planned, r.actual]); });
+      section('pr_output', 'Production Output — Cast vs Delivered (7 days)');
+      rows.push([T('th_date', 'Date'), T('pr_cast', 'Cast'), T('pr_delivered', 'Delivered')]);
+      outputRows().forEach(function (r) { rows.push([r.day, r.cast, r.del]); });
 
-      section('or_delays', 'Delays by Reason');
-      var delays = {}, rejects = {};
-      activeTrips().forEach(function (t) {
-        if (t.delayReason) delays[t.delayReason] = (delays[t.delayReason] || 0) + 1;
-        if (t.rejectReason) rejects[t.rejectReason] = (rejects[t.rejectReason] || 0) + 1;
-      });
-      Object.keys(delays).forEach(function (k) { rows.push([T(DLY_I18N[k] || '', k), delays[k]]); });
-      section('or_rejected', 'Rejected Loads');
-      Object.keys(rejects).forEach(function (k) { rows.push([T(REJ_I18N[k] || '', k), rejects[k]]); });
+      section('pr_qc_fails', 'QC Failures by Reason');
+      var qc = qcCounts();
+      Object.keys(qc).forEach(function (k) { rows.push([T(QC_I18N[k] || '', k), qc[k]]); });
+
+      section('pr_elements', 'Output by Element');
+      var el = elementCounts();
+      Object.keys(el).forEach(function (k) { rows.push([k, el[k]]); });
 
       section('or_clients', 'Client Service Performance');
-      rows.push([T('or_client', 'Client'), T('or_jobs', 'Jobs'), T('or_trips', 'Trips'), T('or_volume', 'Delivered (m³)'), T('or_delays_n', 'Delays'), T('or_ontime', 'On-Time Dispatch')]);
+      rows.push([T('or_client', 'Client'), T('or_jobs', 'Jobs'), T('pr_cast', 'Cast'), T('pr_delivered', 'Delivered'), T('or_delays_n', 'Delays'), T('pr_ontime', 'On-Time Delivery')]);
       var map = clientRows();
       Object.keys(map).forEach(function (n) {
         var b = map[n];
-        rows.push([n, b.jobs, b.trips, Math.round(b.volume), b.delays, (b.finished ? Math.round(b.onTime / b.finished * 100) : 100) + '%']);
+        rows.push([n, b.jobs, Math.round(b.cast), Math.round(b.delivered), b.delays,
+          (b.finished ? Math.round(b.onTime / b.finished * 100) : 100) + '%']);
       });
 
       var csv = rows.map(function (r) { return r.map(csvEsc).join(','); }).join('\r\n');
       var blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
       var url = URL.createObjectURL(blob);
       var a = document.createElement('a');
-      a.href = url; a.download = 'jehan-ops-report-' + tk + '.csv';
+      a.href = url; a.download = 'jehan-precast-report-' + tk + '.csv';
       document.body.appendChild(a); a.click(); document.body.removeChild(a);
       URL.revokeObjectURL(url);
     }

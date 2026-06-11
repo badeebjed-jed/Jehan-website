@@ -35,8 +35,11 @@
   var K_OPS  = 'jehan_opsorders';
   var K_TRIP = 'jehan_trips';
   var K_AST  = 'jehan_assets';
+  var K_PCO  = 'jehan_pcorders';
+  var K_CAST = 'jehan_castings';
+  var K_DEL  = 'jehan_deliveries';
   var K_VER  = 'jehan_data_version';
-  var VERSION = '5';
+  var VERSION = '6';
 
   // Sales-system constants
   var CONCRETE_DAILY_CAPACITY = 600; // m³ per day
@@ -62,6 +65,15 @@
   COLLECTION[K_OPS]  = 'opsorders';
   COLLECTION[K_TRIP] = 'trips';
   COLLECTION[K_AST]  = 'assets';
+  COLLECTION[K_PCO]  = 'pcorders';
+  COLLECTION[K_CAST] = 'castings';
+  COLLECTION[K_DEL]  = 'deliveries';
+
+  // ── Precast Operations constants ─────────────────────────────
+  var CAST_MILESTONES = ['Queued', 'Mold Prep', 'Casting', 'Curing', 'Demolding', 'QC', 'In Yard'];
+  var QC_REASONS = ['Surface Defect', 'Dimensional Error', 'Cracking', 'Reinforcement Issue', 'Curing Problem', 'Other'];
+  var DELIVERY_MILESTONES = ['Planned', 'Loading', 'En Route', 'Delivered'];
+  var DESIGN_STATUSES = ['Awaiting Drawings', 'Design Approved'];
 
   // ── Plant Operations constants ───────────────────────────────
   var TRIP_MILESTONES = ['Scheduled', 'Loading', 'En Route', 'On Site', 'Discharging', 'Washout', 'Returned'];
@@ -77,7 +89,7 @@
   // ── One-time cache reset on version bump ─────────────────────
   try {
     if (localStorage.getItem(K_VER) !== VERSION) {
-      [K_REQ, K_CUST, K_MSG, K_LEAD, K_TASK, K_EVT, K_AUD, K_OPS, K_TRIP, K_AST].forEach(function (k) {
+      [K_REQ, K_CUST, K_MSG, K_LEAD, K_TASK, K_EVT, K_AUD, K_OPS, K_TRIP, K_AST, K_PCO, K_CAST, K_DEL].forEach(function (k) {
         localStorage.setItem(k, '[]');
       });
       localStorage.setItem(K_VER, VERSION);
@@ -131,7 +143,7 @@
   function pull() {
     if (pulling) return;
     pulling = true;
-    var keys = [K_REQ, K_CUST, K_MSG, K_LEAD, K_TASK, K_EVT, K_AUD, K_OPS, K_TRIP, K_AST];
+    var keys = [K_REQ, K_CUST, K_MSG, K_LEAD, K_TASK, K_EVT, K_AUD, K_OPS, K_TRIP, K_AST, K_PCO, K_CAST, K_DEL];
     Promise.all(keys.map(function (k) { return serverGet(COLLECTION[k]); }))
       .then(function (res) {
         var changed = false;
@@ -612,6 +624,117 @@
     return Math.round((new Date(end) - new Date(start)) / 60000);
   }
 
+  // ── Precast Operations: orders / castings / deliveries ───────
+  // pcorder  = { id, requestId, ref, client, phone, email, project, site,
+  //              element, quantity (units), deliveryDate, authStatus,
+  //              designStatus, priority, notes, completed, date }
+  // casting  = { id, orderId, day, lineId, element, units, status,
+  //              qcFail, times{}, date }
+  // delivery = { id, orderId, day, trailerId, driver, units, items,
+  //              status, delayReason, times{}, date }
+  function getPcOrders() { return listOf(K_PCO); }
+  function getPcOrder(id) { return getById(K_PCO, id); }
+  function addPcOrder(data) { return createIn(K_PCO, data); }
+  function updatePcOrder(id, patch) { return updateIn(K_PCO, id, patch); }
+  function deletePcOrder(id) { deleteIn(K_PCO, id); }
+
+  function getCastings() { return listOf(K_CAST); }
+  function getCasting(id) { return getById(K_CAST, id); }
+  function addCasting(data) { return createIn(K_CAST, data); }
+  function updateCasting(id, patch) { return updateIn(K_CAST, id, patch); }
+  function deleteCasting(id) { deleteIn(K_CAST, id); }
+  function castingsForOrder(orderId) {
+    return read(K_CAST).filter(function (c) { return c.orderId === orderId; })
+      .sort(function (a, b) { return String(a.day).localeCompare(String(b.day)); });
+  }
+
+  function getDeliveries() { return listOf(K_DEL); }
+  function getDelivery(id) { return getById(K_DEL, id); }
+  function addDelivery(data) { return createIn(K_DEL, data); }
+  function updateDelivery(id, patch) { return updateIn(K_DEL, id, patch); }
+  function deleteDelivery(id) { deleteIn(K_DEL, id); }
+  function deliveriesForOrder(orderId) {
+    return read(K_DEL).filter(function (d) { return d.orderId === orderId; })
+      .sort(function (a, b) { return String(a.day).localeCompare(String(b.day)); });
+  }
+
+  // Sync precast bookings from the sales system (read-only commercial
+  // source; execution data lives on the precast order).
+  function syncPcFromSales() {
+    var have = {};
+    read(K_PCO).forEach(function (o) { if (o.requestId != null) have[o.requestId] = true; });
+    var created = 0;
+    read(K_REQ).forEach(function (r) {
+      if (r.productType !== 'precast') return;
+      if (have[r.id]) return;
+      if (['Cancelled', 'Rejected', 'Expired'].indexOf(r.status) !== -1) return;
+      if (r.approval && r.approval.required && r.approval.status !== 'approved') return;
+      var released = ['Booked', 'Paid', 'Approved'].indexOf(r.status) !== -1;
+      if (!released && !r.quote) return;
+      addPcOrder({
+        id: uid(), requestId: r.id, ref: r.ref,
+        client: r.client, phone: r.phone || '', email: r.email || '',
+        project: r.project || '', site: r.location || '',
+        element: r.mix || '', quantity: r.quantity,
+        deliveryDate: r.deliveryDate || '',
+        commerciallyReleased: released,
+        authStatus: 'Pending Review', designStatus: 'Awaiting Drawings',
+        priority: 'Normal', notes: '', completed: false, date: nowISO()
+      });
+      created++;
+    });
+    return created;
+  }
+
+  // Units that passed QC and reached the yard for an order.
+  function unitsInYard(orderId) {
+    return castingsForOrder(orderId).reduce(function (s, c) {
+      if (c.status === 'In Yard' && !c.qcFail) {
+        var u = parseFloat(c.units); return s + (isNaN(u) ? 0 : u);
+      }
+      return s;
+    }, 0);
+  }
+  // Units delivered to site for an order.
+  function unitsDelivered(orderId) {
+    return deliveriesForOrder(orderId).reduce(function (s, d) {
+      if (d.status === 'Delivered') {
+        var u = parseFloat(d.units); return s + (isNaN(u) ? 0 : u);
+      }
+      return s;
+    }, 0);
+  }
+
+  // Derived precast order status for the live lanes.
+  function pcOrderStatus(o) {
+    if (o.completed) return 'Completed';
+    if (o.authStatus === 'On Hold') return 'On Hold';
+    var dels = deliveriesForOrder(o.id);
+    var activeDel = dels.some(function (d) { return ['Loading', 'En Route'].indexOf(d.status) !== -1; });
+    var anyDelay = dels.some(function (d) { return d.delayReason; });
+    if (anyDelay) return 'Delayed';
+    if (activeDel) return 'Delivering';
+    var casts = castingsForOrder(o.id);
+    var inProd = casts.some(function (c) { return ['Mold Prep', 'Casting', 'Curing', 'Demolding', 'QC'].indexOf(c.status) !== -1; });
+    if (inProd) return 'In Production';
+    var target = parseFloat(o.quantity) || 0;
+    if (target > 0 && unitsInYard(o.id) >= target && unitsDelivered(o.id) < target) return 'Ready in Yard';
+    if (casts.length) return 'In Production';
+    if (o.authStatus === 'Authorized') {
+      return o.designStatus === 'Design Approved' ? 'Authorized' : 'Design Review';
+    }
+    return o.designStatus === 'Design Approved' ? 'Booked' : 'Design Review';
+  }
+
+  // Units scheduled on a production line for a given day (capacity check).
+  function lineLoad(lineId, day, excludeCastingId) {
+    return read(K_CAST).reduce(function (s, c) {
+      if (c.id === excludeCastingId) return s;
+      if (c.lineId !== lineId || c.day !== day) return s;
+      var u = parseFloat(c.units); return s + (isNaN(u) ? 0 : u);
+    }, 0);
+  }
+
   // ── Quote expiry auto-marking ────────────────────────────────
   function maybeExpireQuotes() {
     var today = new Date().toISOString().slice(0, 10);
@@ -702,6 +825,20 @@
       case 'Washout':               return 'bg-surface-mid text-mid border border-border';
       case 'Returned':              return 'bg-surface-high text-light border border-border';
       case 'Completed':             return 'bg-primary text-white border border-primary';
+      // precast statuses
+      case 'Design Review':         return 'bg-gold-bg text-gold-hover border border-gold';
+      case 'Queued':                return 'bg-surface-mid text-mid border border-border';
+      case 'Mold Prep':             return 'bg-gold-bg text-dark border border-gold';
+      case 'Casting':               return 'bg-gold-bg text-dark border border-gold';
+      case 'Curing':                return 'bg-primary-lt/20 text-primary border border-primary-lt';
+      case 'Demolding':             return 'bg-primary-lt/20 text-primary border border-primary-lt';
+      case 'QC':                    return 'bg-primary-lt/30 text-primary border border-primary-lt';
+      case 'In Yard':               return 'bg-primary-lt/30 text-primary border border-primary-lt';
+      case 'In Production':         return 'bg-gold-bg text-dark border border-gold';
+      case 'Ready in Yard':         return 'bg-primary-lt/30 text-primary border border-primary-lt';
+      case 'Delivering':            return 'bg-primary text-white border border-primary';
+      case 'Planned':               return 'bg-surface-mid text-mid border border-border';
+      case 'Delivered':             return 'bg-primary text-white border border-primary';
       // lead stages
       case 'New':                   return 'bg-gold-bg text-dark border border-gold';
       case 'Qualified':             return 'bg-primary-lt/20 text-primary border border-primary-lt';
@@ -771,6 +908,17 @@
     approvalReasons: approvalReasons, pendingApprovals: pendingApprovals,
     approvalRejected: approvalRejected,
     maybeExpireQuotes: maybeExpireQuotes,
+    // precast operations
+    getPcOrders: getPcOrders, getPcOrder: getPcOrder, addPcOrder: addPcOrder,
+    updatePcOrder: updatePcOrder, deletePcOrder: deletePcOrder,
+    getCastings: getCastings, getCasting: getCasting, addCasting: addCasting,
+    updateCasting: updateCasting, deleteCasting: deleteCasting, castingsForOrder: castingsForOrder,
+    getDeliveries: getDeliveries, getDelivery: getDelivery, addDelivery: addDelivery,
+    updateDelivery: updateDelivery, deleteDelivery: deleteDelivery, deliveriesForOrder: deliveriesForOrder,
+    syncPcFromSales: syncPcFromSales, pcOrderStatus: pcOrderStatus,
+    unitsInYard: unitsInYard, unitsDelivered: unitsDelivered, lineLoad: lineLoad,
+    CAST_MILESTONES: CAST_MILESTONES, QC_REASONS: QC_REASONS,
+    DELIVERY_MILESTONES: DELIVERY_MILESTONES, DESIGN_STATUSES: DESIGN_STATUSES,
     // plant operations
     getOpsOrders: getOpsOrders, getOpsOrder: getOpsOrder, addOpsOrder: addOpsOrder,
     updateOpsOrder: updateOpsOrder, deleteOpsOrder: deleteOpsOrder,
