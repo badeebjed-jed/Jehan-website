@@ -82,6 +82,52 @@
     </div>
   </div>
 
+  <!-- Design import modal -->
+  <div id="design-modal" class="hidden fixed inset-0 z-[60] flex items-center justify-center p-4">
+    <div class="absolute inset-0 bg-black/40" onclick="closeDesign()"></div>
+    <div class="relative bg-surface rounded-lg shadow-xl w-full max-w-lg max-h-[92vh] overflow-y-auto">
+      <div class="px-6 py-4 border-b border-border flex items-center justify-between">
+        <h3 class="text-lg font-bold text-dark" data-i18n="dz_title">Design / Shop Drawings</h3>
+        <button onclick="closeDesign()" class="text-light hover:text-dark transition-colors"><span class="material-symbols-outlined">close</span></button>
+      </div>
+      <div class="p-6 space-y-4">
+        <p id="dz-order" class="text-xs text-light"></p>
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5" data-i18n="dz_ref">Drawing / Design Reference</label>
+          <input id="dz-ref" type="text" data-i18n-ph="dz_ref_ph" placeholder="e.g. SD-1042 Rev B" class="w-full border border-border rounded px-3 py-2.5 text-sm text-dark bg-bg focus:outline-none focus:border-primary"/>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5" data-i18n="dz_link">Design Link (CAD / BIM / Drive)</label>
+          <input id="dz-link" type="url" data-i18n-ph="dz_link_ph" placeholder="https://…" class="w-full border border-border rounded px-3 py-2.5 text-sm text-dark bg-bg focus:outline-none focus:border-primary"/>
+          <p class="text-[11px] text-light mt-1" data-i18n="dz_link_hint">Recommended: paste a link to the drawing in your drive or BIM system.</p>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5" data-i18n="dz_file">Attach File (optional, PDF/image, max 3MB)</label>
+          <div class="flex items-center gap-3">
+            <label class="inline-flex items-center gap-1.5 py-2 px-3 border border-primary text-primary text-xs font-semibold rounded cursor-pointer hover:bg-surface-mid transition-colors">
+              <span class="material-symbols-outlined text-[16px]">upload_file</span>
+              <span data-i18n="dz_choose">Choose file</span>
+              <input id="dz-file" type="file" accept=".pdf,image/*" class="hidden" onchange="pickDesignFile(this)">
+            </label>
+            <span id="dz-filename" class="text-xs text-mid truncate"></span>
+            <button id="dz-clearfile" onclick="clearDesignFile()" class="hidden text-xs text-error hover:underline" data-i18n="dz_remove">Remove</button>
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5" data-i18n="lbl_notes">Notes</label>
+          <textarea id="dz-notes" rows="2" class="w-full border border-border rounded px-3 py-2.5 text-sm text-dark bg-bg focus:outline-none focus:border-primary resize-none"></textarea>
+        </div>
+        <div id="dz-error" class="hidden bg-error-bg border border-error/30 text-error text-sm font-semibold px-4 py-3 rounded"></div>
+      </div>
+      <div class="px-6 py-4 border-t border-border flex gap-3 justify-end">
+        <button onclick="closeDesign()" class="px-5 py-2 border border-border rounded text-sm font-semibold text-mid hover:bg-surface-mid transition-colors" data-i18n="btn_cancel">Cancel</button>
+        <button onclick="saveDesign()" class="flex items-center gap-2 bg-gold hover:bg-gold-hover text-white text-sm font-semibold px-5 py-2 rounded transition-colors">
+          <span class="material-symbols-outlined text-[18px]">save</span><span data-i18n="dz_save">Save Design</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Toast -->
   <div id="po-toast" class="hidden fixed bottom-6 right-6 z-50 bg-primary text-white text-sm font-semibold px-5 py-3 rounded shadow-lg flex items-center gap-2 max-w-md">
     <span class="material-symbols-outlined text-[18px]">check_circle</span>
@@ -149,6 +195,30 @@
       '</div>';
     }
 
+    // Design block: shows the imported design (ref + view) or an Add button.
+    function designBlock(o) {
+      var d = o.design;
+      var has = d && (d.ref || d.link || d.fileData);
+      if (!has) {
+        return '<button onclick="openDesign(' + o.id + ')" class="w-full border border-dashed border-primary text-primary hover:bg-surface-mid text-xs font-bold px-3 py-2.5 rounded transition-colors flex items-center justify-center gap-1.5">' +
+          '<span class="material-symbols-outlined text-[16px]">upload_file</span>' + t18('dz_add', 'Add Design') + '</button>';
+      }
+      var viewBtn = (d.link || d.fileData)
+        ? '<button onclick="viewDesign(' + o.id + ')" class="text-[11px] font-bold text-primary hover:underline flex items-center gap-0.5"><span class="material-symbols-outlined text-[14px]">open_in_new</span>' + t18('dz_view', 'View') + '</button>'
+        : '';
+      return '<div class="bg-surface-dim border border-border rounded p-2.5">' +
+        '<div class="flex items-center gap-2 mb-1">' +
+          '<span class="material-symbols-outlined text-primary text-[16px]">description</span>' +
+          '<span class="text-[11px] font-bold uppercase tracking-widest text-light">' + t18('dz_title', 'Design / Shop Drawings') + '</span>' +
+          '<span class="ms-auto flex items-center gap-2">' + viewBtn +
+            '<button onclick="openDesign(' + o.id + ')" class="text-[11px] font-bold text-mid hover:text-primary flex items-center gap-0.5"><span class="material-symbols-outlined text-[14px]">edit</span>' + t18('btn_edit', 'Edit') + '</button>' +
+          '</span>' +
+        '</div>' +
+        '<p class="text-xs font-semibold text-dark">' + D.escapeHtml(d.ref || (d.fileName || t18('dz_link', 'Design Link'))) + '</p>' +
+        (d.by ? '<p class="text-[10px] text-light">' + D.escapeHtml(d.by) + (d.date ? ' · ' + D.fmtDate(d.date) : '') + '</p>' : '') +
+      '</div>';
+    }
+
     function executionPanel(o) {
       var casts = D.castingsForOrder(o.id);
       var dels = D.deliveriesForOrder(o.id);
@@ -185,6 +255,7 @@
           '<div><label class="block text-[10px] font-bold uppercase tracking-widest text-light mb-1">' + t18('oo_auth_status', 'Authorization') + '</label>' +
             '<select id="auth-' + o.id + '" class="w-full text-xs font-semibold border border-border rounded px-2 py-2 bg-bg text-dark focus:outline-none focus:border-primary">' + authOpts + '</select></div>' +
         '</div>' +
+        designBlock(o) +
         '<div><label class="block text-[10px] font-bold uppercase tracking-widest text-light mb-1">' + t18('oo_priority', 'Job Priority') + '</label>' +
           '<select id="pri-' + o.id + '" class="w-full text-xs border border-border rounded px-2 py-2 bg-bg text-dark focus:outline-none focus:border-primary">' + priOpts + '</select></div>' +
         '<textarea id="notes-' + o.id + '" rows="2" data-i18n-ph="oo_notes" placeholder="Operational Notes" class="w-full text-xs border border-border rounded px-2 py-2 bg-bg text-dark focus:outline-none focus:border-primary resize-none">' + D.escapeHtml(o.notes || '') + '</textarea>' +
@@ -235,6 +306,86 @@
       if (window.reapplyDashLang) window.reapplyDashLang();
     }
 
+    // ── Design import ──────────────────────────────────────────
+    var designOrderId = null;
+    var designPendingFile = null; // { name, data } staged before save
+    function me() { try { var u = window.JehanAuth.currentUser(); return u ? (u.name || u.email) : ''; } catch (e) { return ''; } }
+    function openDesign(id) {
+      var o = D.getPcOrder(id); if (!o) return;
+      designOrderId = id;
+      designPendingFile = null;
+      var d = o.design || {};
+      document.getElementById('dz-order').textContent = (o.ref || '') + ' · ' + (o.client || '') + (o.element ? ' · ' + o.element : '');
+      document.getElementById('dz-ref').value = d.ref || '';
+      document.getElementById('dz-link').value = d.link || '';
+      document.getElementById('dz-notes').value = d.notes || '';
+      document.getElementById('dz-filename').textContent = d.fileName || '';
+      document.getElementById('dz-clearfile').classList.toggle('hidden', !d.fileName);
+      document.getElementById('dz-file').value = '';
+      document.getElementById('dz-error').classList.add('hidden');
+      document.getElementById('design-modal').classList.remove('hidden');
+      if (window.reapplyDashLang) window.reapplyDashLang();
+    }
+    function closeDesign() { document.getElementById('design-modal').classList.add('hidden'); designOrderId = null; designPendingFile = null; }
+    function dzError(key, fb) {
+      var e = document.getElementById('dz-error');
+      e.innerHTML = '<span data-i18n="' + key + '">' + fb + '</span>';
+      e.classList.remove('hidden');
+      if (window.reapplyDashLang) window.reapplyDashLang();
+    }
+    function pickDesignFile(input) {
+      if (!input.files || !input.files[0]) return;
+      var file = input.files[0];
+      if (file.size > 3 * 1024 * 1024) {
+        dzError('dz_too_big', 'File is too large (max 3MB). Use a link instead for large drawings.');
+        input.value = '';
+        return;
+      }
+      var reader = new FileReader();
+      reader.onload = function (e) {
+        designPendingFile = { name: file.name, data: e.target.result };
+        document.getElementById('dz-filename').textContent = file.name;
+        document.getElementById('dz-clearfile').classList.remove('hidden');
+        document.getElementById('dz-error').classList.add('hidden');
+      };
+      reader.readAsDataURL(file);
+    }
+    function clearDesignFile() {
+      designPendingFile = { name: '', data: '' }; // signals removal on save
+      document.getElementById('dz-filename').textContent = '';
+      document.getElementById('dz-clearfile').classList.add('hidden');
+      document.getElementById('dz-file').value = '';
+    }
+    function saveDesign() {
+      if (designOrderId == null) return;
+      var o = D.getPcOrder(designOrderId); if (!o) return;
+      var ref = document.getElementById('dz-ref').value.trim();
+      var link = document.getElementById('dz-link').value.trim();
+      var notes = document.getElementById('dz-notes').value.trim();
+      var prev = o.design || {};
+      var fileName = prev.fileName || '', fileData = prev.fileData || '';
+      if (designPendingFile) { fileName = designPendingFile.name; fileData = designPendingFile.data; }
+      if (!ref && !link && !fileData) { dzError('dz_need_one', 'Add a reference, a link, or a file.'); return; }
+      var design = { ref: ref, link: link, fileName: fileName, fileData: fileData, notes: notes, by: me(), date: new Date().toISOString() };
+      var firstDesign = !(prev.ref || prev.link || prev.fileData);
+      // The design is now on file; a manager still approves it explicitly
+      // via the Design Status dropdown (Awaiting Drawings → Design Approved).
+      D.updatePcOrder(designOrderId, { design: design });
+      D.logAudit('design_imported', (o.ref || '') + ' design ' + (ref ? '(' + ref + ') ' : '') + (firstDesign ? 'imported' : 'updated'), designOrderId, o.ref);
+      closeDesign();
+      render();
+      toast('dz_saved', 'Design saved');
+    }
+    function viewDesign(id) {
+      var o = D.getPcOrder(id); if (!o || !o.design) return;
+      var d = o.design;
+      if (d.link) { window.open(d.link, '_blank', 'noopener'); return; }
+      if (d.fileData) {
+        var w = window.open('', '_blank');
+        if (w) w.document.write('<iframe src="' + d.fileData + '" style="border:0;width:100%;height:100%;position:fixed;inset:0"></iframe><title>' + (d.fileName || 'Design') + '</title>');
+      }
+    }
+
     function saveOrder(id) {
       var o = D.getPcOrder(id); if (!o) return;
       var newAuth = document.getElementById('auth-' + id).value;
@@ -272,6 +423,6 @@
     if (created > 0) toast('oo_synced_n', 'new order(s) synced', created);
     D.subscribe(function () { D.syncPcFromSales(); render(); });
   </script>
-  <script src="js/dash-lang.js?v=9"></script>
+  <script src="js/dash-lang.js?v=11"></script>
 </body>
 </html>
