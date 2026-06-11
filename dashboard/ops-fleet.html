@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Fleet & Master Data - Jehan Holding Group</title>
+  <script src="js/auth.js?v=9"></script>
+  <script>if (!window.JehanAuth || !window.JehanAuth.enforce('operations')) { /* halted by redirect */ }</script>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600;700&family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+  <script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          primary:       '#3D5A34',
+          'primary-mid': '#5C7A48',
+          'primary-lt':  '#8CAE78',
+          gold:          '#C49A1A',
+          'gold-hover':  '#A07D10',
+          bg:            '#F2F1EE',
+          surface:       '#FFFFFF',
+          'surface-dim': '#F8F7F4',
+          'surface-mid': '#EEEDE9',
+          'surface-high':'#E4E3DF',
+          dark:          '#1E1E1E',
+          mid:           '#444444',
+          light:         '#888888',
+          border:        '#DCDBD7',
+          error:         '#ba1a1a',
+          'error-bg':    '#ffdad6',
+          'gold-bg':     '#FBF0C4',
+        },
+        fontFamily: {
+          heading: ['"Barlow Condensed"', 'Arial', 'sans-serif'],
+          body:    ['Barlow', 'Arial', 'sans-serif'],
+        },
+        borderRadius: { DEFAULT: '4px', full: '9999px' },
+      }
+    }
+  };
+  </script>
+  <style>
+    body { font-family: 'Barlow', Arial, sans-serif; }
+    h1,h2,h3,h4,h5 { font-family: 'Barlow Condensed', Arial, sans-serif; font-weight: 700; letter-spacing: 0.02em; }
+    .material-symbols-outlined { font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24; }
+  </style>
+</head>
+<body class="bg-bg text-dark h-screen flex overflow-hidden">
+
+  <aside class="w-64 h-full flex flex-col bg-surface border-r border-border flex-shrink-0" data-nav></aside>
+  <script src="js/dash-nav.js?v=2"></script>
+
+  <div class="flex-1 flex flex-col overflow-hidden">
+
+    <header class="bg-surface border-b border-border h-16 flex items-center justify-between px-8 flex-shrink-0 gap-4">
+      <h1 class="font-heading font-bold text-2xl uppercase tracking-wide text-dark" data-i18n="page_ops_fleet">Fleet & Master Data</h1>
+      <button onclick="openAssetModal()" class="flex items-center gap-2 bg-gold hover:bg-gold-hover text-white text-sm font-semibold tracking-wide px-5 py-2 rounded transition-colors flex-shrink-0">
+        <span class="material-symbols-outlined text-[18px]">add</span>
+        <span data-i18n="fl_add">Add →</span>
+      </button>
+    </header>
+
+    <div class="flex-1 overflow-y-auto p-8">
+      <div class="max-w-5xl mx-auto space-y-5">
+
+        <!-- Kind tabs -->
+        <div class="flex flex-wrap gap-2" id="fl-tabs"></div>
+
+        <!-- Table -->
+        <div id="fl-container" class="bg-surface border border-border rounded shadow-[0_2px_12px_rgba(0,0,0,0.07)] overflow-x-auto"></div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Add / Edit modal -->
+  <div id="asset-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div class="absolute inset-0 bg-black/40" onclick="closeAssetModal()"></div>
+    <div class="relative bg-surface rounded-lg shadow-xl w-full max-w-lg max-h-[92vh] overflow-y-auto">
+      <div class="px-6 py-4 border-b border-border flex items-center justify-between">
+        <h3 class="text-lg font-bold text-dark" id="asset-modal-title">—</h3>
+        <button onclick="closeAssetModal()" class="text-light hover:text-dark transition-colors"><span class="material-symbols-outlined">close</span></button>
+      </div>
+      <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="md:col-span-2">
+          <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5"><span data-i18n="fl_name">Name / ID</span> <span class="text-error">*</span></label>
+          <input id="af-name" type="text" class="w-full border border-border rounded px-3 py-2.5 text-sm text-dark bg-bg focus:outline-none focus:border-primary"/>
+        </div>
+        <div id="af-capacity-wrap">
+          <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5" data-i18n="fl_capacity">Capacity</label>
+          <input id="af-capacity" type="text" class="w-full border border-border rounded px-3 py-2.5 text-sm text-dark bg-bg focus:outline-none focus:border-primary"/>
+        </div>
+        <div id="af-boom-wrap" class="hidden">
+          <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5" data-i18n="fl_boom">Boom (m)</label>
+          <input id="af-boom" type="number" min="0" class="w-full border border-border rounded px-3 py-2.5 text-sm text-dark bg-bg focus:outline-none focus:border-primary"/>
+        </div>
+        <div id="af-operator-wrap">
+          <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5" data-i18n="fl_operator">Operator / Driver</label>
+          <input id="af-operator" type="text" class="w-full border border-border rounded px-3 py-2.5 text-sm text-dark bg-bg focus:outline-none focus:border-primary"/>
+        </div>
+        <div id="af-role-wrap" class="hidden">
+          <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5" data-i18n="fl_role">Role</label>
+          <select id="af-role" class="w-full border border-border rounded px-3 py-2.5 text-sm text-dark bg-bg focus:outline-none focus:border-primary">
+            <option value="Dispatcher" data-i18n="role_dispatcher">Dispatcher</option>
+            <option value="Plant Supervisor" data-i18n="role_supervisor">Plant Supervisor</option>
+            <option value="Plant Operator" data-i18n="role_operator">Plant Operator</option>
+            <option value="Driver" data-i18n="role_driver">Driver</option>
+            <option value="Pump Operator" data-i18n="role_pump_op">Pump Operator</option>
+            <option value="Fleet Coordinator" data-i18n="role_fleet">Fleet Coordinator</option>
+          </select>
+        </div>
+        <div id="af-phone-wrap" class="hidden">
+          <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5" data-i18n="th_phone">Phone</label>
+          <input id="af-phone" type="tel" class="w-full border border-border rounded px-3 py-2.5 text-sm text-dark bg-bg focus:outline-none focus:border-primary"/>
+        </div>
+        <div id="af-shift-wrap" class="hidden">
+          <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5" data-i18n="fl_shift">Shift</label>
+          <select id="af-shift" class="w-full border border-border rounded px-3 py-2.5 text-sm text-dark bg-bg focus:outline-none focus:border-primary">
+            <option value="Morning" data-i18n="shift_morning">Morning</option>
+            <option value="Evening" data-i18n="shift_evening">Evening</option>
+            <option value="Night" data-i18n="shift_night">Night</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5" data-i18n="fl_status">Status</label>
+          <select id="af-status" class="w-full border border-border rounded px-3 py-2.5 text-sm text-dark bg-bg focus:outline-none focus:border-primary">
+            <option value="Available" data-i18n="ast_available">Available</option>
+            <option value="On Trip" data-i18n="ast_on_trip">On Trip</option>
+            <option value="Maintenance" data-i18n="ast_maintenance">Maintenance</option>
+          </select>
+        </div>
+        <div class="md:col-span-2">
+          <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5" data-i18n="lbl_notes">Notes</label>
+          <textarea id="af-notes" rows="2" class="w-full border border-border rounded px-3 py-2.5 text-sm text-dark bg-bg focus:outline-none focus:border-primary resize-none"></textarea>
+        </div>
+      </div>
+      <div class="px-6 py-4 border-t border-border flex gap-3 justify-between">
+        <button id="af-delete" onclick="deleteAssetNow()" class="hidden flex items-center gap-2 border border-error/40 text-error text-sm font-semibold px-4 py-2 rounded hover:bg-error hover:text-white transition-colors">
+          <span class="material-symbols-outlined text-[18px]">delete</span><span data-i18n="btn_delete">Delete</span>
+        </button>
+        <div class="flex gap-3 ms-auto">
+          <button onclick="closeAssetModal()" class="px-5 py-2 border border-border rounded text-sm font-semibold text-mid hover:bg-surface-mid transition-colors" data-i18n="btn_cancel">Cancel</button>
+          <button onclick="saveAsset()" class="flex items-center gap-2 bg-gold hover:bg-gold-hover text-white text-sm font-semibold px-5 py-2 rounded transition-colors">
+            <span class="material-symbols-outlined text-[18px]">save</span><span data-i18n="btn_save">Save</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="fl-toast" class="hidden fixed bottom-6 right-6 z-50 bg-primary text-white text-sm font-semibold px-5 py-3 rounded shadow-lg flex items-center gap-2">
+    <span class="material-symbols-outlined text-[18px]">check_circle</span>
+    <span id="fl-toast-msg">Done</span>
+  </div>
+
+  <script src="js/dash-data.js?v=7"></script>
+  <script>
+    var D = window.JehanData;
+    var activeKind = 'mixer';
+    var editingId = null;
+
+    var KINDS = [
+      ['plant', 'fl_plants', 'Plants', 'factory'],
+      ['mixer', 'fl_mixers', 'Mixer Trucks', 'local_shipping'],
+      ['pump',  'fl_pumps',  'Pump Trucks', 'precision_manufacturing'],
+      ['staff', 'fl_staff',  'Plant Staff', 'engineering']
+    ];
+    var ST_I18N = { 'Available': 'ast_available', 'On Trip': 'ast_on_trip', 'Maintenance': 'ast_maintenance' };
+    function t18(key, fb) { return '<span data-i18n="' + key + '">' + fb + '</span>'; }
+    function toast(key, fb) {
+      var el = document.getElementById('fl-toast');
+      document.getElementById('fl-toast-msg').textContent = window.dashT ? window.dashT(key, fb) : fb;
+      el.classList.remove('hidden');
+      setTimeout(function () { el.classList.add('hidden'); }, 2500);
+    }
+    function statusPillA(s) {
+      var cls = s === 'Available' ? 'bg-primary-lt/20 text-primary border-primary-lt'
+              : s === 'On Trip'  ? 'bg-gold-bg text-dark border-gold'
+              :                    'bg-error-bg text-error border-error/30';
+      return '<span class="inline-block border text-[11px] font-bold px-2.5 py-0.5 rounded-full ' + cls + '" data-i18n="' + ST_I18N[s] + '">' + s + '</span>';
+    }
+    function tripsToday(assetId) {
+      var tk = new Date().toISOString().slice(0, 10);
+      return D.getTrips().filter(function (t) {
+        return t.day === tk && (t.truckId === assetId || t.pumpId === assetId);
+      }).length;
+    }
+
+    function renderTabs() {
+      document.getElementById('fl-tabs').innerHTML = KINDS.map(function (k) {
+        var n = D.getAssets(k[0]).length;
+        var active = activeKind === k[0];
+        return '<button onclick="setKind(\'' + k[0] + '\')" class="flex items-center gap-2 px-4 py-2 rounded border text-sm font-bold transition-colors ' +
+          (active ? 'bg-primary text-white border-primary' : 'bg-surface text-mid border-border hover:border-primary hover:text-primary') + '">' +
+          '<span class="material-symbols-outlined text-[18px]">' + k[3] + '</span>' + t18(k[1], k[2]) +
+          ' <span class="opacity-70">(' + n + ')</span></button>';
+      }).join('');
+    }
+    function setKind(k) { activeKind = k; render(); }
+
+    function render() {
+      renderTabs();
+      var list = D.getAssets(activeKind);
+      var c = document.getElementById('fl-container');
+      if (!list.length) {
+        c.innerHTML = '<p class="text-sm text-light text-center py-14" data-i18n="fl_none">Nothing here yet — add your first record.</p>';
+        if (window.reapplyDashLang) window.reapplyDashLang();
+        return;
+      }
+      var isStaff = activeKind === 'staff';
+      var isPump = activeKind === 'pump';
+      var head =
+        '<th class="text-start px-4 py-3 text-[11px] font-bold uppercase tracking-widest text-light">' + t18('fl_name', 'Name / ID') + '</th>' +
+        (isStaff
+          ? '<th class="text-start px-4 py-3 text-[11px] font-bold uppercase tracking-widest text-light">' + t18('fl_role', 'Role') + '</th>' +
+            '<th class="text-start px-4 py-3 text-[11px] font-bold uppercase tracking-widest text-light">' + t18('th_phone', 'Phone') + '</th>' +
+            '<th class="text-start px-4 py-3 text-[11px] font-bold uppercase tracking-widest text-light">' + t18('fl_shift', 'Shift') + '</th>'
+          : '<th class="text-start px-4 py-3 text-[11px] font-bold uppercase tracking-widest text-light">' + t18(isPump ? 'fl_boom' : 'fl_capacity', isPump ? 'Boom (m)' : 'Capacity') + '</th>' +
+            '<th class="text-start px-4 py-3 text-[11px] font-bold uppercase tracking-widest text-light">' + t18('fl_operator', 'Operator / Driver') + '</th>' +
+            '<th class="text-start px-4 py-3 text-[11px] font-bold uppercase tracking-widest text-light">' + t18('fl_trips_today', 'Trips today') + '</th>') +
+        '<th class="text-start px-4 py-3 text-[11px] font-bold uppercase tracking-widest text-light">' + t18('fl_status', 'Status') + '</th>' +
+        '<th class="px-4 py-3"></th>';
+      var rows = list.map(function (a) {
+        var cells = '<td class="px-4 py-3"><p class="text-sm font-semibold text-dark">' + D.escapeHtml(a.name) + '</p>' +
+          (a.notes ? '<p class="text-xs text-light truncate max-w-[220px]">' + D.escapeHtml(a.notes) + '</p>' : '') + '</td>';
+        if (isStaff) {
+          cells += '<td class="px-4 py-3 text-sm text-mid">' + D.escapeHtml(a.role || '—') + '</td>' +
+            '<td class="px-4 py-3 text-sm text-mid">' + D.escapeHtml(a.phone || '—') + '</td>' +
+            '<td class="px-4 py-3 text-sm text-mid">' + D.escapeHtml(a.shift || '—') + '</td>';
+        } else {
+          cells += '<td class="px-4 py-3 text-sm text-mid">' + D.escapeHtml(String(isPump ? (a.boom || '—') : (a.capacity || '—'))) + '</td>' +
+            '<td class="px-4 py-3 text-sm text-mid">' + D.escapeHtml(a.operator || '—') + '</td>' +
+            '<td class="px-4 py-3 text-sm font-bold text-dark">' + (activeKind === 'plant' ? '—' : tripsToday(a.id)) + '</td>';
+        }
+        cells += '<td class="px-4 py-3">' + statusPillA(a.status || 'Available') + '</td>' +
+          '<td class="px-4 py-3 text-end"><button onclick="openAssetModal(' + a.id + ')" class="p-1.5 rounded text-primary hover:bg-primary-lt/20 transition-colors"><span class="material-symbols-outlined text-[20px]">edit</span></button></td>';
+        return '<tr class="border-b border-border last:border-0 hover:bg-surface-dim transition-colors">' + cells + '</tr>';
+      }).join('');
+      c.innerHTML = '<table class="w-full min-w-[640px]"><thead><tr class="bg-surface-dim border-b border-border">' + head + '</tr></thead><tbody>' + rows + '</tbody></table>';
+      if (window.reapplyDashLang) window.reapplyDashLang();
+    }
+
+    // ── Modal ──────────────────────────────────────────────────
+    function openAssetModal(id) {
+      editingId = id || null;
+      var a = id ? D.getAsset(id) : null;
+      var kind = a ? a.kind : activeKind;
+      var K = KINDS.filter(function (k) { return k[0] === kind; })[0];
+      document.getElementById('asset-modal-title').innerHTML = t18(K[1], K[2]);
+      var isStaff = kind === 'staff', isPump = kind === 'pump';
+      document.getElementById('af-capacity-wrap').classList.toggle('hidden', isStaff || isPump);
+      document.getElementById('af-boom-wrap').classList.toggle('hidden', !isPump);
+      document.getElementById('af-operator-wrap').classList.toggle('hidden', isStaff || kind === 'plant');
+      document.getElementById('af-role-wrap').classList.toggle('hidden', !isStaff);
+      document.getElementById('af-phone-wrap').classList.toggle('hidden', !isStaff);
+      document.getElementById('af-shift-wrap').classList.toggle('hidden', !isStaff);
+      document.getElementById('af-name').value = a ? a.name : '';
+      document.getElementById('af-capacity').value = a ? (a.capacity || '') : '';
+      document.getElementById('af-boom').value = a ? (a.boom || '') : '';
+      document.getElementById('af-operator').value = a ? (a.operator || '') : '';
+      document.getElementById('af-role').value = a ? (a.role || 'Driver') : 'Driver';
+      document.getElementById('af-phone').value = a ? (a.phone || '') : '';
+      document.getElementById('af-shift').value = a ? (a.shift || 'Morning') : 'Morning';
+      document.getElementById('af-status').value = a ? (a.status || 'Available') : 'Available';
+      document.getElementById('af-notes').value = a ? (a.notes || '') : '';
+      document.getElementById('af-delete').classList.toggle('hidden', !a);
+      document.getElementById('asset-modal').classList.remove('hidden');
+      if (window.reapplyDashLang) window.reapplyDashLang();
+    }
+    function closeAssetModal() { document.getElementById('asset-modal').classList.add('hidden'); editingId = null; }
+    function saveAsset() {
+      var name = document.getElementById('af-name').value.trim();
+      if (!name) return;
+      var kind = editingId ? D.getAsset(editingId).kind : activeKind;
+      var data = {
+        kind: kind, name: name,
+        capacity: document.getElementById('af-capacity').value.trim(),
+        boom: document.getElementById('af-boom').value ? parseFloat(document.getElementById('af-boom').value) : '',
+        operator: document.getElementById('af-operator').value.trim(),
+        role: document.getElementById('af-role').value,
+        phone: document.getElementById('af-phone').value.trim(),
+        shift: document.getElementById('af-shift').value,
+        status: document.getElementById('af-status').value,
+        notes: document.getElementById('af-notes').value.trim()
+      };
+      if (editingId) { D.updateAsset(editingId, data); }
+      else { D.addAsset(data); }
+      closeAssetModal();
+      render();
+      toast('toast_ast_saved', 'Record saved');
+    }
+    function deleteAssetNow() {
+      if (!editingId) return;
+      D.deleteAsset(editingId);
+      closeAssetModal();
+      render();
+      toast('toast_ast_deleted', 'Record deleted');
+    }
+
+    render();
+    D.subscribe(render);
+  </script>
+  <script src="js/dash-lang.js?v=8"></script>
+</body>
+</html>

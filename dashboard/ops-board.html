@@ -163,6 +163,7 @@
       var planned = orders.reduce(function (s, o) { var q = parseFloat(o.quantity); return s + (isNaN(q) ? 0 : q); }, 0);
       var dispatched = dayTrips().reduce(function (s, t) {
         if (t.status === 'Cancelled' || t.rejectReason) return s;
+        if (['Discharging', 'Washout', 'Returned'].indexOf(t.status) === -1) return s;
         var q = parseFloat(t.qty); return s + (isNaN(q) ? 0 : q);
       }, 0);
       var cap = D.CONCRETE_DAILY_CAPACITY;
