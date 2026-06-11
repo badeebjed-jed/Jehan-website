@@ -565,9 +565,10 @@
       if (have[r.id]) return;
       if (['Cancelled', 'Rejected', 'Expired'].indexOf(r.status) !== -1) return;
       if (r.approval && r.approval.required && r.approval.status !== 'approved') return;
-      // commercially meaningful: it has a quote or a confirmed/booked status
+      // Actionable for operations: priced, released, or given a committed
+      // delivery date (e.g. a Sales Forms booking).
       var released = ['Booked', 'Paid', 'Approved'].indexOf(r.status) !== -1;
-      if (!released && !r.quote) return;
+      if (!released && !r.quote && !r.deliveryDate) return;
       addOpsOrder({
         id: uid(), requestId: r.id, ref: r.ref,
         client: r.client, phone: r.phone || '', email: r.email || '',
@@ -670,7 +671,9 @@
       if (['Cancelled', 'Rejected', 'Expired'].indexOf(r.status) !== -1) return;
       if (r.approval && r.approval.required && r.approval.status !== 'approved') return;
       var released = ['Booked', 'Paid', 'Approved'].indexOf(r.status) !== -1;
-      if (!released && !r.quote) return;
+      // Flow to operations once the job is actionable: priced, released,
+      // or given a committed delivery date (e.g. via Sales Forms).
+      if (!released && !r.quote && !r.deliveryDate) return;
       addPcOrder({
         id: uid(), requestId: r.id, ref: r.ref,
         client: r.client, phone: r.phone || '', email: r.email || '',
