@@ -55,7 +55,7 @@
 
   <!-- Sidebar -->
   <aside class="w-64 h-full flex flex-col bg-surface border-r border-border flex-shrink-0" data-nav></aside>
-  <script src="js/dash-nav.js?v=4"></script>
+  <script src="js/dash-nav.js?v=5"></script>
 
   <!-- Main -->
   <div class="flex-1 flex flex-col overflow-hidden">
@@ -310,7 +310,7 @@
     </div>
   </div>
 
-  <script src="js/dash-data.js?v=9"></script>
+  <script src="js/dash-data.js?v=10"></script>
   <script>
     var D = window.JehanData;
     // Only the Primary Administrator may delete quote requests.
@@ -698,7 +698,8 @@
       return L.join('\n');
     }
 
-    // "Open in Email App" — opens a pre-filled draft in the user's mail client.
+    // "Open in Email App" — opens the in-dashboard composer, pre-filled with
+    // the client, subject and quote, ready to review and send from Info@.
     function openQuoteMailto() {
       var r = D.getRequest(currentReqId);
       if (!r) return;
@@ -710,10 +711,11 @@
       if (!rate) { flagRate(); return; }
       var q = gatherQuote(r);
       var subject = 'Your Quote from Jehan Holding Group' + (q.ref ? ' - ' + q.ref : '');
-      var href = 'mailto:' + encodeURIComponent(r.email) +
-        '?subject=' + encodeURIComponent(subject) +
-        '&body=' + encodeURIComponent(quotePlainText(q));
-      window.location.href = href;
+      var url = 'mail.html?to=' + encodeURIComponent(r.email) +
+        '&subject=' + encodeURIComponent(subject) +
+        '&body=' + encodeURIComponent(quotePlainText(q)) +
+        '&related=' + encodeURIComponent(q.ref || '');
+      window.location.href = url;
     }
 
     function flagRate() {
@@ -816,6 +818,8 @@
       // Try to auto-email the client from the server.
       showQuoteToast('Quote saved. Emailing ' + r.email + '…');
       var api = (location.pathname.indexOf('/dashboard/') !== -1) ? '../api.php' : 'api.php';
+      // CC the rep who sent it (and set Reply-To to them) so replies come back.
+      try { var su = window.JehanAuth.currentUser(); if (su && su.email) { q.cc = su.email; q.replyTo = su.email; } } catch (e) {}
       fetch(api + '?action=sendquote', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -984,7 +988,7 @@
     D.subscribe(renderRequests);
   </script>
 
-  <script src="js/dash-lang.js?v=9"></script>
+  <script src="js/dash-lang.js?v=12"></script>
   <script>
     // ── Company Profile Upload ────────────────────────────────────
     function uploadProfile(input) {

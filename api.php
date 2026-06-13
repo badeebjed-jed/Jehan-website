@@ -72,7 +72,7 @@ function jehan_mail_config() {
 
 // Minimal SMTP client (no external libraries). Returns true on success;
 // writes a human-readable trace into $log.
-function jehan_smtp_send($cfg, $to, $subject, $html, &$log) {
+function jehan_smtp_send($cfg, $to, $subject, $html, &$log, $opts = array()) {
   $host   = isset($cfg['host']) ? $cfg['host'] : 'smtp.hostinger.com';
   $port   = isset($cfg['port']) ? (int)$cfg['port'] : 465;
   $secure = isset($cfg['secure']) ? $cfg['secure'] : ($port === 465 ? 'ssl' : 'tls');
@@ -108,16 +108,33 @@ function jehan_smtp_send($cfg, $to, $subject, $html, &$log) {
   $r = $say('AUTH LOGIN');           if ($code($r) !== 334) { $log = 'AUTH: ' . $r; fclose($fp); return false; }
   $r = $say(base64_encode($user));   if ($code($r) !== 334) { $log = 'username stage: ' . $r; fclose($fp); return false; }
   $r = $say(base64_encode($pass));   if ($code($r) !== 235) { $log = 'login failed (check mailbox password): ' . $r; fclose($fp); return false; }
+  // Normalise CC list (string or array), keep only valid addresses, drop dup of $to.
+  $ccList = array();
+  if (!empty($opts['cc'])) {
+    $raw = is_array($opts['cc']) ? $opts['cc'] : preg_split('/[,;]+/', $opts['cc']);
+    foreach ($raw as $a) {
+      $a = trim($a);
+      if ($a !== '' && filter_var($a, FILTER_VALIDATE_EMAIL) && strcasecmp($a, $to) !== 0) $ccList[strtolower($a)] = $a;
+    }
+    $ccList = array_values($ccList);
+  }
+  $replyTo = (!empty($opts['replyTo']) && filter_var($opts['replyTo'], FILTER_VALIDATE_EMAIL)) ? $opts['replyTo'] : $fromE;
+
   $r = $say('MAIL FROM:<' . $fromE . '>'); if ($code($r) !== 250) { $log = 'MAIL FROM: ' . $r; fclose($fp); return false; }
   $r = $say('RCPT TO:<' . $to . '>');      if ($code($r) !== 250 && $code($r) !== 251) { $log = 'RCPT TO: ' . $r; fclose($fp); return false; }
+  foreach ($ccList as $cc) {
+    $r = $say('RCPT TO:<' . $cc . '>');    if ($code($r) !== 250 && $code($r) !== 251) { $log = 'RCPT TO (cc): ' . $r; fclose($fp); return false; }
+  }
   $r = $say('DATA');                 if ($code($r) !== 354) { $log = 'DATA: ' . $r; fclose($fp); return false; }
 
   $headers  = 'From: "' . $fromN . '" <' . $fromE . ">\r\n";
   $headers .= 'To: <' . $to . ">\r\n";
-  $headers .= 'Subject: ' . $subject . "\r\n";
+  if ($ccList) $headers .= 'Cc: ' . implode(', ', array_map(function ($a) { return '<' . $a . '>'; }, $ccList)) . "\r\n";
+  $subjHdr = preg_match('/[^\x20-\x7e]/', $subject) ? '=?UTF-8?B?' . base64_encode($subject) . '?=' : $subject;
+  $headers .= 'Subject: ' . $subjHdr . "\r\n";
   $headers .= 'Date: ' . date('r') . "\r\n";
   $headers .= "MIME-Version: 1.0\r\n";
-  $headers .= 'Reply-To: <' . $fromE . ">\r\n";
+  $headers .= 'Reply-To: <' . $replyTo . ">\r\n";
   $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
   $body = preg_replace('/^\./m', '..', $html);          // dot-stuffing
   $r = $say($headers . "\r\n" . $body . "\r\n.");
@@ -175,11 +192,14 @@ if (isset($_GET['action']) && $_GET['action'] === 'sendquote') {
   $ref     = isset($b['ref']) ? $b['ref'] : '';
   $subject = 'Your Quote from Jehan Holding Group' . ($ref ? ' - ' . $ref : '');
   $html    = jehan_quote_html($b);
+  $opts    = array();
+  if (!empty($b['cc']))      $opts['cc'] = $b['cc'];            // copy the sending rep
+  if (!empty($b['replyTo'])) $opts['replyTo'] = $b['replyTo'];  // replies go to the rep
 
   $cfg = jehan_mail_config();
   if ($cfg) {
     $log = '';
-    $sent = jehan_smtp_send($cfg, $to, $subject, $html, $log);
+    $sent = jehan_smtp_send($cfg, $to, $subject, $html, $log, $opts);
     echo json_encode(array('ok' => $sent, 'sent' => $sent, 'method' => 'smtp', 'detail' => $sent ? '' : $log, 'to' => $to));
     exit;
   }
@@ -190,8 +210,57 @@ if (isset($_GET['action']) && $_GET['action'] === 'sendquote') {
   exit;
 }
 
+// Branded shell for a free-form message written by an employee.
+function jehan_message_html($bodyText, $signature) {
+  $e = function ($s) { return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); };
+  $body = nl2br($e($bodyText));
+  $sig  = $signature !== '' ? '<p style="margin:22px 0 0;color:#444;font-size:14px;">Kind regards,<br><strong>' . $e($signature) . '</strong></p>' : '';
+  return '<div style="font-family:Arial,Helvetica,sans-serif;max-width:560px;margin:0 auto;background:#ffffff;border:1px solid #e4e3df;border-radius:6px;overflow:hidden;">'
+    . '<div style="background:#3D5A34;padding:18px 24px;text-align:center;"><img src="https://jehanreadymix.com/assets/images/logo.png" alt="Jehan Holding Group" style="height:40px;"></div>'
+    . '<div style="padding:24px;color:#1E1E1E;font-size:14px;line-height:1.7;">' . $body . $sig . '</div>'
+    . '<div style="background:#F2F1EE;padding:14px 24px;text-align:center;color:#888;font-size:12px;">Jehan Holding Group · Info@Jehanreadymix.com · +966 59 393 9882</div>'
+    . '</div>';
+}
 
-$ALLOWED = array('requests', 'messages', 'customers', 'leads', 'tasks', 'events', 'audit', 'opsorders', 'trips', 'assets', 'pcorders', 'castings', 'deliveries');
+// ── Send a free-form email composed in the dashboard ─────────
+if (isset($_GET['action']) && $_GET['action'] === 'sendmail') {
+  if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    http_response_code(405); echo json_encode(array('ok' => false, 'error' => 'POST required')); exit;
+  }
+  $b = json_decode(file_get_contents('php://input'), true);
+  if (!is_array($b) || empty($b['to']) || !filter_var($b['to'], FILTER_VALIDATE_EMAIL)) {
+    http_response_code(400);
+    echo json_encode(array('ok' => false, 'error' => 'missing or invalid recipient email'));
+    exit;
+  }
+  $to      = $b['to'];
+  $subject = isset($b['subject']) && trim($b['subject']) !== '' ? trim($b['subject']) : '(no subject)';
+  $sender  = isset($b['senderName']) ? trim($b['senderName']) : '';
+  if (!empty($b['html'])) {
+    $html = $b['html'];
+  } else {
+    $signature = $sender !== '' ? ($sender . ' · Jehan Holding Group') : 'Jehan Holding Group';
+    $html = jehan_message_html(isset($b['body']) ? $b['body'] : '', $signature);
+  }
+  $opts = array();
+  if (!empty($b['cc']))      $opts['cc'] = $b['cc'];
+  if (!empty($b['replyTo'])) $opts['replyTo'] = $b['replyTo'];
+
+  $cfg = jehan_mail_config();
+  if ($cfg) {
+    $log = '';
+    $sent = jehan_smtp_send($cfg, $to, $subject, $html, $log, $opts);
+    echo json_encode(array('ok' => $sent, 'sent' => $sent, 'method' => 'smtp', 'detail' => $sent ? '' : $log, 'to' => $to));
+    exit;
+  }
+  $headers = "MIME-Version: 1.0\r\nContent-Type: text/html; charset=UTF-8\r\nFrom: Jehan Holding Group <Info@Jehanreadymix.com>\r\nReply-To: Info@Jehanreadymix.com\r\n";
+  $sent = @mail($to, $subject, $html, $headers, '-fInfo@Jehanreadymix.com');
+  echo json_encode(array('ok' => (bool)$sent, 'sent' => (bool)$sent, 'method' => 'mail', 'detail' => $sent ? '' : 'SMTP not configured and mail() is disabled', 'to' => $to));
+  exit;
+}
+
+
+$ALLOWED = array('requests', 'messages', 'customers', 'leads', 'tasks', 'events', 'audit', 'opsorders', 'trips', 'assets', 'pcorders', 'castings', 'deliveries', 'sentmail');
 $col = isset($_GET['collection']) ? preg_replace('/[^a-z]/', '', $_GET['collection']) : '';
 if (!in_array($col, $ALLOWED, true)) {
   http_response_code(400);

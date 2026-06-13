@@ -38,6 +38,7 @@
   var K_PCO  = 'jehan_pcorders';
   var K_CAST = 'jehan_castings';
   var K_DEL  = 'jehan_deliveries';
+  var K_MAIL = 'jehan_sentmail';
   var K_VER  = 'jehan_data_version';
   var VERSION = '6';
 
@@ -68,6 +69,7 @@
   COLLECTION[K_PCO]  = 'pcorders';
   COLLECTION[K_CAST] = 'castings';
   COLLECTION[K_DEL]  = 'deliveries';
+  COLLECTION[K_MAIL] = 'sentmail';
 
   // ── Precast Operations constants ─────────────────────────────
   var CAST_MILESTONES = ['Queued', 'Mold Prep', 'Casting', 'Curing', 'Demolding', 'QC', 'In Yard'];
@@ -143,7 +145,7 @@
   function pull() {
     if (pulling) return;
     pulling = true;
-    var keys = [K_REQ, K_CUST, K_MSG, K_LEAD, K_TASK, K_EVT, K_AUD, K_OPS, K_TRIP, K_AST, K_PCO, K_CAST, K_DEL];
+    var keys = [K_REQ, K_CUST, K_MSG, K_LEAD, K_TASK, K_EVT, K_AUD, K_OPS, K_TRIP, K_AST, K_PCO, K_CAST, K_DEL, K_MAIL];
     Promise.all(keys.map(function (k) { return serverGet(COLLECTION[k]); }))
       .then(function (res) {
         var changed = false;
@@ -659,6 +661,43 @@
       .sort(function (a, b) { return String(a.day).localeCompare(String(b.day)); });
   }
 
+  // ── Company email: send via SMTP + keep a synced Sent log ─────
+  function getSentMail() {
+    return listOf(K_MAIL).sort(function (a, b) {
+      return String(b.sentAt || b.createdAt || '').localeCompare(String(a.sentAt || a.createdAt || ''));
+    });
+  }
+  function logSentMail(rec) { return createIn(K_MAIL, rec); }
+  function deleteSentMail(id) { deleteIn(K_MAIL, id); }
+
+  // Send a free-form email through the company mailbox (Info@).
+  // payload: { to, cc, subject, body, senderName, replyTo, relatedTo }
+  // Resolves with the server JSON; on success also records a Sent entry.
+  function sendEmail(payload) {
+    var body = {
+      to: payload.to,
+      cc: payload.cc || '',
+      subject: payload.subject || '',
+      body: payload.body || '',
+      senderName: payload.senderName || '',
+      replyTo: payload.replyTo || ''
+    };
+    return fetch(API + '?action=sendmail', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    }).then(function (r) { return r.json(); }).then(function (res) {
+      if (res && res.ok) {
+        logSentMail({
+          to: payload.to, cc: payload.cc || '', subject: payload.subject || '',
+          body: payload.body || '', sender: payload.senderName || '',
+          relatedTo: payload.relatedTo || '', sentAt: new Date().toISOString()
+        });
+      }
+      return res;
+    });
+  }
+
   // Sync precast bookings from the sales system (read-only commercial
   // source; execution data lives on the precast order).
   function syncPcFromSales() {
@@ -922,6 +961,8 @@
     unitsInYard: unitsInYard, unitsDelivered: unitsDelivered, lineLoad: lineLoad,
     CAST_MILESTONES: CAST_MILESTONES, QC_REASONS: QC_REASONS,
     DELIVERY_MILESTONES: DELIVERY_MILESTONES, DESIGN_STATUSES: DESIGN_STATUSES,
+    // company email
+    sendEmail: sendEmail, getSentMail: getSentMail, logSentMail: logSentMail, deleteSentMail: deleteSentMail,
     // plant operations
     getOpsOrders: getOpsOrders, getOpsOrder: getOpsOrder, addOpsOrder: addOpsOrder,
     updateOpsOrder: updateOpsOrder, deleteOpsOrder: deleteOpsOrder,

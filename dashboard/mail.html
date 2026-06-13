@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Company Email - Jehan Holding Group</title>
+  <script src="js/auth.js?v=11"></script>
+  <script>if (!window.JehanAuth || !window.JehanAuth.enforce('profile')) { /* halted by redirect */ }</script>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600;700&family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+  <script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          primary:       '#3D5A34',
+          'primary-mid': '#5C7A48',
+          'primary-lt':  '#8CAE78',
+          gold:          '#C49A1A',
+          'gold-hover':  '#A07D10',
+          bg:            '#F2F1EE',
+          surface:       '#FFFFFF',
+          'surface-dim': '#F8F7F4',
+          'surface-mid': '#EEEDE9',
+          'surface-high':'#E4E3DF',
+          dark:          '#1E1E1E',
+          mid:           '#444444',
+          light:         '#888888',
+          border:        '#DCDBD7',
+          error:         '#ba1a1a',
+          'error-bg':    '#ffdad6',
+          'gold-bg':     '#FBF0C4',
+        },
+        fontFamily: {
+          heading: ['"Barlow Condensed"', 'Arial', 'sans-serif'],
+          body:    ['Barlow', 'Arial', 'sans-serif'],
+        },
+        borderRadius: { DEFAULT: '4px', full: '9999px' },
+      }
+    }
+  };
+  </script>
+  <style>
+    body { font-family: 'Barlow', Arial, sans-serif; }
+    h1,h2,h3,h4,h5 { font-family: 'Barlow Condensed', Arial, sans-serif; font-weight: 700; letter-spacing: 0.02em; }
+    .material-symbols-outlined { font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24; }
+    .tab-on { color:#3D5A34; border-color:#3D5A34; }
+  </style>
+</head>
+<body class="bg-bg text-dark h-screen flex overflow-hidden">
+
+  <aside class="w-64 h-full flex flex-col bg-surface border-r border-border flex-shrink-0" data-nav></aside>
+  <script src="js/dash-nav.js?v=5"></script>
+
+  <div class="flex-1 flex flex-col overflow-hidden">
+
+    <header class="bg-surface border-b border-border h-16 flex items-center justify-between px-8 flex-shrink-0 gap-4">
+      <h1 class="font-heading font-bold text-2xl uppercase tracking-wide text-dark" data-i18n="page_mail">Company Email</h1>
+      <a href="https://webmail.hostinger.com" target="_blank" rel="noopener"
+         class="flex items-center gap-2 bg-primary hover:bg-primary-mid text-white text-sm font-semibold tracking-wide px-5 py-2 rounded transition-colors flex-shrink-0">
+        <span class="material-symbols-outlined text-[18px]">open_in_new</span>
+        <span data-i18n="mail_open_mailbox">Open Full Mailbox</span>
+      </a>
+    </header>
+
+    <div class="flex-1 overflow-y-auto p-8">
+      <div class="max-w-3xl mx-auto space-y-5">
+
+        <!-- Identity banner -->
+        <div class="bg-gold-bg border border-gold/30 rounded p-4 flex items-start gap-3">
+          <span class="material-symbols-outlined text-gold-hover text-[22px] flex-shrink-0">info</span>
+          <p class="text-sm text-mid leading-relaxed">
+            <span data-i18n="mail_banner_1">Messages are sent from the company mailbox</span>
+            <strong class="text-dark">Info@Jehanreadymix.com</strong>.
+            <span data-i18n="mail_banner_2">A copy is automatically sent to your inbox</span>
+            (<strong id="mail-myemail" class="text-dark">—</strong>)
+            <span data-i18n="mail_banner_3">so replies and history stay with you. Use “Open Full Mailbox” to read incoming email.</span>
+          </p>
+        </div>
+
+        <!-- Tabs -->
+        <div class="flex items-center gap-1 border-b border-border">
+          <button id="tab-compose" onclick="switchTab('compose')"
+            class="px-4 py-2.5 text-sm font-semibold border-b-2 tab-on -mb-px transition-colors">
+            <span class="material-symbols-outlined text-[18px] align-middle me-1">edit_note</span><span data-i18n="mail_tab_compose">Compose</span>
+          </button>
+          <button id="tab-sent" onclick="switchTab('sent')"
+            class="px-4 py-2.5 text-sm font-semibold border-b-2 border-transparent text-light hover:text-mid -mb-px transition-colors">
+            <span class="material-symbols-outlined text-[18px] align-middle me-1">send</span><span data-i18n="mail_tab_sent">Sent</span> <span id="sent-count" class="text-xs"></span>
+          </button>
+        </div>
+
+        <!-- Compose panel -->
+        <div id="panel-compose" class="bg-surface border border-border rounded-lg shadow-sm">
+          <div class="p-5 sm:p-6 space-y-4">
+
+            <div>
+              <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5"><span data-i18n="mail_to">To</span> <span class="text-error">*</span></label>
+              <input id="m-to" type="email" placeholder="client@example.com" data-i18n-ph="mail_to_ph"
+                class="w-full border border-border rounded px-3 py-2.5 text-sm text-dark bg-bg focus:outline-none focus:border-primary"/>
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5" data-i18n="mail_cc">Cc</label>
+              <input id="m-cc" type="text" placeholder="name@jehanreadymix.com"
+                class="w-full border border-border rounded px-3 py-2.5 text-sm text-dark bg-bg focus:outline-none focus:border-primary"/>
+              <p class="text-xs text-light mt-1" data-i18n="mail_cc_hint">Your email is added here automatically so you keep a copy.</p>
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5"><span data-i18n="mail_subject">Subject</span> <span class="text-error">*</span></label>
+              <input id="m-subject" type="text" data-i18n-ph="mail_subject_ph" placeholder="Subject…"
+                class="w-full border border-border rounded px-3 py-2.5 text-sm text-dark bg-bg focus:outline-none focus:border-primary"/>
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5"><span data-i18n="mail_message">Message</span> <span class="text-error">*</span></label>
+              <textarea id="m-body" rows="9" data-i18n-ph="mail_message_ph" placeholder="Write your message…"
+                class="w-full border border-border rounded px-3 py-2.5 text-sm text-dark bg-bg focus:outline-none focus:border-primary resize-y leading-relaxed"></textarea>
+            </div>
+
+            <input type="hidden" id="m-related"/>
+          </div>
+
+          <div class="px-5 sm:px-6 py-4 border-t border-border flex items-center justify-between gap-3 flex-wrap">
+            <span id="m-status" class="text-sm font-medium"></span>
+            <div class="flex gap-2 ms-auto">
+              <button onclick="clearCompose()" class="px-4 py-2 border border-border rounded text-sm font-semibold text-mid hover:bg-surface-mid transition-colors" data-i18n="mail_clear">Clear</button>
+              <button id="m-send" onclick="sendNow()" class="flex items-center gap-2 bg-gold hover:bg-gold-hover text-white text-sm font-semibold px-6 py-2 rounded transition-colors disabled:opacity-50">
+                <span class="material-symbols-outlined text-[18px]">send</span><span data-i18n="mail_send">Send Email</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sent panel -->
+        <div id="panel-sent" class="hidden space-y-2.5"></div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="mail-toast" class="hidden fixed bottom-6 right-6 z-50 bg-primary text-white text-sm font-semibold px-5 py-3 rounded shadow-lg flex items-center gap-2">
+    <span class="material-symbols-outlined text-[18px]">check_circle</span>
+    <span id="mail-toast-msg">Done</span>
+  </div>
+
+  <script src="js/dash-data.js?v=10"></script>
+  <script>
+    var D = window.JehanData;
+    var ME = (window.JehanAuth && window.JehanAuth.currentUser()) || {};
+
+    function T(key, fb) { return window.dashT ? window.dashT(key, fb) : fb; }
+    function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]); }); }
+
+    function toast(key, fb) {
+      var el = document.getElementById('mail-toast');
+      document.getElementById('mail-toast-msg').textContent = T(key, fb);
+      el.classList.remove('hidden');
+      clearTimeout(el._t);
+      el._t = setTimeout(function () { el.classList.add('hidden'); }, 2600);
+    }
+
+    function switchTab(which) {
+      var onC = which === 'compose';
+      document.getElementById('panel-compose').classList.toggle('hidden', !onC);
+      document.getElementById('panel-sent').classList.toggle('hidden', onC);
+      var tc = document.getElementById('tab-compose'), ts = document.getElementById('tab-sent');
+      tc.classList.toggle('tab-on', onC); tc.classList.toggle('text-light', !onC);
+      ts.classList.toggle('tab-on', !onC); ts.classList.toggle('text-light', onC);
+      if (!onC) renderSent();
+    }
+
+    function clearCompose() {
+      document.getElementById('m-to').value = '';
+      document.getElementById('m-subject').value = '';
+      document.getElementById('m-body').value = '';
+      document.getElementById('m-related').value = '';
+      document.getElementById('m-cc').value = ME.email || '';
+      document.getElementById('m-status').textContent = '';
+    }
+
+    function sendNow() {
+      var to = document.getElementById('m-to').value.trim();
+      var cc = document.getElementById('m-cc').value.trim();
+      var subject = document.getElementById('m-subject').value.trim();
+      var body = document.getElementById('m-body').value.trim();
+      var status = document.getElementById('m-status');
+      var btn = document.getElementById('m-send');
+
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to)) {
+        status.className = 'text-sm font-medium text-error';
+        status.textContent = T('mail_err_to', 'Please enter a valid recipient email.');
+        return;
+      }
+      if (!subject) {
+        status.className = 'text-sm font-medium text-error';
+        status.textContent = T('mail_err_subject', 'Please add a subject.');
+        return;
+      }
+      if (!body) {
+        status.className = 'text-sm font-medium text-error';
+        status.textContent = T('mail_err_body', 'Please write a message.');
+        return;
+      }
+
+      btn.disabled = true;
+      status.className = 'text-sm font-medium text-mid';
+      status.textContent = T('mail_sending', 'Sending…');
+
+      D.sendEmail({
+        to: to, cc: cc, subject: subject, body: body,
+        senderName: ME.name || '', replyTo: ME.email || '',
+        relatedTo: document.getElementById('m-related').value || ''
+      }).then(function (res) {
+        btn.disabled = false;
+        if (res && res.ok) {
+          status.className = 'text-sm font-medium text-primary';
+          status.textContent = T('mail_sent_ok', 'Email sent.');
+          toast('mail_sent_ok', 'Email sent.');
+          clearCompose();
+          document.getElementById('sent-count').textContent = '(' + D.getSentMail().length + ')';
+        } else {
+          status.className = 'text-sm font-medium text-error';
+          status.textContent = T('mail_sent_fail', 'Could not send.') + (res && res.detail ? ' — ' + res.detail : '');
+        }
+      }).catch(function () {
+        btn.disabled = false;
+        status.className = 'text-sm font-medium text-error';
+        status.textContent = T('mail_sent_fail', 'Could not send.');
+      });
+    }
+
+    function fmtDate(iso) {
+      if (!iso) return '';
+      var d = new Date(iso);
+      if (isNaN(d)) return iso;
+      return d.toLocaleString(document.documentElement.lang === 'ar' ? 'ar' : 'en', { dateStyle: 'medium', timeStyle: 'short' });
+    }
+
+    function renderSent() {
+      var box = document.getElementById('panel-sent');
+      var items = D.getSentMail();
+      document.getElementById('sent-count').textContent = '(' + items.length + ')';
+      if (!items.length) {
+        box.innerHTML = '<div class="bg-surface border border-border rounded-lg p-10 text-center text-light">'
+          + '<span class="material-symbols-outlined text-[40px] block mb-2 opacity-50">mark_email_read</span>'
+          + '<p class="text-sm">' + esc(T('mail_sent_empty', 'No emails sent from the dashboard yet.')) + '</p></div>';
+        return;
+      }
+      box.innerHTML = items.map(function (m) {
+        return '<details class="bg-surface border border-border rounded-lg group">'
+          + '<summary class="flex items-center gap-3 px-4 py-3 cursor-pointer list-none">'
+          +   '<span class="material-symbols-outlined text-primary text-[20px]">send</span>'
+          +   '<span class="flex-1 min-w-0">'
+          +     '<span class="block text-sm font-semibold text-dark truncate">' + esc(m.subject || '(no subject)') + '</span>'
+          +     '<span class="block text-xs text-light truncate">' + esc(T('mail_to', 'To') + ': ' + (m.to || '')) + '</span>'
+          +   '</span>'
+          +   '<span class="text-xs text-light whitespace-nowrap">' + esc(fmtDate(m.sentAt || m.createdAt)) + '</span>'
+          + '</summary>'
+          + '<div class="px-4 pb-4 pt-1 border-t border-border text-sm text-mid space-y-2">'
+          +   (m.cc ? '<div class="text-xs text-light">' + esc(T('mail_cc', 'Cc') + ': ' + m.cc) + '</div>' : '')
+          +   '<div class="whitespace-pre-wrap leading-relaxed">' + esc(m.body || '') + '</div>'
+          +   (m.relatedTo ? '<div class="text-xs text-light pt-1">' + esc(T('mail_related', 'Related') + ': ' + m.relatedTo) + '</div>' : '')
+          + '</div>'
+          + '</details>';
+      }).join('');
+    }
+
+    // Prefill from query params (e.g. coming from a quote).
+    function prefillFromQuery() {
+      var p = new URLSearchParams(location.search);
+      var to = p.get('to'), subject = p.get('subject'), body = p.get('body'), related = p.get('related');
+      if (to) document.getElementById('m-to').value = to;
+      if (subject) document.getElementById('m-subject').value = subject;
+      if (body) document.getElementById('m-body').value = body;
+      if (related) document.getElementById('m-related').value = related;
+      if (to || subject || body) switchTab('compose');
+    }
+
+    function init() {
+      document.getElementById('mail-myemail').textContent = ME.email || '—';
+      document.getElementById('m-cc').value = ME.email || '';
+      prefillFromQuery();
+      document.getElementById('sent-count').textContent = '(' + D.getSentMail().length + ')';
+      if (window.reapplyDashLang) window.reapplyDashLang();
+    }
+
+    if (D.ready) { D.ready(init); } else { init(); }
+    if (D.subscribe) D.subscribe(function () {
+      document.getElementById('sent-count').textContent = '(' + D.getSentMail().length + ')';
+      if (!document.getElementById('panel-sent').classList.contains('hidden')) renderSent();
+    });
+  </script>
+  <script src="js/dash-lang.js?v=12"></script>
+</body>
+</html>

@@ -96,6 +96,7 @@
         PC_ITEMS.map(itemHtml).join('') +
       '</div>' +
       '<div class="my-3 h-px bg-border"></div>' +
+      itemHtml(['mail.html', 'mail', 'nav_mail', 'Company Email']) +
       itemHtml(['settings.html', 'settings', 'nav_settings', 'Settings']) +
     '</nav>' +
     '<div class="px-4 py-4 border-t border-border">' +
