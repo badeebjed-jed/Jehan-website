@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Spare Parts - Jehan Holding Group</title>
+  <script src="js/auth.js?v=11"></script>
+  <script>if (!window.JehanAuth || !window.JehanAuth.enforce('maintenance')) { /* halted by redirect */ }</script>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600;700&family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+  <script>
+  tailwind.config = { theme: { extend: {
+    colors: { primary:'#3D5A34','primary-mid':'#5C7A48','primary-lt':'#8CAE78', gold:'#C49A1A','gold-hover':'#A07D10',
+      bg:'#F2F1EE', surface:'#FFFFFF','surface-dim':'#F8F7F4','surface-mid':'#EEEDE9','surface-high':'#E4E3DF',
+      dark:'#1E1E1E', mid:'#444444', light:'#888888', border:'#DCDBD7', error:'#ba1a1a','error-bg':'#ffdad6','gold-bg':'#FBF0C4' },
+    fontFamily: { heading:['"Barlow Condensed"','Arial','sans-serif'], body:['Barlow','Arial','sans-serif'] },
+    borderRadius: { DEFAULT:'4px', full:'9999px' } } } };
+  </script>
+  <style>
+    body { font-family: 'Barlow', Arial, sans-serif; }
+    h1,h2,h3,h4,h5 { font-family: 'Barlow Condensed', Arial, sans-serif; font-weight: 700; letter-spacing: 0.02em; }
+    .material-symbols-outlined { font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24; }
+  </style>
+</head>
+<body class="bg-bg text-dark h-screen flex overflow-hidden">
+
+  <aside class="w-64 h-full flex flex-col bg-surface border-r border-border flex-shrink-0" data-nav></aside>
+  <script src="js/dash-nav.js?v=5"></script>
+
+  <div class="flex-1 flex flex-col overflow-hidden">
+
+    <header class="bg-surface border-b border-border h-16 flex items-center justify-between px-8 flex-shrink-0 gap-4">
+      <h1 class="font-heading font-bold text-2xl uppercase tracking-wide text-dark" data-i18n="page_mt_parts">Spare Parts</h1>
+      <button onclick="openPart()" class="flex items-center gap-2 bg-gold hover:bg-gold-hover text-white text-sm font-semibold px-5 py-2 rounded transition-colors flex-shrink-0">
+        <span class="material-symbols-outlined text-[18px]">add</span><span data-i18n="mt_add_part">Add Part</span>
+      </button>
+    </header>
+
+    <div class="flex-1 overflow-y-auto p-8">
+      <div class="max-w-5xl mx-auto space-y-4">
+
+        <div id="low-banner" class="hidden bg-gold-bg border border-gold/40 rounded-lg p-3 flex items-start gap-2">
+          <span class="material-symbols-outlined text-gold-hover text-[20px]">inventory</span>
+          <div class="text-sm text-mid"><strong data-i18n="mt_low_stock_t">Low stock:</strong> <span id="low-list"></span></div>
+        </div>
+
+        <div class="bg-surface border border-border rounded-lg overflow-hidden">
+          <table class="w-full text-sm">
+            <thead class="bg-surface-dim border-b border-border">
+              <tr class="text-[11px] font-bold uppercase tracking-widest text-light">
+                <th class="text-start px-4 py-3" data-i18n="mt_part">Part</th>
+                <th class="text-start px-4 py-3" data-i18n="mt_sku">SKU</th>
+                <th class="text-start px-4 py-3" data-i18n="mt_stock">Stock</th>
+                <th class="text-start px-4 py-3" data-i18n="mt_min">Min</th>
+                <th class="text-start px-4 py-3" data-i18n="mt_unit_cost">Unit cost</th>
+                <th class="px-4 py-3"></th>
+              </tr>
+            </thead>
+            <tbody id="rows"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Part modal -->
+  <div id="p-modal" class="hidden fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
+    <div class="bg-surface rounded-lg shadow-xl w-full max-w-md max-h-[92vh] overflow-y-auto">
+      <div class="px-6 py-4 border-b border-border flex items-center justify-between">
+        <h3 class="font-heading font-bold text-lg" id="p-title" data-i18n="mt_add_part">Add Part</h3>
+        <button onclick="closePart()" class="text-light hover:text-dark"><span class="material-symbols-outlined">close</span></button>
+      </div>
+      <div class="p-6 space-y-4">
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5"><span data-i18n="mt_part_name">Part name</span> <span class="text-error">*</span></label>
+          <input id="p-name" type="text" class="w-full border border-border rounded px-3 py-2.5 text-sm bg-bg focus:outline-none focus:border-primary"/>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5" data-i18n="mt_sku">SKU</label>
+            <input id="p-sku" type="text" class="w-full border border-border rounded px-3 py-2.5 text-sm bg-bg focus:outline-none focus:border-primary"/>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5" data-i18n="mt_supplier">Supplier</label>
+            <input id="p-supplier" type="text" class="w-full border border-border rounded px-3 py-2.5 text-sm bg-bg focus:outline-none focus:border-primary"/>
+          </div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div>
+            <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5" data-i18n="mt_stock">Stock</label>
+            <input id="p-stock" type="number" min="0" class="w-full border border-border rounded px-3 py-2.5 text-sm bg-bg focus:outline-none focus:border-primary"/>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5" data-i18n="mt_min">Min</label>
+            <input id="p-min" type="number" min="0" class="w-full border border-border rounded px-3 py-2.5 text-sm bg-bg focus:outline-none focus:border-primary"/>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5" data-i18n="mt_unit_cost">Unit cost</label>
+            <input id="p-cost" type="number" min="0" step="0.5" class="w-full border border-border rounded px-3 py-2.5 text-sm bg-bg focus:outline-none focus:border-primary"/>
+          </div>
+        </div>
+        <p id="p-err" class="hidden text-sm text-error"></p>
+      </div>
+      <div class="px-6 py-4 border-t border-border flex gap-3 justify-between">
+        <button id="p-del" onclick="delPart()" class="hidden text-sm font-semibold text-error px-3 py-2 rounded hover:bg-error-bg" data-i18n="btn_delete">Delete</button>
+        <div class="flex gap-2 ms-auto">
+          <button onclick="closePart()" class="px-5 py-2 border border-border rounded text-sm font-semibold text-mid hover:bg-surface-mid" data-i18n="btn_cancel">Cancel</button>
+          <button onclick="savePart()" class="flex items-center gap-2 bg-gold hover:bg-gold-hover text-white text-sm font-semibold px-5 py-2 rounded">
+            <span class="material-symbols-outlined text-[18px]">save</span><span data-i18n="btn_save">Save</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="hidden fixed bottom-6 right-6 z-50 bg-primary text-white text-sm font-semibold px-5 py-3 rounded shadow-lg flex items-center gap-2">
+    <span class="material-symbols-outlined text-[18px]">check_circle</span><span id="toast-msg">Done</span>
+  </div>
+
+  <script src="js/dash-data.js?v=10"></script>
+  <script>
+    var D = window.JehanData;
+    var editId = null;
+    function T(k, fb) { return window.dashT ? window.dashT(k, fb) : fb; }
+    function esc(s) { return D.escapeHtml(s); }
+    function toast(fb) { document.getElementById('toast-msg').textContent = fb; var el=document.getElementById('toast'); el.classList.remove('hidden'); clearTimeout(el._t); el._t=setTimeout(function(){el.classList.add('hidden');},2400); }
+
+    function render() {
+      var parts = D.getParts();
+      var low = D.partsLowStock();
+      var b = document.getElementById('low-banner');
+      if (low.length) { b.classList.remove('hidden'); document.getElementById('low-list').textContent = low.map(function(p){return p.name+' ('+(p.stock||0)+')';}).join(', '); }
+      else b.classList.add('hidden');
+
+      document.getElementById('rows').innerHTML = parts.length ? parts.map(function(p){
+        var isLow = Number(p.stock||0) <= Number(p.minStock||0);
+        return '<tr class="border-b border-border last:border-0 hover:bg-surface-dim">' +
+          '<td class="px-4 py-3"><p class="font-semibold text-dark">'+esc(p.name)+'</p>'+(p.supplier?'<p class="text-xs text-light">'+esc(p.supplier)+'</p>':'')+'</td>' +
+          '<td class="px-4 py-3 text-mid">'+esc(p.sku||'—')+'</td>' +
+          '<td class="px-4 py-3"><span class="'+(isLow?'text-error font-bold':'text-dark font-semibold')+'">'+(p.stock||0)+'</span>'+(isLow?' <span class="bg-gold-bg text-gold-hover border border-gold text-[10px] font-bold px-1.5 py-0.5 rounded-full ms-1">'+T('mt_low','LOW')+'</span>':'')+'</td>' +
+          '<td class="px-4 py-3 text-mid">'+(p.minStock||0)+'</td>' +
+          '<td class="px-4 py-3 text-mid">'+(p.unitCost?Number(p.unitCost).toLocaleString()+' SAR':'—')+'</td>' +
+          '<td class="px-4 py-3 text-end whitespace-nowrap">' +
+            '<button onclick="restock('+p.id+')" title="'+T('mt_restock','Restock')+'" class="p-1.5 rounded text-primary hover:bg-surface-mid"><span class="material-symbols-outlined text-[18px]">add_box</span></button>' +
+            '<button onclick="openPart('+p.id+')" title="'+T('mt_edit','Edit')+'" class="p-1.5 rounded text-mid hover:bg-surface-mid"><span class="material-symbols-outlined text-[18px]">edit</span></button>' +
+          '</td>' +
+        '</tr>';
+      }).join('') : '<tr><td colspan="6" class="px-4 py-10 text-center text-light text-sm" data-i18n="mt_no_parts">No parts yet — add your first spare part.</td></tr>';
+      if (window.reapplyDashLang) window.reapplyDashLang();
+    }
+
+    function restock(id) {
+      var p = D.getPart(id);
+      var qty = prompt(T('mt_restock_qty','How many to add to ') + p.name + '?', '1');
+      if (qty == null) return;
+      var n = parseInt(qty, 10);
+      if (!isNaN(n) && n > 0) { D.restockPart(id, n); toast(T('mt_restocked','Stock updated')); render(); }
+    }
+
+    function openPart(id) {
+      editId = (typeof id === 'number') ? id : null;
+      var p = editId != null ? D.getPart(editId) : null;
+      document.getElementById('p-title').textContent = p ? T('mt_edit_part','Edit Part') : T('mt_add_part','Add Part');
+      document.getElementById('p-name').value = p ? p.name : '';
+      document.getElementById('p-sku').value = p ? (p.sku||'') : '';
+      document.getElementById('p-supplier').value = p ? (p.supplier||'') : '';
+      document.getElementById('p-stock').value = p ? (p.stock||0) : '';
+      document.getElementById('p-min').value = p ? (p.minStock||0) : '';
+      document.getElementById('p-cost').value = p ? (p.unitCost||'') : '';
+      document.getElementById('p-err').classList.add('hidden');
+      document.getElementById('p-del').classList.toggle('hidden', !p);
+      document.getElementById('p-modal').classList.remove('hidden');
+      if (window.reapplyDashLang) window.reapplyDashLang();
+    }
+    function closePart() { document.getElementById('p-modal').classList.add('hidden'); editId = null; }
+    function savePart() {
+      var name = document.getElementById('p-name').value.trim();
+      if (!name) { var e=document.getElementById('p-err'); e.textContent=T('mt_err_part','Please enter a part name.'); e.classList.remove('hidden'); return; }
+      var data = {
+        name: name, sku: document.getElementById('p-sku').value.trim(),
+        supplier: document.getElementById('p-supplier').value.trim(),
+        stock: Number(document.getElementById('p-stock').value)||0,
+        minStock: Number(document.getElementById('p-min').value)||0,
+        unitCost: Number(document.getElementById('p-cost').value)||0
+      };
+      if (editId != null) D.updatePart(editId, data); else D.addPart(data);
+      closePart(); toast(T('mt_saved','Saved')); render();
+    }
+    function delPart() {
+      if (editId == null) return;
+      if (!confirm(T('mt_del_part','Delete this part?'))) return;
+      D.deletePart(editId); closePart(); toast(T('mt_deleted','Part deleted')); render();
+    }
+
+    render();
+    if (D.subscribe) D.subscribe(function(){ if (!document.getElementById('p-modal').classList.contains('hidden')) return; render(); });
+  </script>
+  <script src="js/dash-lang.js?v=12"></script>
+</body>
+</html>

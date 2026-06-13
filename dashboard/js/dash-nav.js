@@ -45,9 +45,19 @@
     ['pc-reports.html',    'query_stats',     'nav_pc_reports',    'Precast Reports']
   ];
 
+  // Maintenance Operations group items: [href, material icon, i18n key, fallback EN]
+  var MT_ITEMS = [
+    ['mt-board.html',   'build_circle',   'nav_mt_board',   'Maintenance Board'],
+    ['mt-intake.html',  'assignment_late','nav_mt_intake',  'Work Order Intake'],
+    ['mt-assets.html',  'precision_manufacturing', 'nav_mt_assets', 'Assets & Service'],
+    ['mt-parts.html',   'inventory_2',    'nav_mt_parts',   'Spare Parts'],
+    ['mt-reports.html', 'query_stats',    'nav_mt_reports', 'Maintenance Reports']
+  ];
+
   var open = localStorage.getItem('jehan_nav_sales_open') !== '0';
   var opsOpen = localStorage.getItem('jehan_nav_ops_open') !== '0';
   var pcOpen = localStorage.getItem('jehan_nav_pc_open') !== '0';
+  var mtOpen = localStorage.getItem('jehan_nav_mt_open') !== '0';
 
   function itemHtml(it) {
     var active = page === it[0];
@@ -96,6 +106,16 @@
         PC_ITEMS.map(itemHtml).join('') +
       '</div>' +
       '<div class="my-3 h-px bg-border"></div>' +
+      // ── Maintenance Operations group ──
+      '<button id="mt-group-btn" type="button" class="w-full flex items-center gap-2 px-3 py-2 rounded text-[11px] font-bold uppercase tracking-widest text-light hover:text-primary transition-colors select-none">' +
+        '<span class="material-symbols-outlined text-[17px]">construction</span>' +
+        '<span data-i18n="nav_mt_system">Maintenance Operations</span>' +
+        '<span id="mt-group-chev" class="material-symbols-outlined text-[18px] ml-auto transition-transform' + (mtOpen ? '' : ' -rotate-90') + '">expand_more</span>' +
+      '</button>' +
+      '<div id="mt-group-items" class="space-y-0.5 mt-1' + (mtOpen ? '' : ' hidden') + '">' +
+        MT_ITEMS.map(itemHtml).join('') +
+      '</div>' +
+      '<div class="my-3 h-px bg-border"></div>' +
       itemHtml(['mail.html', 'mail', 'nav_mail', 'Company Email']) +
       itemHtml(['settings.html', 'settings', 'nav_settings', 'Settings']) +
     '</nav>' +
@@ -137,6 +157,7 @@
   wireGroup('sales-group-btn', 'sales-group-items', 'sales-group-chev', 'jehan_nav_sales_open');
   wireGroup('ops-group-btn', 'ops-group-items', 'ops-group-chev', 'jehan_nav_ops_open');
   wireGroup('pc-group-btn', 'pc-group-items', 'pc-group-chev', 'jehan_nav_pc_open');
+  wireGroup('mt-group-btn', 'mt-group-items', 'mt-group-chev', 'jehan_nav_mt_open');
 
   // ── Mobile: turn the sidebar into a slide-in drawer ──────────
   (function () {

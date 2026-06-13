@@ -43,7 +43,7 @@
   var SESSION_TIMEOUT_MS = 1000 * 60 * 60 * 8; // 8 hours
 
   // Permission modules every account can be granted.
-  var MODULES = ['bookings', 'customers', 'financials', 'settings', 'profile', 'approvals', 'operations', 'precast'];
+  var MODULES = ['bookings', 'customers', 'financials', 'settings', 'profile', 'approvals', 'operations', 'precast', 'maintenance'];
 
   // ── Crypto ───────────────────────────────────────────────────
   function sha256Hex(message) {
@@ -395,7 +395,11 @@
         'ops-fleet.html': 'operations', 'ops-reports.html': 'operations',
         // precast operations module
         'pc-orders.html': 'precast', 'pc-production.html': 'precast',
-        'pc-delivery.html': 'precast', 'pc-reports.html': 'precast'
+        'pc-delivery.html': 'precast', 'pc-reports.html': 'precast',
+        // maintenance operations module
+        'mt-intake.html': 'maintenance', 'mt-board.html': 'maintenance',
+        'mt-assets.html': 'maintenance', 'mt-parts.html': 'maintenance',
+        'mt-reports.html': 'maintenance'
       };
       document.querySelectorAll('nav a[href]').forEach(function (a) {
         var href = a.getAttribute('href');
@@ -414,6 +418,12 @@
         var pi = document.getElementById('pc-group-items');
         if (pb) pb.style.display = 'none';
         if (pi) pi.style.display = 'none';
+      }
+      if (!can('maintenance')) {
+        var mb = document.getElementById('mt-group-btn');
+        var mi = document.getElementById('mt-group-items');
+        if (mb) mb.style.display = 'none';
+        if (mi) mi.style.display = 'none';
       }
       // Settings → Workspace cards: hide individually based on permission,
       // and hide the whole section if neither card is visible.

@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Work Order Intake - Jehan Holding Group</title>
+  <script src="js/auth.js?v=11"></script>
+  <script>if (!window.JehanAuth || !window.JehanAuth.enforce('maintenance')) { /* halted by redirect */ }</script>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600;700&family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+  <script>
+  tailwind.config = { theme: { extend: {
+    colors: { primary:'#3D5A34','primary-mid':'#5C7A48','primary-lt':'#8CAE78', gold:'#C49A1A','gold-hover':'#A07D10',
+      bg:'#F2F1EE', surface:'#FFFFFF','surface-dim':'#F8F7F4','surface-mid':'#EEEDE9','surface-high':'#E4E3DF',
+      dark:'#1E1E1E', mid:'#444444', light:'#888888', border:'#DCDBD7', error:'#ba1a1a','error-bg':'#ffdad6','gold-bg':'#FBF0C4' },
+    fontFamily: { heading:['"Barlow Condensed"','Arial','sans-serif'], body:['Barlow','Arial','sans-serif'] },
+    borderRadius: { DEFAULT:'4px', full:'9999px' } } } };
+  </script>
+  <style>
+    body { font-family: 'Barlow', Arial, sans-serif; }
+    h1,h2,h3,h4,h5 { font-family: 'Barlow Condensed', Arial, sans-serif; font-weight: 700; letter-spacing: 0.02em; }
+    .material-symbols-outlined { font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24; }
+  </style>
+</head>
+<body class="bg-bg text-dark h-screen flex overflow-hidden">
+
+  <aside class="w-64 h-full flex flex-col bg-surface border-r border-border flex-shrink-0" data-nav></aside>
+  <script src="js/dash-nav.js?v=5"></script>
+
+  <div class="flex-1 flex flex-col overflow-hidden">
+
+    <header class="bg-surface border-b border-border h-16 flex items-center justify-between px-8 flex-shrink-0 gap-4">
+      <h1 class="font-heading font-bold text-2xl uppercase tracking-wide text-dark" data-i18n="page_mt_intake">Work Order Intake</h1>
+      <div class="flex items-center gap-2 flex-shrink-0">
+        <button onclick="syncOps()" class="flex items-center gap-2 border border-border bg-surface hover:bg-surface-mid text-mid text-sm font-semibold px-4 py-2 rounded transition-colors">
+          <span class="material-symbols-outlined text-[18px]">sync</span><span data-i18n="mt_sync">Sync from Plant Ops</span>
+        </button>
+        <button onclick="openWO()" class="flex items-center gap-2 bg-gold hover:bg-gold-hover text-white text-sm font-semibold px-5 py-2 rounded transition-colors">
+          <span class="material-symbols-outlined text-[18px]">add</span><span data-i18n="mt_new_wo">New Work Order</span>
+        </button>
+      </div>
+    </header>
+
+    <div class="flex-1 overflow-y-auto p-8">
+      <div class="max-w-5xl mx-auto space-y-6">
+
+        <!-- KPI strip -->
+        <div id="kpi" class="grid grid-cols-2 md:grid-cols-4 gap-3"></div>
+
+        <!-- Needs triage -->
+        <div>
+          <h2 class="text-sm font-bold uppercase tracking-widest text-light mb-2 flex items-center gap-2">
+            <span class="material-symbols-outlined text-[18px] text-error">assignment_late</span><span data-i18n="mt_needs_triage">Needs Triage</span>
+            <span id="triage-count" class="text-xs"></span>
+          </h2>
+          <div id="triage" class="space-y-2.5"></div>
+        </div>
+
+        <!-- In the workshop -->
+        <div>
+          <h2 class="text-sm font-bold uppercase tracking-widest text-light mb-2 flex items-center gap-2">
+            <span class="material-symbols-outlined text-[18px] text-primary">build</span><span data-i18n="mt_in_workshop">Accepted — In the Workshop</span>
+          </h2>
+          <div id="workshop" class="space-y-2.5"></div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- New WO modal -->
+  <div id="wo-modal" class="hidden fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
+    <div class="bg-surface rounded-lg shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+      <div class="px-6 py-4 border-b border-border flex items-center justify-between">
+        <h3 class="font-heading font-bold text-lg" data-i18n="mt_new_wo">New Work Order</h3>
+        <button onclick="closeWO()" class="text-light hover:text-dark"><span class="material-symbols-outlined">close</span></button>
+      </div>
+      <div class="p-6 space-y-4">
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5"><span data-i18n="mt_asset">Asset</span> <span class="text-error">*</span></label>
+          <select id="wo-asset" class="w-full border border-border rounded px-3 py-2.5 text-sm bg-bg focus:outline-none focus:border-primary"></select>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5" data-i18n="mt_type">Type</label>
+            <select id="wo-type" onchange="woTypeChange()" class="w-full border border-border rounded px-3 py-2.5 text-sm bg-bg focus:outline-none focus:border-primary"></select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5" data-i18n="mt_priority">Priority</label>
+            <select id="wo-priority" class="w-full border border-border rounded px-3 py-2.5 text-sm bg-bg focus:outline-none focus:border-primary"></select>
+          </div>
+        </div>
+        <div id="wo-cause-wrap">
+          <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5" data-i18n="mt_cause">Fault area</label>
+          <select id="wo-cause" class="w-full border border-border rounded px-3 py-2.5 text-sm bg-bg focus:outline-none focus:border-primary"></select>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5"><span data-i18n="mt_summary">Summary</span> <span class="text-error">*</span></label>
+          <input id="wo-summary" type="text" data-i18n-ph="mt_summary_ph" placeholder="What's wrong / what's needed…" class="w-full border border-border rounded px-3 py-2.5 text-sm bg-bg focus:outline-none focus:border-primary"/>
+        </div>
+        <p id="wo-err" class="hidden text-sm text-error"></p>
+      </div>
+      <div class="px-6 py-4 border-t border-border flex gap-3 justify-end">
+        <button onclick="closeWO()" class="px-5 py-2 border border-border rounded text-sm font-semibold text-mid hover:bg-surface-mid" data-i18n="btn_cancel">Cancel</button>
+        <button onclick="saveWO()" class="flex items-center gap-2 bg-gold hover:bg-gold-hover text-white text-sm font-semibold px-5 py-2 rounded">
+          <span class="material-symbols-outlined text-[18px]">save</span><span data-i18n="mt_raise">Raise Work Order</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="hidden fixed bottom-6 right-6 z-50 bg-primary text-white text-sm font-semibold px-5 py-3 rounded shadow-lg flex items-center gap-2">
+    <span class="material-symbols-outlined text-[18px]">check_circle</span><span id="toast-msg">Done</span>
+  </div>
+
+  <script src="js/dash-data.js?v=10"></script>
+  <script>
+    var D = window.JehanData;
+    function T(k, fb) { return window.dashT ? window.dashT(k, fb) : fb; }
+    function esc(s) { return D.escapeHtml(s); }
+    function toast(fb, k) {
+      document.getElementById('toast-msg').textContent = T(k || '', fb) || fb;
+      var el = document.getElementById('toast'); el.classList.remove('hidden');
+      clearTimeout(el._t); el._t = setTimeout(function(){ el.classList.add('hidden'); }, 2600);
+    }
+    function assetsNonStaff() { return D.getAssets().filter(function(a){ return a.kind !== 'staff'; }); }
+
+    function renderKpis() {
+      var k = D.maintenanceKpis();
+      var cards = [
+        ['mt_k_open', 'Open Work Orders', k.openWOs, 'assignment', 'text-dark'],
+        ['mt_k_critical', 'Critical', k.criticalWOs, 'priority_high', k.criticalWOs ? 'text-error' : 'text-dark'],
+        ['mt_k_breakdown', 'Breakdowns', k.breakdownsOpen, 'car_crash', k.breakdownsOpen ? 'text-error' : 'text-dark'],
+        ['mt_k_pmdue', 'PM Due', k.pmDue, 'event_repeat', k.pmDue ? 'text-gold-hover' : 'text-dark']
+      ];
+      document.getElementById('kpi').innerHTML = cards.map(function(c){
+        return '<div class="bg-surface border border-border rounded-lg p-4">' +
+          '<div class="flex items-center justify-between mb-1"><span class="material-symbols-outlined text-[20px] text-light">'+c[3]+'</span></div>' +
+          '<p class="text-2xl font-bold '+c[4]+'">'+c[2]+'</p>' +
+          '<p class="text-xs text-light" data-i18n="'+c[0]+'">'+c[1]+'</p></div>';
+      }).join('');
+    }
+
+    function priorityOptions(sel) {
+      return D.WO_PRIORITY.map(function(p){ return '<option'+(p===sel?' selected':'')+'>'+p+'</option>'; }).join('');
+    }
+
+    function woCard(w, triage) {
+      var a = w.assetId != null ? D.getAsset(w.assetId) : null;
+      var srcIcon = w.source === 'ops' ? 'factory' : (w.source === 'pm' ? 'event_repeat' : 'person');
+      var srcLabel = w.source === 'ops' ? T('mt_src_ops','From Plant Ops') : (w.source === 'pm' ? T('mt_src_pm','PM Scheduler') : T('mt_src_manual','Manual'));
+      var head = '<div class="flex items-start gap-3">' +
+          '<span class="material-symbols-outlined text-[22px] '+(w.type==='Breakdown'?'text-error':'text-primary')+'">'+(w.type==='Breakdown'?'car_crash':(w.type==='Preventive'?'event_repeat':'fact_check'))+'</span>' +
+          '<div class="flex-1 min-w-0">' +
+            '<div class="flex items-center gap-2 flex-wrap">' +
+              '<span class="font-bold text-dark text-sm">'+esc(w.ref)+'</span>' +
+              '<span class="'+D.statusPill(w.priority)+' text-[10px] font-bold px-2 py-0.5 rounded-full">'+esc(w.priority)+'</span>' +
+              '<span class="'+D.statusPill(w.status)+' text-[10px] font-bold px-2 py-0.5 rounded-full">'+esc(w.status)+'</span>' +
+              '<span class="text-[11px] text-light flex items-center gap-1"><span class="material-symbols-outlined text-[13px]">'+srcIcon+'</span>'+srcLabel+'</span>' +
+            '</div>' +
+            '<p class="text-sm font-semibold text-dark mt-0.5">'+esc(a ? a.name : w.assetName || '—')+' <span class="text-light font-normal">· '+esc(w.type)+'</span></p>' +
+            '<p class="text-xs text-mid mt-0.5">'+esc(w.summary || '')+(w.cause?' · '+esc(w.cause):'')+'</p>' +
+          '</div></div>';
+
+      if (triage) {
+        return '<div class="bg-surface border border-border rounded-lg p-4">' + head +
+          '<div class="flex items-center gap-2 mt-3 flex-wrap">' +
+            '<select onchange="setField('+w.id+',\'priority\',this.value)" class="text-xs border border-border rounded px-2 py-1.5 bg-bg">'+priorityOptions(w.priority)+'</select>' +
+            '<input list="tech-list" value="'+esc(w.technician||'')+'" onchange="setField('+w.id+',\'technician\',this.value)" placeholder="'+T('mt_assign_tech','Assign technician…')+'" class="text-xs border border-border rounded px-2 py-1.5 bg-bg flex-1 min-w-[140px]"/>' +
+            '<button onclick="accept('+w.id+')" class="text-xs font-bold bg-primary text-white px-3 py-1.5 rounded hover:bg-primary-mid">'+T('mt_accept','Accept →')+'</button>' +
+            '<button onclick="cancelWO('+w.id+')" class="text-xs font-semibold text-error px-2 py-1.5 rounded hover:bg-error-bg">'+T('btn_cancel','Cancel')+'</button>' +
+          '</div></div>';
+      }
+      return '<div class="bg-surface border border-border rounded-lg p-4">' + head +
+        '<div class="flex items-center gap-2 mt-2 text-xs text-light">' +
+          (w.technician ? '<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">engineering</span>'+esc(w.technician)+'</span>' : '') +
+          '<a href="mt-board.html" class="ms-auto font-bold text-primary hover:underline">'+T('mt_open_board','Open on board →')+'</a>' +
+        '</div></div>';
+    }
+
+    function render() {
+      renderKpis();
+      var wos = D.getWorkOrders();
+      var triage = wos.filter(function(w){ return w.status === 'Reported'; });
+      var shop = wos.filter(function(w){ return ['Diagnosed','In Progress','Awaiting Parts','Testing','On Hold'].indexOf(w.status) !== -1; });
+      document.getElementById('triage-count').textContent = '('+triage.length+')';
+      document.getElementById('triage').innerHTML = triage.length
+        ? triage.map(function(w){ return woCard(w, true); }).join('')
+        : '<div class="bg-surface border border-border rounded-lg p-8 text-center text-light text-sm" data-i18n="mt_triage_empty">Nothing waiting — all caught up.</div>';
+      document.getElementById('workshop').innerHTML = shop.length
+        ? shop.map(function(w){ return woCard(w, false); }).join('')
+        : '<div class="bg-surface border border-border rounded-lg p-8 text-center text-light text-sm" data-i18n="mt_shop_empty">No active repairs.</div>';
+      // technician datalist from staff assets
+      var staff = D.getAssets('staff');
+      var dl = document.getElementById('tech-list');
+      if (!dl) { dl = document.createElement('datalist'); dl.id = 'tech-list'; document.body.appendChild(dl); }
+      dl.innerHTML = staff.map(function(s){ return '<option value="'+esc(s.name)+'">'; }).join('');
+      if (window.reapplyDashLang) window.reapplyDashLang();
+    }
+
+    function setField(id, field, val) { var p={}; p[field]=val; D.updateWorkOrder(id, p); }
+    function accept(id) {
+      D.updateWorkOrder(id, { status: 'Diagnosed' });
+      D.logAudit('wo_accepted', 'Work order accepted into workshop', id, '');
+      toast('Accepted into workshop', 'mt_toast_accepted'); render();
+    }
+    function cancelWO(id) {
+      var w = D.getWorkOrder(id);
+      D.updateWorkOrder(id, { status: 'Cancelled' });
+      if (w && w.assetId != null) D.refreshAssetService(w.assetId);
+      D.logAudit('wo_cancelled', 'Work order cancelled', id, '');
+      toast('Work order cancelled', 'mt_toast_cancelled'); render();
+    }
+
+    function syncOps() {
+      var a = D.syncBreakdownsFromOps();
+      var b = D.syncPmDue();
+      toast((a+b) ? ((a+b)+' '+T('mt_synced','new work order(s) raised')) : T('mt_nothing_new','Nothing new'), '');
+      render();
+    }
+
+    // ── New WO modal ──
+    function openWO() {
+      var sel = document.getElementById('wo-asset');
+      sel.innerHTML = assetsNonStaff().map(function(a){ return '<option value="'+a.id+'">'+esc(a.name)+' · '+esc(a.kind)+'</option>'; }).join('');
+      document.getElementById('wo-type').innerHTML = D.WO_TYPES.map(function(t){ return '<option>'+t+'</option>'; }).join('');
+      document.getElementById('wo-priority').innerHTML = priorityOptions('Normal');
+      document.getElementById('wo-cause').innerHTML = D.WO_FAULT_CAUSES.map(function(c){ return '<option>'+c+'</option>'; }).join('');
+      document.getElementById('wo-summary').value = '';
+      document.getElementById('wo-err').classList.add('hidden');
+      woTypeChange();
+      document.getElementById('wo-modal').classList.remove('hidden');
+      if (window.reapplyDashLang) window.reapplyDashLang();
+    }
+    function closeWO() { document.getElementById('wo-modal').classList.add('hidden'); }
+    function woTypeChange() {
+      document.getElementById('wo-cause-wrap').classList.toggle('hidden', document.getElementById('wo-type').value !== 'Breakdown');
+    }
+    function saveWO() {
+      var assetId = Number(document.getElementById('wo-asset').value);
+      var summary = document.getElementById('wo-summary').value.trim();
+      if (!summary) { var e=document.getElementById('wo-err'); e.textContent=T('mt_err_summary','Please describe the work needed.'); e.classList.remove('hidden'); return; }
+      var type = document.getElementById('wo-type').value;
+      var a = D.getAsset(assetId);
+      var me = ''; try { var u=window.JehanAuth.currentUser(); me=u?(u.name||u.email):''; } catch(e){}
+      D.raiseWorkOrder({
+        type: type, priority: document.getElementById('wo-priority').value,
+        assetId: assetId, assetName: a ? a.name : '',
+        cause: type === 'Breakdown' ? document.getElementById('wo-cause').value : '',
+        summary: summary, source: 'manual', reportedBy: me
+      });
+      D.logAudit('wo_raised', type + ' work order for ' + (a?a.name:''), assetId, '');
+      closeWO(); toast('Work order raised', 'mt_toast_raised'); render();
+    }
+
+    render();
+    if (D.subscribe) D.subscribe(render);
+  </script>
+  <script src="js/dash-lang.js?v=12"></script>
+</body>
+</html>

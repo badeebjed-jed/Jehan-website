@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Assets & Service - Jehan Holding Group</title>
+  <script src="js/auth.js?v=11"></script>
+  <script>if (!window.JehanAuth || !window.JehanAuth.enforce('maintenance')) { /* halted by redirect */ }</script>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600;700&family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+  <script>
+  tailwind.config = { theme: { extend: {
+    colors: { primary:'#3D5A34','primary-mid':'#5C7A48','primary-lt':'#8CAE78', gold:'#C49A1A','gold-hover':'#A07D10',
+      bg:'#F2F1EE', surface:'#FFFFFF','surface-dim':'#F8F7F4','surface-mid':'#EEEDE9','surface-high':'#E4E3DF',
+      dark:'#1E1E1E', mid:'#444444', light:'#888888', border:'#DCDBD7', error:'#ba1a1a','error-bg':'#ffdad6','gold-bg':'#FBF0C4' },
+    fontFamily: { heading:['"Barlow Condensed"','Arial','sans-serif'], body:['Barlow','Arial','sans-serif'] },
+    borderRadius: { DEFAULT:'4px', full:'9999px' } } } };
+  </script>
+  <style>
+    body { font-family: 'Barlow', Arial, sans-serif; }
+    h1,h2,h3,h4,h5 { font-family: 'Barlow Condensed', Arial, sans-serif; font-weight: 700; letter-spacing: 0.02em; }
+    .material-symbols-outlined { font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24; }
+  </style>
+</head>
+<body class="bg-bg text-dark h-screen flex overflow-hidden">
+
+  <aside class="w-64 h-full flex flex-col bg-surface border-r border-border flex-shrink-0" data-nav></aside>
+  <script src="js/dash-nav.js?v=5"></script>
+
+  <div class="flex-1 flex flex-col overflow-hidden">
+
+    <header class="bg-surface border-b border-border h-16 flex items-center justify-between px-8 flex-shrink-0 gap-4">
+      <h1 class="font-heading font-bold text-2xl uppercase tracking-wide text-dark" data-i18n="page_mt_assets">Assets & Service</h1>
+      <button onclick="syncPm()" class="flex items-center gap-2 border border-border bg-surface hover:bg-surface-mid text-mid text-sm font-semibold px-4 py-2 rounded transition-colors flex-shrink-0">
+        <span class="material-symbols-outlined text-[18px]">event_repeat</span><span data-i18n="mt_raise_due">Raise due PM</span>
+      </button>
+    </header>
+
+    <div class="flex-1 overflow-y-auto p-8">
+      <div class="max-w-5xl mx-auto">
+        <div class="bg-surface border border-border rounded-lg overflow-hidden">
+          <table class="w-full text-sm">
+            <thead class="bg-surface-dim border-b border-border">
+              <tr class="text-[11px] font-bold uppercase tracking-widest text-light">
+                <th class="text-start px-4 py-3" data-i18n="mt_asset">Asset</th>
+                <th class="text-start px-4 py-3" data-i18n="fl_status">Status</th>
+                <th class="text-start px-4 py-3" data-i18n="mt_meter">Meter</th>
+                <th class="text-start px-4 py-3" data-i18n="mt_open_wo">Open WOs</th>
+                <th class="text-start px-4 py-3" data-i18n="mt_next_pm">Next PM</th>
+                <th class="px-4 py-3"></th>
+              </tr>
+            </thead>
+            <tbody id="rows"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Manage modal -->
+  <div id="mng" class="hidden fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
+    <div class="bg-surface rounded-lg shadow-xl w-full max-w-2xl max-h-[92vh] overflow-y-auto">
+      <div class="px-6 py-4 border-b border-border flex items-center justify-between">
+        <h3 class="font-heading font-bold text-lg" id="g-title">Asset</h3>
+        <button onclick="closeMng()" class="text-light hover:text-dark"><span class="material-symbols-outlined">close</span></button>
+      </div>
+      <div class="p-6 space-y-5">
+
+        <!-- meters -->
+        <div>
+          <h4 class="text-xs font-bold uppercase tracking-widest text-light mb-2" data-i18n="mt_meters">Meters</h4>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs text-light mb-1" data-i18n="mt_odometer">Odometer (km)</label>
+              <input id="g-odo" type="number" min="0" class="w-full border border-border rounded px-3 py-2 text-sm bg-bg focus:outline-none focus:border-primary"/>
+            </div>
+            <div>
+              <label class="block text-xs text-light mb-1" data-i18n="mt_engine_hours">Engine hours</label>
+              <input id="g-hrs" type="number" min="0" class="w-full border border-border rounded px-3 py-2 text-sm bg-bg focus:outline-none focus:border-primary"/>
+            </div>
+          </div>
+          <p class="text-xs text-light mt-1" data-i18n="mt_meter_hint">Used by kilometre/hour-based PM plans. Trip-based plans count automatically.</p>
+        </div>
+
+        <!-- PM plans -->
+        <div>
+          <h4 class="text-xs font-bold uppercase tracking-widest text-light mb-2" data-i18n="mt_pm_plans">Preventive plans</h4>
+          <div id="g-plans" class="space-y-2 mb-3"></div>
+          <div class="bg-surface-dim border border-border rounded p-3 space-y-2">
+            <input id="pl-name" type="text" data-i18n-ph="mt_pm_name_ph" placeholder="Plan name (e.g. 250h engine service)" class="w-full border border-border rounded px-2 py-2 text-sm bg-surface"/>
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="block text-[11px] text-light mb-1" data-i18n="mt_every_days">Every (days)</label>
+                <input id="pl-days" type="number" min="0" placeholder="90" class="w-full border border-border rounded px-2 py-2 text-sm bg-surface"/>
+              </div>
+              <div>
+                <label class="block text-[11px] text-light mb-1" data-i18n="mt_or_usage">…or every (usage)</label>
+                <div class="flex gap-1">
+                  <input id="pl-usage" type="number" min="0" placeholder="200" class="w-20 border border-border rounded px-2 py-2 text-sm bg-surface"/>
+                  <select id="pl-type" class="flex-1 border border-border rounded px-1 py-2 text-sm bg-surface"></select>
+                </div>
+              </div>
+            </div>
+            <button onclick="addPlan()" class="text-xs font-bold bg-primary text-white px-3 py-2 rounded hover:bg-primary-mid w-full" data-i18n="mt_add_plan">Add plan</button>
+          </div>
+        </div>
+
+        <!-- history -->
+        <div>
+          <h4 class="text-xs font-bold uppercase tracking-widest text-light mb-2" data-i18n="mt_history">Service history</h4>
+          <div id="g-history" class="space-y-2"></div>
+        </div>
+
+      </div>
+      <div class="px-6 py-4 border-t border-border flex gap-3 justify-between">
+        <button onclick="reportFault()" class="flex items-center gap-2 text-sm font-semibold text-error px-3 py-2 rounded hover:bg-error-bg">
+          <span class="material-symbols-outlined text-[18px]">car_crash</span><span data-i18n="mt_report_fault">Report Fault</span>
+        </button>
+        <button onclick="saveMeters()" class="flex items-center gap-2 bg-gold hover:bg-gold-hover text-white text-sm font-semibold px-5 py-2 rounded">
+          <span class="material-symbols-outlined text-[18px]">save</span><span data-i18n="btn_save">Save</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="hidden fixed bottom-6 right-6 z-50 bg-primary text-white text-sm font-semibold px-5 py-3 rounded shadow-lg flex items-center gap-2">
+    <span class="material-symbols-outlined text-[18px]">check_circle</span><span id="toast-msg">Done</span>
+  </div>
+
+  <script src="js/dash-data.js?v=10"></script>
+  <script>
+    var D = window.JehanData;
+    var curAsset = null;
+    function T(k, fb) { return window.dashT ? window.dashT(k, fb) : fb; }
+    function esc(s) { return D.escapeHtml(s); }
+    function toast(fb) { document.getElementById('toast-msg').textContent = fb; var el=document.getElementById('toast'); el.classList.remove('hidden'); clearTimeout(el._t); el._t=setTimeout(function(){el.classList.add('hidden');},2400); }
+
+    function nextPmLabel(assetId) {
+      var plans = D.pmSchedulesForAsset(assetId);
+      if (!plans.length) return '<span class="text-light">—</span>';
+      var soonest = null;
+      plans.forEach(function(p){ var s = D.pmStatus(p); if (s.dueIn != null && (soonest === null || s.dueIn < soonest.dueIn)) soonest = s; });
+      if (!soonest) return '<span class="text-light">—</span>';
+      if (soonest.dueIn <= 0) return '<span class="bg-error-bg text-error border border-error/30 text-[11px] font-bold px-2 py-0.5 rounded-full">'+T('mt_due_now','Due now')+'</span>';
+      return '<span class="text-mid">'+T('mt_in','in')+' '+soonest.dueIn+' '+esc(soonest.unit)+'</span>';
+    }
+
+    function render() {
+      var assets = D.getAssets().filter(function(a){ return a.kind !== 'staff'; });
+      document.getElementById('rows').innerHTML = assets.map(function(a){
+        var open = D.assetOpenWOs(a.id).length;
+        var meter = [];
+        if (a.odometer) meter.push(a.odometer + ' km');
+        if (a.engineHours) meter.push(a.engineHours + ' h');
+        var st = D.assetDownNow(a.id) ? 'Maintenance' : (a.status || 'Available');
+        return '<tr class="border-b border-border last:border-0 hover:bg-surface-dim">' +
+          '<td class="px-4 py-3"><p class="font-semibold text-dark">'+esc(a.name)+'</p><p class="text-xs text-light">'+esc(a.kind)+'</p></td>' +
+          '<td class="px-4 py-3"><span class="'+D.statusPill(st)+' text-[11px] font-bold px-2 py-0.5 rounded-full">'+esc(st)+'</span></td>' +
+          '<td class="px-4 py-3 text-mid">'+(meter.join(' · ')||'<span class="text-light">—</span>')+'</td>' +
+          '<td class="px-4 py-3">'+(open?'<span class="text-error font-bold">'+open+'</span>':'<span class="text-light">0</span>')+'</td>' +
+          '<td class="px-4 py-3">'+nextPmLabel(a.id)+'</td>' +
+          '<td class="px-4 py-3 text-end"><button onclick="openMng('+a.id+')" class="text-xs font-bold text-primary hover:underline">'+T('mt_manage','Manage →')+'</button></td>' +
+        '</tr>';
+      }).join('') || '<tr><td colspan="6" class="px-4 py-10 text-center text-light text-sm" data-i18n="mt_no_assets">No assets yet — add them in Fleet & Master Data.</td></tr>';
+      if (window.reapplyDashLang) window.reapplyDashLang();
+    }
+
+    function openMng(id) {
+      curAsset = id;
+      var a = D.getAsset(id); if (!a) return;
+      document.getElementById('g-title').textContent = a.name + ' · ' + a.kind;
+      document.getElementById('g-odo').value = a.odometer || '';
+      document.getElementById('g-hrs').value = a.engineHours || '';
+      document.getElementById('pl-type').innerHTML = D.PM_INTERVAL_TYPES.filter(function(t){ return t !== 'Days'; }).map(function(t){ return '<option>'+t+'</option>'; }).join('');
+      document.getElementById('pl-name').value=''; document.getElementById('pl-days').value=''; document.getElementById('pl-usage').value='';
+      renderPlans(); renderHistory();
+      document.getElementById('mng').classList.remove('hidden');
+      if (window.reapplyDashLang) window.reapplyDashLang();
+    }
+    function closeMng() { document.getElementById('mng').classList.add('hidden'); curAsset = null; }
+
+    function renderPlans() {
+      var plans = D.pmSchedulesForAsset(curAsset);
+      document.getElementById('g-plans').innerHTML = plans.length ? plans.map(function(p){
+        var s = D.pmStatus(p);
+        var legs = [];
+        if (p.everyDays) legs.push(T('mt_every','every')+' '+p.everyDays+' '+T('mt_days','days'));
+        if (p.everyUsage) legs.push(T('mt_every','every')+' '+p.everyUsage+' '+esc(p.intervalType));
+        var due = s.dueIn != null ? (s.dueIn<=0 ? '<span class="text-error font-bold">'+T('mt_due_now','Due now')+'</span>' : T('mt_in','in')+' '+s.dueIn+' '+esc(s.unit)) : '';
+        return '<div class="flex items-center gap-2 bg-surface-dim border border-border rounded px-3 py-2 text-sm">' +
+          '<span class="material-symbols-outlined text-[18px] text-primary">event_repeat</span>' +
+          '<span class="flex-1"><span class="font-semibold text-dark">'+esc(p.name||T('mt_service','Service'))+'</span> <span class="text-light text-xs">· '+legs.join(' '+T('mt_or','or')+' ')+'</span></span>' +
+          '<span class="text-xs">'+due+'</span>' +
+          '<button onclick="delPlan('+p.id+')" class="text-error hover:bg-error-bg rounded"><span class="material-symbols-outlined text-[16px]">delete</span></button>' +
+        '</div>';
+      }).join('') : '<p class="text-xs text-light" data-i18n="mt_no_plans">No preventive plans yet.</p>';
+    }
+    function addPlan() {
+      var name = document.getElementById('pl-name').value.trim();
+      var days = Number(document.getElementById('pl-days').value)||0;
+      var usage = Number(document.getElementById('pl-usage').value)||0;
+      var type = document.getElementById('pl-type').value;
+      if (!days && !usage) { toast(T('mt_err_plan','Set a days or usage interval.')); return; }
+      var a = D.getAsset(curAsset);
+      D.addPmSchedule({
+        assetId: curAsset, name: name || T('mt_service','Service'),
+        everyDays: days || null, everyUsage: usage || null,
+        intervalType: usage ? type : 'Days',
+        lastServiceDate: new Date().toISOString(),
+        lastServiceUsage: D.assetUsageCount(curAsset),
+        lastServiceMeter: type === 'Kilometres' ? Number(a.odometer||0) : (type === 'Engine Hours' ? Number(a.engineHours||0) : 0),
+        date: new Date().toISOString()
+      });
+      document.getElementById('pl-name').value=''; document.getElementById('pl-days').value=''; document.getElementById('pl-usage').value='';
+      renderPlans(); render(); toast(T('mt_plan_added','Plan added'));
+    }
+    function delPlan(id) { D.deletePmSchedule(id); renderPlans(); render(); }
+
+    function renderHistory() {
+      var wos = D.workOrdersForAsset(curAsset);
+      document.getElementById('g-history').innerHTML = wos.length ? wos.map(function(w){
+        return '<div class="flex items-start gap-2 text-sm border-l-2 border-border ps-3 py-1">' +
+          '<span class="material-symbols-outlined text-[16px] '+(w.type==='Breakdown'?'text-error':'text-primary')+'">'+(w.type==='Breakdown'?'car_crash':(w.type==='Preventive'?'event_repeat':'fact_check'))+'</span>' +
+          '<div class="flex-1 min-w-0">' +
+            '<p class="text-dark"><span class="font-semibold">'+esc(w.ref)+'</span> · '+esc(w.type)+' · <span class="'+D.statusPill(w.status)+' text-[10px] font-bold px-1.5 py-0.5 rounded-full">'+esc(w.status)+'</span></p>' +
+            '<p class="text-xs text-light">'+esc(w.summary||'')+(w.technician?(' · '+esc(w.technician)):'')+(w.cost?(' · '+Number(w.cost).toLocaleString()+' SAR'):'')+'</p>' +
+            '<p class="text-[11px] text-light">'+D.fmtDate(w.closedAt||w.opened||w.date)+'</p>' +
+          '</div></div>';
+      }).join('') : '<p class="text-xs text-light" data-i18n="mt_no_history">No service records yet.</p>';
+    }
+
+    function saveMeters() {
+      D.updateAsset(curAsset, { odometer: Number(document.getElementById('g-odo').value)||0, engineHours: Number(document.getElementById('g-hrs').value)||0 });
+      toast(T('mt_saved','Saved')); render();
+    }
+    function reportFault() {
+      var a = D.getAsset(curAsset);
+      var me = ''; try { var u=window.JehanAuth.currentUser(); me=u?(u.name||u.email):''; } catch(e){}
+      D.raiseWorkOrder({ type:'Breakdown', priority:'Critical', assetId:curAsset, assetName:a?a.name:'', summary:T('mt_reported_fault','Fault reported from Assets & Service'), source:'manual', reportedBy:me });
+      D.logAudit('wo_raised', 'Breakdown reported for ' + (a?a.name:''), curAsset, '');
+      toast(T('mt_fault_raised','Breakdown raised — asset taken out of service')); renderHistory(); render();
+    }
+    function syncPm() { var n = D.syncPmDue(); toast(n ? (n+' '+T('mt_pm_raised','PM work order(s) raised')) : T('mt_nothing_new','Nothing due')); render(); }
+
+    render();
+    if (D.subscribe) D.subscribe(function(){ if (!document.getElementById('mng').classList.contains('hidden')) return; render(); });
+  </script>
+  <script src="js/dash-lang.js?v=12"></script>
+</body>
+</html>

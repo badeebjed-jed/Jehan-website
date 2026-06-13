@@ -157,6 +157,11 @@
                   <option>Precast Operations Manager</option>
                   <option>Precast Production Supervisor</option>
                 </optgroup>
+                <optgroup label="Maintenance Operations">
+                  <option>Maintenance Manager</option>
+                  <option>Maintenance Planner</option>
+                  <option>Technician / Mechanic</option>
+                </optgroup>
                 <optgroup label="Shared">
                   <option>Fleet Coordinator</option>
                   <option>Viewer</option>
@@ -199,6 +204,10 @@
                 <div class="flex items-center justify-between">
                   <div><p class="text-sm font-semibold text-dark" data-i18n="access_precast">Precast Operations</p><p class="text-xs text-light" data-i18n="access_precast_d">Precast orders, production queue, delivery planning and reports</p></div>
                   <button onclick="toggleSwitch(this)" data-perm="precast" class="toggle-btn w-12 h-6 rounded-full relative transition-colors flex-shrink-0" data-state="off"><span class="absolute top-0.5 w-5 h-5 rounded-full shadow transition-all toggle-thumb"></span></button>
+                </div>
+                <div class="flex items-center justify-between">
+                  <div><p class="text-sm font-semibold text-dark" data-i18n="access_maintenance">Maintenance Operations</p><p class="text-xs text-light" data-i18n="access_maintenance_d">Work orders, maintenance board, asset service, PM and spare parts</p></div>
+                  <button onclick="toggleSwitch(this)" data-perm="maintenance" class="toggle-btn w-12 h-6 rounded-full relative transition-colors flex-shrink-0" data-state="off"><span class="absolute top-0.5 w-5 h-5 rounded-full shadow transition-all toggle-thumb"></span></button>
                 </div>
               </div>
             </div>
@@ -265,6 +274,11 @@
                 <option>Precast Operations Manager</option>
                 <option>Precast Production Supervisor</option>
               </optgroup>
+              <optgroup label="Maintenance Operations">
+                <option>Maintenance Manager</option>
+                <option>Maintenance Planner</option>
+                <option>Technician / Mechanic</option>
+              </optgroup>
               <optgroup label="Shared">
                 <option>Fleet Coordinator</option>
                 <option selected>Viewer</option>
@@ -294,6 +308,7 @@
             <label class="flex items-center gap-2 text-sm text-dark cursor-pointer"><input id="au-perm-approvals" type="checkbox" class="accent-primary"/> <span data-i18n="access_approvals">Approvals &amp; Audit</span></label>
             <label class="flex items-center gap-2 text-sm text-dark cursor-pointer"><input id="au-perm-operations" type="checkbox" class="accent-primary"/> <span data-i18n="access_operations">Plant Operations</span></label>
             <label class="flex items-center gap-2 text-sm text-dark cursor-pointer"><input id="au-perm-precast" type="checkbox" class="accent-primary"/> <span data-i18n="access_precast">Precast Operations</span></label>
+            <label class="flex items-center gap-2 text-sm text-dark cursor-pointer"><input id="au-perm-maintenance" type="checkbox" class="accent-primary"/> <span data-i18n="access_maintenance">Maintenance Operations</span></label>
           </div>
         </div>
       </div>
@@ -483,22 +498,26 @@
     // positions that run the Sales, Plant Operations and Precast systems.
     var ROLE_PRESETS = {
       // Management
-      'Administrator':                { bookings:true,  customers:true,  financials:true,  settings:true,  profile:true,  approvals:true,  operations:true,  precast:true  },
-      'General Manager':              { bookings:true,  customers:true,  financials:true,  settings:false, profile:true,  approvals:true,  operations:true,  precast:true  },
-      'Operations Manager':           { bookings:true,  customers:true,  financials:false, settings:false, profile:false, approvals:false, operations:true,  precast:true  },
+      'Administrator':                { bookings:true,  customers:true,  financials:true,  settings:true,  profile:true,  approvals:true,  operations:true,  precast:true,  maintenance:true  },
+      'General Manager':              { bookings:true,  customers:true,  financials:true,  settings:false, profile:true,  approvals:true,  operations:true,  precast:true,  maintenance:true  },
+      'Operations Manager':           { bookings:true,  customers:true,  financials:false, settings:false, profile:false, approvals:false, operations:true,  precast:true,  maintenance:true  },
       // Sales
-      'Sales Manager':                { bookings:true,  customers:true,  financials:true,  settings:false, profile:false, approvals:true,  operations:false, precast:false },
-      'Sales Representative':         { bookings:true,  customers:true,  financials:false, settings:false, profile:false, approvals:false, operations:false, precast:false },
+      'Sales Manager':                { bookings:true,  customers:true,  financials:true,  settings:false, profile:false, approvals:true,  operations:false, precast:false, maintenance:false },
+      'Sales Representative':         { bookings:true,  customers:true,  financials:false, settings:false, profile:false, approvals:false, operations:false, precast:false, maintenance:false },
       // Plant Operations
-      'Plant Operations Manager':     { bookings:true,  customers:true,  financials:true,  settings:false, profile:false, approvals:false, operations:true,  precast:false },
-      'Dispatcher':                   { bookings:true,  customers:true,  financials:false, settings:false, profile:false, approvals:false, operations:true,  precast:false },
-      'Plant Supervisor':             { bookings:false, customers:false, financials:false, settings:false, profile:false, approvals:false, operations:true,  precast:false },
+      'Plant Operations Manager':     { bookings:true,  customers:true,  financials:true,  settings:false, profile:false, approvals:false, operations:true,  precast:false, maintenance:true  },
+      'Dispatcher':                   { bookings:true,  customers:true,  financials:false, settings:false, profile:false, approvals:false, operations:true,  precast:false, maintenance:false },
+      'Plant Supervisor':             { bookings:false, customers:false, financials:false, settings:false, profile:false, approvals:false, operations:true,  precast:false, maintenance:false },
       // Precast Operations
-      'Precast Operations Manager':   { bookings:true,  customers:true,  financials:true,  settings:false, profile:false, approvals:false, operations:false, precast:true  },
-      'Precast Production Supervisor':{ bookings:false, customers:false, financials:false, settings:false, profile:false, approvals:false, operations:false, precast:true  },
+      'Precast Operations Manager':   { bookings:true,  customers:true,  financials:true,  settings:false, profile:false, approvals:false, operations:false, precast:true,  maintenance:true  },
+      'Precast Production Supervisor':{ bookings:false, customers:false, financials:false, settings:false, profile:false, approvals:false, operations:false, precast:true,  maintenance:false },
+      // Maintenance Operations
+      'Maintenance Manager':          { bookings:false, customers:false, financials:true,  settings:false, profile:false, approvals:false, operations:true,  precast:true,  maintenance:true  },
+      'Maintenance Planner':          { bookings:false, customers:false, financials:false, settings:false, profile:false, approvals:false, operations:true,  precast:false, maintenance:true  },
+      'Technician / Mechanic':        { bookings:false, customers:false, financials:false, settings:false, profile:false, approvals:false, operations:false, precast:false, maintenance:true  },
       // Shared
-      'Fleet Coordinator':            { bookings:false, customers:false, financials:false, settings:false, profile:false, approvals:false, operations:true,  precast:true  },
-      'Viewer':                       { bookings:true,  customers:false, financials:false, settings:false, profile:false, approvals:false, operations:false, precast:false }
+      'Fleet Coordinator':            { bookings:false, customers:false, financials:false, settings:false, profile:false, approvals:false, operations:true,  precast:true,  maintenance:true  },
+      'Viewer':                       { bookings:true,  customers:false, financials:false, settings:false, profile:false, approvals:false, operations:false, precast:false, maintenance:false }
     };
 
     function applyRolePreset() {
@@ -512,6 +531,7 @@
       document.getElementById('au-perm-approvals').checked = !!p.approvals;
       document.getElementById('au-perm-operations').checked = !!p.operations;
       document.getElementById('au-perm-precast').checked = !!p.precast;
+      document.getElementById('au-perm-maintenance').checked = !!p.maintenance;
     }
 
     // Manage panel: changing a user's role applies that role's preset to
@@ -534,7 +554,8 @@
         profile:    document.getElementById('au-perm-profile').checked,
         approvals:  document.getElementById('au-perm-approvals').checked,
         operations: document.getElementById('au-perm-operations').checked,
-        precast:    document.getElementById('au-perm-precast').checked
+        precast:    document.getElementById('au-perm-precast').checked,
+        maintenance: document.getElementById('au-perm-maintenance').checked
       };
       A.addUser({
         name: document.getElementById('au-name').value,

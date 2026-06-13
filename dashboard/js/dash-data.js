@@ -39,6 +39,9 @@
   var K_CAST = 'jehan_castings';
   var K_DEL  = 'jehan_deliveries';
   var K_MAIL = 'jehan_sentmail';
+  var K_WO   = 'jehan_workorders';
+  var K_PM   = 'jehan_pmschedules';
+  var K_PART = 'jehan_parts';
   var K_VER  = 'jehan_data_version';
   var VERSION = '6';
 
@@ -70,6 +73,9 @@
   COLLECTION[K_CAST] = 'castings';
   COLLECTION[K_DEL]  = 'deliveries';
   COLLECTION[K_MAIL] = 'sentmail';
+  COLLECTION[K_WO]   = 'workorders';
+  COLLECTION[K_PM]   = 'pmschedules';
+  COLLECTION[K_PART] = 'parts';
 
   // ── Precast Operations constants ─────────────────────────────
   var CAST_MILESTONES = ['Queued', 'Mold Prep', 'Casting', 'Curing', 'Demolding', 'QC', 'In Yard'];
@@ -84,6 +90,18 @@
   var OPS_SHIFTS = ['Morning', 'Evening', 'Night'];
   var AUTH_STATUSES = ['Pending Review', 'Authorized', 'On Hold'];
 
+  // ── Maintenance Operations constants ─────────────────────────
+  // Work-order lifecycle (open → closed). 'On Hold'/'Cancelled' are side states.
+  var WO_MILESTONES = ['Reported', 'Diagnosed', 'In Progress', 'Awaiting Parts', 'Testing', 'Closed'];
+  var WO_OPEN_STAGES = ['Reported', 'Diagnosed', 'In Progress', 'Awaiting Parts', 'Testing'];
+  var WO_TYPES = ['Breakdown', 'Preventive', 'Inspection'];
+  var WO_PRIORITY = ['Critical', 'High', 'Normal', 'Low'];
+  var WO_FAULT_CAUSES = ['Engine', 'Hydraulics', 'Drum / Mixer', 'Pump / Boom', 'Electrical', 'Brakes / Tyres', 'Structural / Body', 'Bearings', 'Other'];
+  // How a preventive plan measures the interval until the next service.
+  var PM_INTERVAL_TYPES = ['Days', 'Trips', 'Kilometres', 'Engine Hours'];
+  // Map a Plant-Ops breakdown delay reason → the asset field it implicates.
+  var BREAKDOWN_REASON_MAP = { 'Truck Breakdown': 'truckId', 'Pump Breakdown': 'pumpId', 'Plant Breakdown': 'plantId' };
+
   // api.php lives at the site root. Dashboard pages are one level deeper.
   var API = (location.pathname.indexOf('/dashboard/') !== -1) ? '../api.php' : 'api.php';
   var IS_DASHBOARD = location.pathname.indexOf('/dashboard/') !== -1;
@@ -91,7 +109,7 @@
   // ── One-time cache reset on version bump ─────────────────────
   try {
     if (localStorage.getItem(K_VER) !== VERSION) {
-      [K_REQ, K_CUST, K_MSG, K_LEAD, K_TASK, K_EVT, K_AUD, K_OPS, K_TRIP, K_AST, K_PCO, K_CAST, K_DEL].forEach(function (k) {
+      [K_REQ, K_CUST, K_MSG, K_LEAD, K_TASK, K_EVT, K_AUD, K_OPS, K_TRIP, K_AST, K_PCO, K_CAST, K_DEL, K_WO, K_PM, K_PART].forEach(function (k) {
         localStorage.setItem(k, '[]');
       });
       localStorage.setItem(K_VER, VERSION);
@@ -145,7 +163,7 @@
   function pull() {
     if (pulling) return;
     pulling = true;
-    var keys = [K_REQ, K_CUST, K_MSG, K_LEAD, K_TASK, K_EVT, K_AUD, K_OPS, K_TRIP, K_AST, K_PCO, K_CAST, K_DEL, K_MAIL];
+    var keys = [K_REQ, K_CUST, K_MSG, K_LEAD, K_TASK, K_EVT, K_AUD, K_OPS, K_TRIP, K_AST, K_PCO, K_CAST, K_DEL, K_MAIL, K_WO, K_PM, K_PART];
     Promise.all(keys.map(function (k) { return serverGet(COLLECTION[k]); }))
       .then(function (res) {
         var changed = false;
@@ -777,6 +795,259 @@
     }, 0);
   }
 
+  // ── Maintenance Operations: work orders / PM / parts ─────────
+  function getWorkOrders() { return listOf(K_WO, 'date'); }
+  function getWorkOrder(id) { return getById(K_WO, id); }
+  function addWorkOrder(data) { return createIn(K_WO, data); }
+  function updateWorkOrder(id, patch) { return updateIn(K_WO, id, patch); }
+  function deleteWorkOrder(id) { deleteIn(K_WO, id); }
+
+  function workOrdersForAsset(assetId) {
+    return read(K_WO).filter(function (w) { return w.assetId === assetId; })
+      .sort(function (a, b) { return String(b.date || '').localeCompare(String(a.date || '')); });
+  }
+  // Open = anything not yet Closed or Cancelled.
+  function openWorkOrders() {
+    return read(K_WO).filter(function (w) {
+      return ['Closed', 'Cancelled'].indexOf(w.status) === -1;
+    });
+  }
+  function assetOpenWOs(assetId) {
+    return openWorkOrders().filter(function (w) { return w.assetId === assetId; });
+  }
+  // Is the asset currently out of service (open WO and/or status flag)?
+  function assetDownNow(assetId) {
+    var a = getAsset(assetId);
+    if (a && a.status === 'Maintenance') return true;
+    return assetOpenWOs(assetId).length > 0;
+  }
+
+  // Usage meter for PM: how many completed jobs has this asset done?
+  // Counts returned trips (mixer/pump), demolded+ castings (molds) and
+  // delivered units (trailers) since an optional baseline timestamp.
+  function assetUsageCount(assetId, sinceISO) {
+    if (assetId == null) return 0;
+    var after = function (iso) { return !sinceISO || (iso && iso > sinceISO); };
+    var n = 0;
+    read(K_TRIP).forEach(function (t) {
+      if (t.status !== 'Returned') return;
+      if (t.truckId !== assetId && t.pumpId !== assetId) return;
+      var done = (t.times && (t.times['Returned'])) || t.day || '';
+      if (after(done)) n++;
+    });
+    read(K_CAST).forEach(function (c) {
+      if (c.lineId !== assetId && c.moldId !== assetId) return;
+      if (after(c.date || c.day || '')) n++;
+    });
+    read(K_DEL).forEach(function (d) {
+      if (d.trailerId !== assetId) return;
+      if (d.status === 'Delivered' && after(d.date || d.day || '')) n++;
+    });
+    return n;
+  }
+
+  // Set/clear the shared asset's availability based on its open work orders.
+  // This is the ONLY write-back into the Plant-Ops world (mirrors how ops
+  // writes back only request.stage). Available ⇄ Maintenance.
+  function refreshAssetService(assetId) {
+    var a = getAsset(assetId);
+    if (!a) return;
+    var down = assetOpenWOs(assetId).length > 0;
+    if (down && a.status !== 'Maintenance') {
+      updateAsset(assetId, { status: 'Maintenance' });
+    } else if (!down && a.status === 'Maintenance') {
+      // Only auto-clear what maintenance put down; never override 'On Trip'.
+      updateAsset(assetId, { status: 'Available' });
+    }
+  }
+
+  // Raise a work order and (for breakdowns/critical) take the asset down.
+  function raiseWorkOrder(data) {
+    var wo = addWorkOrder(Object.assign({
+      id: uid(), ref: 'WO-' + String(Date.now()).slice(-6),
+      type: 'Breakdown', priority: 'Normal', status: 'Reported',
+      assetId: null, assetName: '', cause: '', summary: '',
+      source: 'manual', sourceRef: '', tripId: null, orderId: null,
+      reportedBy: '', technician: '', hours: 0, cost: 0,
+      parts: [], opened: nowISO(), closedAt: '', notes: '',
+      completed: false, date: nowISO()
+    }, data || {}));
+    if (wo && wo.assetId != null) refreshAssetService(wo.assetId);
+    return wo;
+  }
+
+  // Close a work order: stamp meter baseline, return asset to service.
+  function closeWorkOrder(id, patch) {
+    var wo = getWorkOrder(id);
+    if (!wo) return null;
+    var up = Object.assign({ status: 'Closed', completed: true, closedAt: nowISO() }, patch || {});
+    updateWorkOrder(id, up);
+    if (wo.assetId != null) {
+      // reset the usage baseline for usage-based PM plans on this asset
+      pmSchedulesForAsset(wo.assetId).forEach(function (p) {
+        updatePmSchedule(p.id, { lastServiceDate: nowISO(), lastServiceUsage: assetUsageCount(wo.assetId) });
+      });
+      refreshAssetService(wo.assetId);
+    }
+    return getWorkOrder(id);
+  }
+
+  // Pull breakdowns flagged on the Operations Board into work orders.
+  // A trip delayed with a *Breakdown* reason, whose implicated asset has no
+  // open WO yet, raises one automatically (source: 'ops'). Idempotent.
+  function syncBreakdownsFromOps() {
+    var made = 0;
+    var existingTripWO = {};
+    read(K_WO).forEach(function (w) { if (w.tripId != null) existingTripWO[w.tripId] = true; });
+    read(K_TRIP).forEach(function (t) {
+      var field = BREAKDOWN_REASON_MAP[t.delayReason];
+      if (!field) return;
+      if (existingTripWO[t.id]) return;
+      var order = getOpsOrder(t.orderId);
+      var assetId = field === 'plantId' ? (order && order.plantId) : t[field];
+      if (assetId == null) return;
+      var a = getAsset(assetId);
+      // avoid duplicate open breakdown for the same asset
+      if (assetOpenWOs(assetId).some(function (w) { return w.type === 'Breakdown'; })) {
+        existingTripWO[t.id] = true; return;
+      }
+      raiseWorkOrder({
+        type: 'Breakdown', priority: 'Critical', status: 'Reported',
+        assetId: assetId, assetName: a ? a.name : '',
+        cause: '', summary: t.delayReason + (order ? ' during ' + order.ref : ''),
+        source: 'ops', tripId: t.id, orderId: t.orderId,
+        reportedBy: 'Dispatch'
+      });
+      existingTripWO[t.id] = true;
+      made++;
+    });
+    return made;
+  }
+
+  // ── Preventive-maintenance schedules ─────────────────────────
+  function getPmSchedules() { return listOf(K_PM, 'date'); }
+  function getPmSchedule(id) { return getById(K_PM, id); }
+  function addPmSchedule(data) { return createIn(K_PM, data); }
+  function updatePmSchedule(id, patch) { return updateIn(K_PM, id, patch); }
+  function deletePmSchedule(id) { deleteIn(K_PM, id); }
+  function pmSchedulesForAsset(assetId) {
+    return read(K_PM).filter(function (p) { return p.assetId === assetId; });
+  }
+
+  // Compute how a PM plan stands: returns {due, dueIn, unit, basis}.
+  // A plan can be measured by Days (calendar) OR a usage interval; if both
+  // are set the soonest trigger wins.
+  function pmStatus(plan) {
+    var today = new Date().toISOString().slice(0, 10);
+    var results = [];
+    // calendar leg
+    if (plan.everyDays) {
+      var base = plan.lastServiceDate ? plan.lastServiceDate.slice(0, 10) : today;
+      var next = new Date(base); next.setDate(next.getDate() + Number(plan.everyDays));
+      var dueIn = Math.round((next - new Date(today)) / 86400000);
+      results.push({ basis: 'Days', dueIn: dueIn, unit: 'days', nextLabel: next.toISOString().slice(0, 10) });
+    }
+    // usage leg (Trips/Km/Hours)
+    if (plan.everyUsage && plan.intervalType && plan.intervalType !== 'Days') {
+      var used, remaining;
+      if (plan.intervalType === 'Trips') {
+        used = assetUsageCount(plan.assetId) - (plan.lastServiceUsage || 0);
+        remaining = Number(plan.everyUsage) - used;
+        results.push({ basis: 'Trips', dueIn: remaining, unit: 'trips', nextLabel: remaining + ' trips' });
+      } else {
+        // Km / Engine Hours come from a manually entered meter on the asset.
+        var a = getAsset(plan.assetId) || {};
+        var meter = plan.intervalType === 'Kilometres' ? Number(a.odometer || 0) : Number(a.engineHours || 0);
+        remaining = (Number(plan.lastServiceMeter || 0) + Number(plan.everyUsage)) - meter;
+        results.push({ basis: plan.intervalType, dueIn: remaining, unit: plan.intervalType === 'Kilometres' ? 'km' : 'hrs', nextLabel: remaining + (plan.intervalType === 'Kilometres' ? ' km' : ' hrs') });
+      }
+    }
+    if (!results.length) return { due: false, dueIn: null, unit: '', basis: '', nextLabel: '' };
+    // soonest trigger wins
+    results.sort(function (x, y) { return x.dueIn - y.dueIn; });
+    var soonest = results[0];
+    return { due: soonest.dueIn <= 0, dueIn: soonest.dueIn, unit: soonest.unit, basis: soonest.basis, nextLabel: soonest.nextLabel, legs: results };
+  }
+
+  // All PM plans that are due (or within an optional lead window).
+  function pmDueList(leadDays) {
+    var lead = leadDays || 0;
+    return read(K_PM).map(function (p) {
+      return { plan: p, status: pmStatus(p) };
+    }).filter(function (x) {
+      return x.status.dueIn != null && x.status.dueIn <= lead;
+    }).sort(function (a, b) { return (a.status.dueIn || 0) - (b.status.dueIn || 0); });
+  }
+
+  // Auto-raise a PM work order for any due plan that has no open PM WO yet.
+  function syncPmDue() {
+    var made = 0;
+    pmDueList(0).forEach(function (x) {
+      var assetId = x.plan.assetId;
+      var hasOpenPM = assetOpenWOs(assetId).some(function (w) { return w.type === 'Preventive'; });
+      if (hasOpenPM) return;
+      var a = getAsset(assetId);
+      raiseWorkOrder({
+        type: 'Preventive', priority: 'Normal', status: 'Reported',
+        assetId: assetId, assetName: a ? a.name : '',
+        summary: (x.plan.name || 'Scheduled service') + ' due',
+        source: 'pm', sourceRef: x.plan.id, reportedBy: 'PM Scheduler'
+      });
+      made++;
+    });
+    return made;
+  }
+
+  // ── Spare-parts inventory ────────────────────────────────────
+  function getParts() { return listOf(K_PART, 'name'); }
+  function getPart(id) { return getById(K_PART, id); }
+  function addPart(data) { return createIn(K_PART, data); }
+  function updatePart(id, patch) { return updateIn(K_PART, id, patch); }
+  function deletePart(id) { deleteIn(K_PART, id); }
+  function partsLowStock() {
+    return read(K_PART).filter(function (p) {
+      return Number(p.stock || 0) <= Number(p.minStock || 0);
+    });
+  }
+  // Consume N of a part (e.g. used on a work order); never below zero.
+  function consumePart(id, qty) {
+    var p = getPart(id);
+    if (!p) return null;
+    var left = Math.max(0, Number(p.stock || 0) - Number(qty || 0));
+    return updatePart(id, { stock: left });
+  }
+  function restockPart(id, qty) {
+    var p = getPart(id);
+    if (!p) return null;
+    return updatePart(id, { stock: Number(p.stock || 0) + Number(qty || 0) });
+  }
+
+  // Maintenance KPIs for the reports page.
+  function maintenanceKpis() {
+    var wos = read(K_WO);
+    var open = wos.filter(function (w) { return ['Closed', 'Cancelled'].indexOf(w.status) === -1; });
+    var closed = wos.filter(function (w) { return w.status === 'Closed'; });
+    var assets = read(K_AST).filter(function (a) { return a.kind !== 'staff'; });
+    var down = assets.filter(function (a) { return assetDownNow(a.id); }).length;
+    // MTTR: mean repair hours on closed WOs that logged hours
+    var withHours = closed.filter(function (w) { return Number(w.hours) > 0; });
+    var mttr = withHours.length ? (withHours.reduce(function (s, w) { return s + Number(w.hours); }, 0) / withHours.length) : 0;
+    var cost = closed.reduce(function (s, w) { return s + Number(w.cost || 0); }, 0);
+    return {
+      openWOs: open.length,
+      criticalWOs: open.filter(function (w) { return w.priority === 'Critical'; }).length,
+      breakdownsOpen: open.filter(function (w) { return w.type === 'Breakdown'; }).length,
+      assetsDown: down,
+      assetsTotal: assets.length,
+      availability: assets.length ? Math.round((assets.length - down) / assets.length * 100) : 100,
+      pmDue: pmDueList(0).length,
+      lowStock: partsLowStock().length,
+      mttr: Math.round(mttr * 10) / 10,
+      totalCost: cost,
+      closedThisCount: closed.length
+    };
+  }
+
   // ── Quote expiry auto-marking ────────────────────────────────
   function maybeExpireQuotes() {
     var today = new Date().toISOString().slice(0, 10);
@@ -888,6 +1159,22 @@
       case 'Negotiation':           return 'bg-gold-bg text-gold-hover border border-gold';
       case 'Won':                   return 'bg-primary text-white border border-primary';
       case 'Lost':                  return 'bg-error-bg text-error border border-error/30';
+      // maintenance work-order milestones
+      case 'Reported':              return 'bg-error-bg text-error border border-error/30';
+      case 'Diagnosed':             return 'bg-gold-bg text-dark border border-gold';
+      case 'In Progress':           return 'bg-gold-bg text-gold-hover border border-gold';
+      case 'Awaiting Parts':        return 'bg-surface-high text-light border border-border';
+      case 'Testing':               return 'bg-primary-lt/20 text-primary border border-primary-lt';
+      case 'Closed':                return 'bg-primary text-white border border-primary';
+      // maintenance priority
+      case 'Critical':              return 'bg-error text-white border border-error';
+      case 'High':                  return 'bg-error-bg text-error border border-error/30';
+      case 'Normal':                return 'bg-surface-mid text-mid border border-border';
+      case 'Low':                   return 'bg-surface-high text-light border border-border';
+      // asset availability
+      case 'Available':             return 'bg-primary-lt/20 text-primary border border-primary-lt';
+      case 'On Trip':               return 'bg-gold-bg text-dark border border-gold';
+      case 'Maintenance':           return 'bg-error-bg text-error border border-error/30';
       default:                      return 'bg-surface-mid text-mid border border-border';
     }
   }
@@ -963,6 +1250,21 @@
     DELIVERY_MILESTONES: DELIVERY_MILESTONES, DESIGN_STATUSES: DESIGN_STATUSES,
     // company email
     sendEmail: sendEmail, getSentMail: getSentMail, logSentMail: logSentMail, deleteSentMail: deleteSentMail,
+    // maintenance operations
+    getWorkOrders: getWorkOrders, getWorkOrder: getWorkOrder, addWorkOrder: addWorkOrder,
+    updateWorkOrder: updateWorkOrder, deleteWorkOrder: deleteWorkOrder,
+    workOrdersForAsset: workOrdersForAsset, openWorkOrders: openWorkOrders,
+    assetOpenWOs: assetOpenWOs, assetDownNow: assetDownNow, assetUsageCount: assetUsageCount,
+    raiseWorkOrder: raiseWorkOrder, closeWorkOrder: closeWorkOrder, refreshAssetService: refreshAssetService,
+    syncBreakdownsFromOps: syncBreakdownsFromOps, syncPmDue: syncPmDue,
+    getPmSchedules: getPmSchedules, getPmSchedule: getPmSchedule, addPmSchedule: addPmSchedule,
+    updatePmSchedule: updatePmSchedule, deletePmSchedule: deletePmSchedule,
+    pmSchedulesForAsset: pmSchedulesForAsset, pmStatus: pmStatus, pmDueList: pmDueList,
+    getParts: getParts, getPart: getPart, addPart: addPart, updatePart: updatePart, deletePart: deletePart,
+    partsLowStock: partsLowStock, consumePart: consumePart, restockPart: restockPart,
+    maintenanceKpis: maintenanceKpis,
+    WO_MILESTONES: WO_MILESTONES, WO_OPEN_STAGES: WO_OPEN_STAGES, WO_TYPES: WO_TYPES,
+    WO_PRIORITY: WO_PRIORITY, WO_FAULT_CAUSES: WO_FAULT_CAUSES, PM_INTERVAL_TYPES: PM_INTERVAL_TYPES,
     // plant operations
     getOpsOrders: getOpsOrders, getOpsOrder: getOpsOrder, addOpsOrder: addOpsOrder,
     updateOpsOrder: updateOpsOrder, deleteOpsOrder: deleteOpsOrder,

@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Maintenance Board - Jehan Holding Group</title>
+  <script src="js/auth.js?v=11"></script>
+  <script>if (!window.JehanAuth || !window.JehanAuth.enforce('maintenance')) { /* halted by redirect */ }</script>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600;700&family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+  <script>
+  tailwind.config = { theme: { extend: {
+    colors: { primary:'#3D5A34','primary-mid':'#5C7A48','primary-lt':'#8CAE78', gold:'#C49A1A','gold-hover':'#A07D10',
+      bg:'#F2F1EE', surface:'#FFFFFF','surface-dim':'#F8F7F4','surface-mid':'#EEEDE9','surface-high':'#E4E3DF',
+      dark:'#1E1E1E', mid:'#444444', light:'#888888', border:'#DCDBD7', error:'#ba1a1a','error-bg':'#ffdad6','gold-bg':'#FBF0C4' },
+    fontFamily: { heading:['"Barlow Condensed"','Arial','sans-serif'], body:['Barlow','Arial','sans-serif'] },
+    borderRadius: { DEFAULT:'4px', full:'9999px' } } } };
+  </script>
+  <style>
+    body { font-family: 'Barlow', Arial, sans-serif; }
+    h1,h2,h3,h4,h5 { font-family: 'Barlow Condensed', Arial, sans-serif; font-weight: 700; letter-spacing: 0.02em; }
+    .material-symbols-outlined { font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24; }
+  </style>
+</head>
+<body class="bg-bg text-dark h-screen flex overflow-hidden">
+
+  <aside class="w-64 h-full flex flex-col bg-surface border-r border-border flex-shrink-0" data-nav></aside>
+  <script src="js/dash-nav.js?v=5"></script>
+
+  <div class="flex-1 flex flex-col overflow-hidden">
+
+    <header class="bg-surface border-b border-border h-16 flex items-center justify-between px-8 flex-shrink-0 gap-4">
+      <h1 class="font-heading font-bold text-2xl uppercase tracking-wide text-dark" data-i18n="page_mt_board">Maintenance Board</h1>
+      <button onclick="syncOps()" class="flex items-center gap-2 border border-border bg-surface hover:bg-surface-mid text-mid text-sm font-semibold px-4 py-2 rounded transition-colors flex-shrink-0">
+        <span class="material-symbols-outlined text-[18px]">sync</span><span data-i18n="mt_sync">Sync from Plant Ops</span>
+      </button>
+    </header>
+
+    <div class="flex-1 overflow-y-auto p-6">
+      <!-- Assets down banner -->
+      <div id="down-banner" class="hidden mb-4 bg-error-bg border border-error/30 rounded-lg p-3 flex items-start gap-2">
+        <span class="material-symbols-outlined text-error text-[20px]">warning</span>
+        <div class="text-sm text-error"><strong data-i18n="mt_assets_down">Assets out of service:</strong> <span id="down-list"></span></div>
+      </div>
+
+      <!-- Kanban -->
+      <div class="overflow-x-auto -mx-1 px-1">
+        <div id="board" class="grid gap-3 min-w-[1040px]" style="grid-template-columns:repeat(5,minmax(200px,1fr));"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Detail modal -->
+  <div id="wo-modal" class="hidden fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
+    <div class="bg-surface rounded-lg shadow-xl w-full max-w-xl max-h-[92vh] overflow-y-auto">
+      <div class="px-6 py-4 border-b border-border flex items-center justify-between">
+        <h3 class="font-heading font-bold text-lg"><span id="m-ref"></span></h3>
+        <button onclick="closeM()" class="text-light hover:text-dark"><span class="material-symbols-outlined">close</span></button>
+      </div>
+      <div class="p-6 space-y-4">
+        <div class="bg-surface-dim border border-border rounded p-3">
+          <p class="text-sm font-bold text-dark" id="m-asset"></p>
+          <p class="text-xs text-mid mt-0.5" id="m-summary"></p>
+        </div>
+
+        <!-- status stepper -->
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5" data-i18n="mt_status">Status</label>
+          <div class="flex items-center gap-2">
+            <button onclick="stepStatus(-1)" class="w-9 h-9 rounded border border-border hover:bg-surface-mid flex items-center justify-center"><span class="material-symbols-outlined text-[18px]">chevron_left</span></button>
+            <span id="m-status" class="flex-1 text-center text-sm font-bold px-3 py-2 rounded-full"></span>
+            <button onclick="stepStatus(1)" class="w-9 h-9 rounded border border-border hover:bg-surface-mid flex items-center justify-center"><span class="material-symbols-outlined text-[18px]">chevron_right</span></button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5" data-i18n="mt_priority">Priority</label>
+            <select id="m-priority" class="w-full border border-border rounded px-3 py-2.5 text-sm bg-bg focus:outline-none focus:border-primary"></select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5" data-i18n="mt_technician">Technician</label>
+            <input id="m-tech" list="tech-list" class="w-full border border-border rounded px-3 py-2.5 text-sm bg-bg focus:outline-none focus:border-primary"/>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5" data-i18n="mt_hours">Labour hours</label>
+            <input id="m-hours" type="number" min="0" step="0.5" class="w-full border border-border rounded px-3 py-2.5 text-sm bg-bg focus:outline-none focus:border-primary"/>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5" data-i18n="mt_labor_cost">Labour & sundry (SAR)</label>
+            <input id="m-labor" type="number" min="0" step="1" class="w-full border border-border rounded px-3 py-2.5 text-sm bg-bg focus:outline-none focus:border-primary"/>
+          </div>
+        </div>
+
+        <!-- parts -->
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-widest text-light mb-1.5" data-i18n="mt_parts_used">Parts used</label>
+          <div class="flex items-center gap-2 mb-2">
+            <select id="m-part" class="flex-1 border border-border rounded px-2 py-2 text-sm bg-bg focus:outline-none focus:border-primary"></select>
+            <input id="m-part-qty" type="number" min="1" value="1" class="w-16 border border-border rounded px-2 py-2 text-sm bg-bg"/>
+            <button onclick="addPart()" class="text-xs font-bold bg-primary text-white px-3 py-2 rounded hover:bg-primary-mid" data-i18n="mt_add">Add</button>
+          </div>
+          <div id="m-parts-list" class="space-y-1"></div>
+        </div>
+
+        <div class="text-right text-sm"><span class="text-light" data-i18n="mt_total_cost">Total cost</span>: <strong id="m-total" class="text-dark"></strong> <span class="text-light">SAR</span></div>
+      </div>
+      <div class="px-6 py-4 border-t border-border flex gap-3 justify-between">
+        <button onclick="cancelWO()" class="text-sm font-semibold text-error px-3 py-2 rounded hover:bg-error-bg" data-i18n="mt_cancel_wo">Cancel WO</button>
+        <div class="flex gap-2">
+          <button onclick="saveM()" class="px-5 py-2 border border-border rounded text-sm font-semibold text-mid hover:bg-surface-mid" data-i18n="btn_save">Save</button>
+          <button onclick="closeWorkOrder()" class="flex items-center gap-2 bg-primary text-white text-sm font-semibold px-5 py-2 rounded hover:bg-primary-mid">
+            <span class="material-symbols-outlined text-[18px]">task_alt</span><span data-i18n="mt_close_wo">Close & Return to Service</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <datalist id="tech-list"></datalist>
+  <div id="toast" class="hidden fixed bottom-6 right-6 z-50 bg-primary text-white text-sm font-semibold px-5 py-3 rounded shadow-lg flex items-center gap-2">
+    <span class="material-symbols-outlined text-[18px]">check_circle</span><span id="toast-msg">Done</span>
+  </div>
+
+  <script src="js/dash-data.js?v=10"></script>
+  <script>
+    var D = window.JehanData;
+    var curId = null;
+    function T(k, fb) { return window.dashT ? window.dashT(k, fb) : fb; }
+    function esc(s) { return D.escapeHtml(s); }
+    function toast(fb) { document.getElementById('toast-msg').textContent = fb; var el=document.getElementById('toast'); el.classList.remove('hidden'); clearTimeout(el._t); el._t=setTimeout(function(){el.classList.add('hidden');},2400); }
+
+    function render() {
+      var stages = D.WO_OPEN_STAGES;
+      var wos = D.getWorkOrders().filter(function(w){ return ['Closed','Cancelled'].indexOf(w.status) === -1; });
+      var board = document.getElementById('board');
+      board.innerHTML = stages.map(function(st){
+        var items = wos.filter(function(w){ return w.status === st; });
+        return '<div class="bg-surface-dim rounded-lg border border-border p-2">' +
+          '<div class="flex items-center justify-between px-1 py-1.5 mb-1">' +
+            '<span class="text-[11px] font-bold uppercase tracking-widest text-mid">'+esc(st)+'</span>' +
+            '<span class="text-[11px] font-bold text-light bg-surface-mid rounded-full px-2">'+items.length+'</span>' +
+          '</div>' +
+          '<div class="space-y-2">' + (items.map(card).join('') || '<p class="text-[11px] text-light text-center py-3">—</p>') + '</div>' +
+        '</div>';
+      }).join('');
+
+      // down banner
+      var assets = D.getAssets().filter(function(a){ return a.kind!=='staff' && D.assetDownNow(a.id); });
+      var b = document.getElementById('down-banner');
+      if (assets.length) { b.classList.remove('hidden'); document.getElementById('down-list').textContent = assets.map(function(a){return a.name;}).join(', '); }
+      else b.classList.add('hidden');
+
+      var staff = D.getAssets('staff');
+      document.getElementById('tech-list').innerHTML = staff.map(function(s){ return '<option value="'+esc(s.name)+'">'; }).join('');
+      if (window.reapplyDashLang) window.reapplyDashLang();
+    }
+
+    function card(w) {
+      var a = w.assetId != null ? D.getAsset(w.assetId) : null;
+      return '<div onclick="openM('+w.id+')" class="bg-surface border border-border rounded p-2.5 cursor-pointer hover:border-primary transition-colors">' +
+        '<div class="flex items-center gap-1.5 mb-1">' +
+          '<span class="material-symbols-outlined text-[16px] '+(w.type==='Breakdown'?'text-error':'text-primary')+'">'+(w.type==='Breakdown'?'car_crash':(w.type==='Preventive'?'event_repeat':'fact_check'))+'</span>' +
+          '<span class="text-xs font-bold text-dark">'+esc(w.ref)+'</span>' +
+          '<span class="'+D.statusPill(w.priority)+' text-[9px] font-bold px-1.5 py-0.5 rounded-full ms-auto">'+esc(w.priority)+'</span>' +
+        '</div>' +
+        '<p class="text-xs font-semibold text-dark truncate">'+esc(a?a.name:w.assetName||'—')+'</p>' +
+        '<p class="text-[11px] text-light truncate">'+esc(w.summary||'')+'</p>' +
+        (w.technician ? '<p class="text-[10px] text-light mt-1 flex items-center gap-1"><span class="material-symbols-outlined text-[12px]">engineering</span>'+esc(w.technician)+'</p>' : '') +
+      '</div>';
+    }
+
+    function syncOps() { var n = D.syncBreakdownsFromOps() + D.syncPmDue(); toast(n ? (n+' raised') : 'Nothing new'); render(); }
+
+    // ── modal ──
+    function partsSubtotal(w) { return (w.parts||[]).reduce(function(s,p){ return s + Number(p.qty)*Number(p.unitCost||0); }, 0); }
+    function refreshTotal() {
+      var w = D.getWorkOrder(curId); if (!w) return;
+      var labor = Number(document.getElementById('m-labor').value)||0;
+      document.getElementById('m-total').textContent = (labor + partsSubtotal(w)).toLocaleString();
+    }
+    function renderPartsList() {
+      var w = D.getWorkOrder(curId);
+      document.getElementById('m-parts-list').innerHTML = (w.parts||[]).map(function(p,i){
+        return '<div class="flex items-center gap-2 text-xs bg-surface-dim border border-border rounded px-2 py-1.5">' +
+          '<span class="flex-1">'+esc(p.name)+' × '+p.qty+'</span>' +
+          '<span class="text-light">'+(Number(p.qty)*Number(p.unitCost||0)).toLocaleString()+' SAR</span>' +
+          '<button onclick="removePart('+i+')" class="text-error hover:bg-error-bg rounded"><span class="material-symbols-outlined text-[16px]">close</span></button>' +
+        '</div>';
+      }).join('');
+    }
+    function openM(id) {
+      curId = id;
+      var w = D.getWorkOrder(id); if (!w) return;
+      var a = w.assetId != null ? D.getAsset(w.assetId) : null;
+      document.getElementById('m-ref').textContent = w.ref + ' · ' + w.type;
+      document.getElementById('m-asset').textContent = (a?a.name:w.assetName||'—') + (a?(' · '+a.kind):'');
+      document.getElementById('m-summary').textContent = (w.summary||'') + (w.cause?(' · '+w.cause):'');
+      document.getElementById('m-status').textContent = w.status;
+      document.getElementById('m-status').className = 'flex-1 text-center text-sm font-bold px-3 py-2 rounded-full ' + D.statusPill(w.status);
+      document.getElementById('m-priority').innerHTML = D.WO_PRIORITY.map(function(p){ return '<option'+(p===w.priority?' selected':'')+'>'+p+'</option>'; }).join('');
+      document.getElementById('m-tech').value = w.technician || '';
+      document.getElementById('m-hours').value = w.hours || '';
+      document.getElementById('m-labor').value = w.laborCost != null ? w.laborCost : (w.cost || '');
+      var parts = D.getParts();
+      document.getElementById('m-part').innerHTML = '<option value="">— '+T('mt_select_part','select part')+' —</option>' +
+        parts.map(function(p){ return '<option value="'+p.id+'">'+esc(p.name)+' ('+ (p.stock||0) +')</option>'; }).join('');
+      document.getElementById('m-part-qty').value = 1;
+      renderPartsList(); refreshTotal();
+      document.getElementById('m-labor').oninput = refreshTotal;
+      document.getElementById('wo-modal').classList.remove('hidden');
+      if (window.reapplyDashLang) window.reapplyDashLang();
+    }
+    function closeM() { document.getElementById('wo-modal').classList.add('hidden'); curId = null; }
+
+    function stepStatus(dir) {
+      var w = D.getWorkOrder(curId); if (!w) return;
+      var stages = D.WO_MILESTONES; // includes Closed at end
+      var i = stages.indexOf(w.status); if (i === -1) i = 0;
+      var ni = Math.max(0, Math.min(stages.length - 1, i + dir));
+      var ns = stages[ni];
+      if (ns === 'Closed') { closeWorkOrder(); return; }
+      D.updateWorkOrder(curId, { status: ns });
+      var el = document.getElementById('m-status');
+      el.textContent = ns; el.className = 'flex-1 text-center text-sm font-bold px-3 py-2 rounded-full ' + D.statusPill(ns);
+      render();
+    }
+
+    function addPart() {
+      var pid = Number(document.getElementById('m-part').value);
+      var qty = Number(document.getElementById('m-part-qty').value)||1;
+      if (!pid) return;
+      var part = D.getPart(pid); if (!part) return;
+      if (Number(part.stock||0) < qty) { toast(T('mt_low_stock','Not enough stock')); return; }
+      var w = D.getWorkOrder(curId);
+      var parts = (w.parts||[]).slice();
+      parts.push({ partId: pid, name: part.name, qty: qty, unitCost: Number(part.unitCost||0) });
+      D.updateWorkOrder(curId, { parts: parts });
+      D.consumePart(pid, qty);
+      renderPartsList(); refreshTotal();
+      // refresh dropdown stock figures
+      var sel = document.getElementById('m-part');
+      var allParts = D.getParts();
+      sel.innerHTML = '<option value="">— '+T('mt_select_part','select part')+' —</option>' + allParts.map(function(p){ return '<option value="'+p.id+'">'+esc(p.name)+' ('+(p.stock||0)+')</option>'; }).join('');
+    }
+    function removePart(i) {
+      var w = D.getWorkOrder(curId);
+      var parts = (w.parts||[]).slice();
+      var rem = parts.splice(i,1)[0];
+      if (rem && rem.partId != null) D.restockPart(rem.partId, rem.qty);
+      D.updateWorkOrder(curId, { parts: parts });
+      renderPartsList(); refreshTotal();
+    }
+
+    function collectCost() {
+      var w = D.getWorkOrder(curId);
+      var labor = Number(document.getElementById('m-labor').value)||0;
+      return labor + partsSubtotal(w);
+    }
+    function saveM() {
+      D.updateWorkOrder(curId, {
+        priority: document.getElementById('m-priority').value,
+        technician: document.getElementById('m-tech').value.trim(),
+        hours: Number(document.getElementById('m-hours').value)||0,
+        laborCost: Number(document.getElementById('m-labor').value)||0,
+        cost: collectCost()
+      });
+      toast(T('mt_saved','Saved')); closeM(); render();
+    }
+    function closeWorkOrder() {
+      saveMSilent();
+      D.closeWorkOrder(curId, { cost: collectCost() });
+      var w = D.getWorkOrder(curId);
+      D.logAudit('wo_closed', 'Work order closed; asset returned to service', curId, w?w.ref:'');
+      toast(T('mt_returned','Closed — asset back in service')); closeM(); render();
+    }
+    function saveMSilent() {
+      D.updateWorkOrder(curId, {
+        priority: document.getElementById('m-priority').value,
+        technician: document.getElementById('m-tech').value.trim(),
+        hours: Number(document.getElementById('m-hours').value)||0,
+        laborCost: Number(document.getElementById('m-labor').value)||0
+      });
+    }
+    function cancelWO() {
+      var w = D.getWorkOrder(curId);
+      D.updateWorkOrder(curId, { status: 'Cancelled' });
+      if (w && w.assetId != null) D.refreshAssetService(w.assetId);
+      D.logAudit('wo_cancelled', 'Work order cancelled', curId, w?w.ref:'');
+      toast(T('mt_toast_cancelled','Work order cancelled')); closeM(); render();
+    }
+
+    render();
+    if (D.subscribe) D.subscribe(function(){ if (!document.getElementById('wo-modal').classList.contains('hidden')) return; render(); });
+  </script>
+  <script src="js/dash-lang.js?v=12"></script>
+</body>
+</html>

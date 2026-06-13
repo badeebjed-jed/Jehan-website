@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Maintenance Reports - Jehan Holding Group</title>
+  <script src="js/auth.js?v=11"></script>
+  <script>if (!window.JehanAuth || !window.JehanAuth.enforce('maintenance')) { /* halted by redirect */ }</script>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600;700&family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+  <script>
+  tailwind.config = { theme: { extend: {
+    colors: { primary:'#3D5A34','primary-mid':'#5C7A48','primary-lt':'#8CAE78', gold:'#C49A1A','gold-hover':'#A07D10',
+      bg:'#F2F1EE', surface:'#FFFFFF','surface-dim':'#F8F7F4','surface-mid':'#EEEDE9','surface-high':'#E4E3DF',
+      dark:'#1E1E1E', mid:'#444444', light:'#888888', border:'#DCDBD7', error:'#ba1a1a','error-bg':'#ffdad6','gold-bg':'#FBF0C4' },
+    fontFamily: { heading:['"Barlow Condensed"','Arial','sans-serif'], body:['Barlow','Arial','sans-serif'] },
+    borderRadius: { DEFAULT:'4px', full:'9999px' } } } };
+  </script>
+  <style>
+    body { font-family: 'Barlow', Arial, sans-serif; }
+    h1,h2,h3,h4,h5 { font-family: 'Barlow Condensed', Arial, sans-serif; font-weight: 700; letter-spacing: 0.02em; }
+    .material-symbols-outlined { font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24; }
+    @media print { aside, header button { display:none !important; } }
+  </style>
+</head>
+<body class="bg-bg text-dark h-screen flex overflow-hidden">
+
+  <aside class="w-64 h-full flex flex-col bg-surface border-r border-border flex-shrink-0" data-nav></aside>
+  <script src="js/dash-nav.js?v=5"></script>
+
+  <div class="flex-1 flex flex-col overflow-hidden">
+
+    <header class="bg-surface border-b border-border h-16 flex items-center justify-between px-8 flex-shrink-0 gap-4">
+      <h1 class="font-heading font-bold text-2xl uppercase tracking-wide text-dark" data-i18n="page_mt_reports">Maintenance Reports</h1>
+      <div class="flex items-center gap-2 flex-shrink-0">
+        <button onclick="exportCSV()" class="flex items-center gap-2 border border-border bg-surface hover:bg-surface-mid text-mid text-sm font-semibold px-4 py-2 rounded transition-colors">
+          <span class="material-symbols-outlined text-[18px]">download</span><span data-i18n="mt_export">Export CSV</span>
+        </button>
+        <button onclick="window.print()" class="flex items-center gap-2 border border-border bg-surface hover:bg-surface-mid text-mid text-sm font-semibold px-4 py-2 rounded transition-colors">
+          <span class="material-symbols-outlined text-[18px]">print</span><span data-i18n="mt_print">Print</span>
+        </button>
+      </div>
+    </header>
+
+    <div class="flex-1 overflow-y-auto p-8">
+      <div class="max-w-5xl mx-auto space-y-6">
+
+        <div id="kpi" class="grid grid-cols-2 md:grid-cols-4 gap-3"></div>
+
+        <div class="grid md:grid-cols-2 gap-5">
+          <div class="bg-surface border border-border rounded-lg p-5">
+            <h2 class="text-sm font-bold uppercase tracking-widest text-light mb-3" data-i18n="mt_r_pareto">Breakdowns by cause</h2>
+            <div id="pareto" class="space-y-2"></div>
+          </div>
+          <div class="bg-surface border border-border rounded-lg p-5">
+            <h2 class="text-sm font-bold uppercase tracking-widest text-light mb-3" data-i18n="mt_r_bytype">Work orders by type</h2>
+            <div id="bytype" class="space-y-2"></div>
+          </div>
+          <div class="bg-surface border border-border rounded-lg p-5">
+            <h2 class="text-sm font-bold uppercase tracking-widest text-light mb-3" data-i18n="mt_r_cost">Repair cost by asset</h2>
+            <div id="cost" class="space-y-2"></div>
+          </div>
+          <div class="bg-surface border border-border rounded-lg p-5">
+            <h2 class="text-sm font-bold uppercase tracking-widest text-light mb-3" data-i18n="mt_r_avail">Asset availability</h2>
+            <div id="avail" class="space-y-1.5 max-h-72 overflow-y-auto"></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <script src="js/dash-data.js?v=10"></script>
+  <script>
+    var D = window.JehanData;
+    function T(k, fb) { return window.dashT ? window.dashT(k, fb) : fb; }
+    function esc(s) { return D.escapeHtml(s); }
+
+    function bar(label, value, max, color) {
+      var pct = max > 0 ? Math.round(value / max * 100) : 0;
+      return '<div>' +
+        '<div class="flex justify-between text-xs mb-0.5"><span class="text-mid">'+esc(label)+'</span><span class="font-bold text-dark">'+value+'</span></div>' +
+        '<div class="h-2 bg-surface-mid rounded-full overflow-hidden"><div class="h-full '+color+' rounded-full" style="width:'+pct+'%"></div></div>' +
+      '</div>';
+    }
+
+    function render() {
+      var k = D.maintenanceKpis();
+      var cards = [
+        ['mt_k_avail', 'Availability', k.availability + '%', k.availability >= 90 ? 'text-primary' : 'text-error'],
+        ['mt_k_open', 'Open WOs', k.openWOs, 'text-dark'],
+        ['mt_k_down', 'Assets down', k.assetsDown + ' / ' + k.assetsTotal, k.assetsDown ? 'text-error' : 'text-dark'],
+        ['mt_k_mttr', 'Avg repair (hrs)', k.mttr, 'text-dark'],
+        ['mt_k_pmdue', 'PM due', k.pmDue, k.pmDue ? 'text-gold-hover' : 'text-dark'],
+        ['mt_k_low', 'Low-stock parts', k.lowStock, k.lowStock ? 'text-gold-hover' : 'text-dark'],
+        ['mt_k_closed', 'Closed WOs', k.closedThisCount, 'text-dark'],
+        ['mt_k_cost', 'Repair cost (SAR)', Number(k.totalCost).toLocaleString(), 'text-dark']
+      ];
+      document.getElementById('kpi').innerHTML = cards.map(function(c){
+        return '<div class="bg-surface border border-border rounded-lg p-4"><p class="text-2xl font-bold '+c[3]+'">'+c[2]+'</p><p class="text-xs text-light" data-i18n="'+c[0]+'">'+c[1]+'</p></div>';
+      }).join('');
+
+      var wos = D.getWorkOrders();
+
+      // Pareto by cause (breakdowns)
+      var causes = {};
+      wos.filter(function(w){ return w.type==='Breakdown'; }).forEach(function(w){ var c=w.cause||T('mt_unspecified','Unspecified'); causes[c]=(causes[c]||0)+1; });
+      var cArr = Object.keys(causes).map(function(c){ return [c, causes[c]]; }).sort(function(a,b){ return b[1]-a[1]; });
+      var cMax = cArr.reduce(function(m,x){ return Math.max(m,x[1]); }, 0);
+      document.getElementById('pareto').innerHTML = cArr.length ? cArr.map(function(x){ return bar(x[0], x[1], cMax, 'bg-error'); }).join('') : '<p class="text-xs text-light">'+T('mt_no_data','No data yet.')+'</p>';
+
+      // By type
+      var types = {};
+      wos.forEach(function(w){ types[w.type]=(types[w.type]||0)+1; });
+      var tArr = Object.keys(types).map(function(t){ return [t, types[t]]; }).sort(function(a,b){ return b[1]-a[1]; });
+      var tMax = tArr.reduce(function(m,x){ return Math.max(m,x[1]); }, 0);
+      document.getElementById('bytype').innerHTML = tArr.length ? tArr.map(function(x){ return bar(x[0], x[1], tMax, 'bg-primary'); }).join('') : '<p class="text-xs text-light">'+T('mt_no_data','No data yet.')+'</p>';
+
+      // Cost by asset
+      var cost = {};
+      wos.forEach(function(w){ if (w.cost) { var n=w.assetName||(w.assetId!=null&&D.getAsset(w.assetId)?D.getAsset(w.assetId).name:'—'); cost[n]=(cost[n]||0)+Number(w.cost); } });
+      var costArr = Object.keys(cost).map(function(n){ return [n, cost[n]]; }).sort(function(a,b){ return b[1]-a[1]; }).slice(0,8);
+      var costMax = costArr.reduce(function(m,x){ return Math.max(m,x[1]); }, 0);
+      document.getElementById('cost').innerHTML = costArr.length ? costArr.map(function(x){ return bar(x[0], x[1], costMax, 'bg-gold'); }).join('') : '<p class="text-xs text-light">'+T('mt_no_data','No data yet.')+'</p>';
+
+      // Availability list
+      var assets = D.getAssets().filter(function(a){ return a.kind!=='staff'; });
+      document.getElementById('avail').innerHTML = assets.length ? assets.map(function(a){
+        var down = D.assetDownNow(a.id);
+        var st = down ? 'Maintenance' : (a.status||'Available');
+        return '<div class="flex items-center justify-between text-sm"><span class="text-mid">'+esc(a.name)+' <span class="text-light text-xs">'+esc(a.kind)+'</span></span><span class="'+D.statusPill(st)+' text-[10px] font-bold px-2 py-0.5 rounded-full">'+esc(st)+'</span></div>';
+      }).join('') : '<p class="text-xs text-light">'+T('mt_no_data','No data yet.')+'</p>';
+
+      if (window.reapplyDashLang) window.reapplyDashLang();
+    }
+
+    function exportCSV() {
+      var rows = [['Ref','Type','Priority','Status','Asset','Cause','Summary','Technician','Hours','Cost','Opened','Closed']];
+      D.getWorkOrders().forEach(function(w){
+        var a = w.assetId!=null?D.getAsset(w.assetId):null;
+        rows.push([w.ref,w.type,w.priority,w.status,(a?a.name:w.assetName||''),w.cause||'',(w.summary||'').replace(/[\r\n,]/g,' '),w.technician||'',w.hours||0,w.cost||0,(w.opened||'').slice(0,10),(w.closedAt||'').slice(0,10)]);
+      });
+      var csv = rows.map(function(r){ return r.map(function(c){ return '"'+String(c).replace(/"/g,'""')+'"'; }).join(','); }).join('\n');
+      var blob = new Blob([csv], { type:'text/csv' });
+      var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'maintenance-work-orders.csv'; a.click();
+    }
+
+    render();
+    if (D.subscribe) D.subscribe(render);
+  </script>
+  <script src="js/dash-lang.js?v=12"></script>
+</body>
+</html>

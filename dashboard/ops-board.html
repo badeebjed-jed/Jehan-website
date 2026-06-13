@@ -279,6 +279,9 @@
               ? '<button onclick="openReason(' + t.id + ', \'delay\')" title="Flag delay" class="p-1.5 rounded text-gold-hover hover:bg-gold-bg transition-colors"><span class="material-symbols-outlined text-[18px]">schedule</span></button>' +
                 '<button onclick="openReason(' + t.id + ', \'reject\')" title="Reject load" class="p-1.5 rounded text-error hover:bg-error-bg transition-colors"><span class="material-symbols-outlined text-[18px]">block</span></button>'
               : '') +
+            ((t.truckId != null || t.pumpId != null)
+              ? '<button onclick="reportFault(' + t.id + ')" title="' + t18p('ob_report_fault', 'Report a fault to Maintenance') + '" class="p-1.5 rounded text-error hover:bg-error-bg transition-colors"><span class="material-symbols-outlined text-[18px]">build</span></button>'
+              : '') +
             '<button onclick="removeTrip(' + t.id + ')" class="p-1.5 rounded text-light hover:text-error hover:bg-error-bg transition-colors"><span class="material-symbols-outlined text-[18px]">delete</span></button>' +
           '</span>' +
         '</div>' +
@@ -389,6 +392,30 @@
       }
       render();
       toast('toast_trip_deleted', 'Trip removed');
+    }
+
+    // ── Report a fault to Maintenance ──────────────────────────
+    // Raises a breakdown work order for the trip's assigned mixer (or pump
+    // if no mixer). The Maintenance system takes the asset out of service,
+    // which removes it from this board's assignable list automatically.
+    function reportFault(id) {
+      var t = D.getTrip(id);
+      if (!t) return;
+      var assetId = t.truckId != null ? t.truckId : t.pumpId;
+      if (assetId == null) return;
+      var a = D.getAsset(assetId);
+      var o = D.getOpsOrder(t.orderId);
+      if (!confirm(t18p('ob_fault_confirm', 'Report a fault on ') + (a ? a.name : '') + '? ' +
+        t18p('ob_fault_confirm2', 'It will be taken out of service and sent to Maintenance.'))) return;
+      var me = ''; try { var u = window.JehanAuth.currentUser(); me = u ? (u.name || u.email) : ''; } catch (e) {}
+      D.raiseWorkOrder({
+        type: 'Breakdown', priority: 'Critical', assetId: assetId, assetName: a ? a.name : '',
+        summary: t18p('ob_fault_during', 'Fault reported during ') + (o ? o.ref : '') + ' (trip #' + (t.seq || 1) + ')',
+        source: 'ops', tripId: t.id, orderId: t.orderId, reportedBy: me || 'Dispatch'
+      });
+      D.logAudit('wo_raised', 'Breakdown reported for ' + (a ? a.name : '') + ' from dispatch', assetId, o ? o.ref : '');
+      render();
+      toast('ob_fault_sent', 'Fault sent to Maintenance — asset out of service');
     }
 
     // ── Delay / reject reasons ─────────────────────────────────

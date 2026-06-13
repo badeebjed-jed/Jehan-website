@@ -122,6 +122,7 @@ const translations = {
     qf_details_ph:   "Anything else we should know? (pumping, access, finish, etc.)",
     qf_step_contact: "Your contact details",
     qf_optional:     "(optional, to receive your quote)",
+    qf_email_hint:   "(to receive your quote)",
 
     /* ── About ── */
     about_title:     "ABOUT JEHAN HOLDING GROUP",
@@ -320,6 +321,7 @@ const translations = {
     qf_details_ph:   "أي شيء آخر يجب أن نعرفه؟ (ضخ، وصول، تشطيب، إلخ)",
     qf_step_contact: "بيانات التواصل",
     qf_optional:     "(اختياري، لاستلام عرض السعر)",
+    qf_email_hint:   "(لاستلام عرض السعر)",
     book_submit:     "إرسال التفاصيل",
 
     /* ── About ── */
