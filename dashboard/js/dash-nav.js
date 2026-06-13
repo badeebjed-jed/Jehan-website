@@ -136,4 +136,62 @@
   wireGroup('sales-group-btn', 'sales-group-items', 'sales-group-chev', 'jehan_nav_sales_open');
   wireGroup('ops-group-btn', 'ops-group-items', 'ops-group-chev', 'jehan_nav_ops_open');
   wireGroup('pc-group-btn', 'pc-group-items', 'pc-group-chev', 'jehan_nav_pc_open');
+
+  // ── Mobile: turn the sidebar into a slide-in drawer ──────────
+  (function () {
+    if (document.getElementById('dash-nav-mobile-css')) return;
+    var css = document.createElement('style');
+    css.id = 'dash-nav-mobile-css';
+    css.textContent =
+      '@media (max-width:1023px){' +
+        'aside[data-nav]{position:fixed;top:0;bottom:0;inset-inline-start:0;z-index:60;' +
+          'transform:translateX(-100%);transition:transform .25s ease;box-shadow:0 12px 40px rgba(0,0,0,.28);}' +
+        'html[dir="rtl"] aside[data-nav]{transform:translateX(100%);}' +
+        'aside[data-nav].nav-open{transform:translateX(0)!important;}' +
+        '.nav-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:55;opacity:0;' +
+          'pointer-events:none;transition:opacity .2s;}' +
+        '.nav-backdrop.show{opacity:1;pointer-events:auto;}' +
+        '.nav-burger{display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;' +
+          'border-radius:6px;border:1px solid #DCDBD7;background:#fff;color:#444;flex-shrink:0;cursor:pointer;}' +
+        'header.bg-surface{height:auto!important;min-height:4rem;flex-wrap:wrap;row-gap:.5rem;' +
+          'padding-left:1rem!important;padding-right:1rem!important;}' +
+        'header.bg-surface h1{font-size:1.3rem!important;line-height:1.15;}' +
+        'main.flex-1.overflow-y-auto,div.flex-1.overflow-y-auto{padding:1rem!important;}' +
+      '}' +
+      '@media (min-width:1024px){.nav-burger{display:none!important;}}';
+    document.head.appendChild(css);
+
+    var backdrop = document.createElement('div');
+    backdrop.className = 'nav-backdrop';
+    function setOpen(open) {
+      aside.classList.toggle('nav-open', open);
+      backdrop.classList.toggle('show', open);
+      document.body.style.overflow = open ? 'hidden' : '';
+    }
+    backdrop.addEventListener('click', function () { setOpen(false); });
+    // Close the drawer after tapping a navigation link.
+    aside.addEventListener('click', function (e) {
+      if (e.target.closest && e.target.closest('a[href]')) setOpen(false);
+    });
+
+    function injectBurger() {
+      if (document.body && !backdrop.parentNode) document.body.appendChild(backdrop);
+      var header = document.querySelector('header');
+      if (!header || header.querySelector('.nav-burger')) return;
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'nav-burger';
+      b.setAttribute('aria-label', 'Menu');
+      b.innerHTML = '<span class="material-symbols-outlined">menu</span>';
+      b.addEventListener('click', function () { setOpen(!aside.classList.contains('nav-open')); });
+      header.insertBefore(b, header.firstChild);
+    }
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', injectBurger);
+    } else { injectBurger(); }
+    // Reset drawer state when crossing the desktop breakpoint.
+    window.addEventListener('resize', function () {
+      if (window.innerWidth >= 1024) setOpen(false);
+    });
+  })();
 })();
